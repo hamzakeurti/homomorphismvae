@@ -50,6 +50,7 @@ def parse_cmd_arguments():
                         default=[3, 16, 32, 32], help='channels convolutional layers')
     parser.add_argument('--hidden_units', type=int, nargs='?', const=[],
                         default=[50], help='hidden units')
+    parser.add_argument('--latent_units',type=int,help='Number of latent units if --intervene is False')
     parser.add_argument('--device', type=str, default='cuda:0', help='device')
     # Training
     parser.add_argument('--epochs', type=int, default=400,
@@ -87,13 +88,17 @@ def setup_model(config):
     path = os.path.join(config.save_path, config.id)
     device = config.device
     if config.load_model:
-        model = save.load_object(path, 'model').double().to(device)
-    else:
+        return save.load_object(path, 'model').double().to(device)
+    if config.intervene:
         n_latent = 2*(config.n_joints - len(config.immobile_joints))
-        model = VariationalOrthogonalAE(img_shape=config.img_shape,
-                                        n_latent=n_latent, kernel_sizes=config.kernel_size,
-                                        strides=config.strides, conv_channels=config.conv_channels, 
-                                        hidden_units=config.hidden_units,device=config.device).double().to(config.device)
+        if n_latent == 0:
+            raise Exception("intervene==True and all joints are immobile.")
+    else:
+        n_latent = config.latent_units
+    model = VariationalOrthogonalAE(img_shape=config.img_shape,
+                                    n_latent=n_latent, kernel_sizes=config.kernel_size,
+                                    strides=config.strides, conv_channels=config.conv_channels, 
+                                    hidden_units=config.hidden_units,device=config.device).double().to(config.device)
     return model
 
 def setup_misc(config):

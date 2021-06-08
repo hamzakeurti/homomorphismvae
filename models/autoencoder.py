@@ -9,12 +9,13 @@ from models.orthogonal import OrthogonalMatrix
 
 
 class VariationalOrthogonalAE(nn.Module):
-    def __init__(self, img_shape, n_latent, kernel_sizes, strides, conv_channels, hidden_units, rotation_steps=None, device='cpu'):
+    def __init__(self, img_shape,n_latent, kernel_sizes, strides, conv_channels, hidden_units, intervene = True, rotation_steps=None, device='cpu'):
         super().__init__()
         shape = img_shape
         self.n_units = n_latent
         n_units = n_latent
         self.activate_latent = None
+        self.intervene = intervene
         self.encoder = nets.CNN(shape_in=shape, kernel_sizes=kernel_sizes, strides=strides,
                                 conv_channels=conv_channels, linear_channels=hidden_units+[2*n_units], use_bias=True)
         self.decoder = nets.TransposedCNN(shape_out=shape, kernel_sizes=kernel_sizes, strides=strides,
@@ -36,12 +37,15 @@ class VariationalOrthogonalAE(nn.Module):
         O = self.orthogonal(angles)
         return torch.matmul(O, h.unsqueeze(-1)).squeeze(dim=-1)
 
-    def forward(self, x, dz):
+    def forward(self, x, dz=None):
         z = self.encode(x)
         mu, logvar = z[:, :self.n_units], z[:, self.n_units:]
         h = self.reparametrize(mu, logvar)
-        z2 = self.rotate(h, dz)
-        out = self.decode(z2)
+        if self.intervene:
+            if dz is None:
+                raise Exception('Expected intervention but no displacement was provided') 
+            h = self.rotate(h, dz)
+        out = self.decode(h)
         return torch.sigmoid(out), mu, logvar
 
     def reparametrize(self, mu, logvar):

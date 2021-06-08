@@ -2,7 +2,7 @@ import torch
 
 def get_distributions(model,dataloader,n_batch,device):
     zs = []
-    angles = []
+    labels = []
     with torch.no_grad():
         for i,batch in enumerate(dataloader):
 
@@ -10,11 +10,11 @@ def get_distributions(model,dataloader,n_batch,device):
             if model.activate_latent is not None:
                 z = model.activate_latent(z)    
             zs.append(z)
-            angles.append(batch[1])
+            labels.append(batch[1])
             print(i)
             if i>=n_batch:
                 break
     zs2 = torch.vstack(zs).cpu().numpy()
-    a = torch.vstack(angles).cpu().numpy()
+    a = torch.vstack(labels).cpu().numpy()
     return zs2,a
 

@@ -19,19 +19,26 @@ def train(model, dataloader, optimizer, epoch, n_verbose=50):
     losses, rlosses, dlosses = [], [], []
     cumulated_loss, c_rloss, c_dloss = 0.0, 0.0, 0.0
 
-    for i, (x1, z1, x2, z2, dj) in enumerate(dataloader):
+    for i, batch in enumerate(dataloader):
+        
         # to device
         device = model.steps.device
-        a = (x1, z1, x2, z2, dj)
-        x1, z1, x2, z2, dj = [e.to(device) for e in a]
+        batch = [e.to(device).double() for e in batch]
         # -
         optimizer.zero_grad()
 
         # forward
-        x2_hat, mu, logvar = model(x1.double(), dj.double())
-
+        if model.intervene:
+            x1, j1, x2, j2, dj = batch
+            out, mu, logvar = model(x1, dj)
+            target = x2
+        else:
+            x1,j1 = batch
+            out, mu, logvar = model(x1)
+            target = x1
+        
         # loss
-        rloss = nn.BCELoss(reduction='sum')(x2_hat, x2)
+        rloss = nn.BCELoss(reduction='sum')(out, target)
         dloss = kl_loss(mu, logvar)
         loss = rloss+dloss
 
