@@ -2,10 +2,11 @@ import json
 import os
 import argparse
 from torch.utils.data import Dataset, DataLoader
+from torch import optim
 
 from models.autoencoder import VariationalOrthogonalAE
 from data.armeye import ArmEyeDataset, FixedJointsSampler
-from utils import save
+from utils import save,checkpoint
 
 
 def parse_cmd_arguments():
@@ -32,7 +33,7 @@ def parse_cmd_arguments():
                         help='Shape of input images [h,w], ignore color channels,'+
                              'those should be added in convolution' + 
                              'channels as number of input channels.')
-    parser.add_argument('--data_root', type=str, default="D:/Projects/PhD/datasets/armeye/transparent_small/",
+    parser.add_argument('--data_root', type=str, default="/home/hamza/datasets/armeye/sphere_v1/transparent_small/",
                         help='Root directory of the dataset relative from dataset directory.')
     # save
     parser.add_argument('--save_path', type=str, default='saved/armeye/orthogonal_vae/',
@@ -83,12 +84,21 @@ def parse_cmd_arguments():
         json.dump(config.__dict__, f, sort_keys=False, indent=4)
     return config
 
+class Config:
+    def __init__(self):
+        pass
+
+def load_config(id, save_dir='/home/hamza/projects/displacementae/saved/armeye/orthogonal_vae'):
+    config = Config()
+    with open(os.path.join(save_dir,str(id),'config.json'),'r') as f:
+        config.__dict__ = json.load(f)
+    return config
 
 def setup_model(config):
     path = os.path.join(config.save_path, config.id)
     device = config.device
-    if config.load_model:
-        return save.load_object(path, 'model').double().to(device)
+    # if config.load_model:
+    #     return save.load_object(path, 'model').double().to(device)
     if config.intervene:
         n_latent = 2*(config.n_joints - len(config.immobile_joints))
         if n_latent == 0:
@@ -98,29 +108,40 @@ def setup_model(config):
     model = VariationalOrthogonalAE(img_shape=config.img_shape,
                                     n_latent=n_latent, kernel_sizes=config.kernel_size,
                                     strides=config.strides, conv_channels=config.conv_channels, 
-                                    hidden_units=config.hidden_units,device=config.device).double().to(config.device)
+                                    hidden_units=config.hidden_units,intervene=config.intervene,device=config.device).double().to(config.device)
     return model
 
 def setup_misc(config):
-    path = os.path.join(config.save_path, config.id)
-    if config.load_model:
-        # get epoch from saved data
-        fnames = os.listdir(path)
-        # parse fnames to get max saved epoch.
-        start_epoch = max([int(fname.split('_')[1][:-2])
-                           for fname in fnames if 'distribs' in fname])+1
-        # load losses
-        l = save.load_object(path, 'losses')
-        losses, rlosses, dlosses = l['total'], l['r'], l['d']
-    else:
-        start_epoch = 0
-        losses, rlosses, dlosses = [], [], []
+    # path = os.path.join(config.save_path, config.id)
+    # # if config.load_model:
+    # #     # get epoch from saved data
+    # #     fnames = os.listdir(path)
+    # #     # parse fnames to get max saved epoch.
+    # #     start_epoch = max([int(fname.split('_')[1][:-2])
+    # #                        for fname in fnames if 'distribs' in fname])+1
+    # #     # load losses
+    # #     l = save.load_object(path, 'losses')
+    # #     losses, rlosses, dlosses = l['total'], l['r'], l['d']
+    start_epoch = 0
+    losses, rlosses, dlosses = [], [], []
     end_epoch = start_epoch + config.epochs
     return start_epoch, end_epoch, losses, rlosses, dlosses
 
+def setup_model_optimizer(config):
+    model = setup_model(config)
+    start_epoch, end_epoch, losses, rlosses, dlosses = setup_misc(config)
+    optimizer = optim.Adam(params=model.parameters(), lr=config.lr)
+    if config.load_model:
+        model,optimizer,l,epoch = checkpoint.load_checkpoint(
+            model,optimizer,os.path.join(config.save_path,config.id))
+        start_epoch = epoch
+        end_epoch = start_epoch + config.epochs 
+        losses, rlosses, dlosses = l['total'], l['r'], l['d']
+    return model,optimizer,start_epoch, end_epoch, losses, rlosses, dlosses
+
 def setup_data(config):
     dataset = ArmEyeDataset(config.data_root, n_joints=config.n_joints, intervene=config.intervene,
-                            displacement_range=config.displacement_range, fixed_joints=config.immobile_joints)
+                            displacement_range=config.displacement_range, immobile_joints=config.immobile_joints)
     sampler = FixedJointsSampler(
         config.fixed_joints, config.fixed_values, dataset, shuffle=config.shuffle)
     dataloader = DataLoader(dataset, batch_size=config.batch_size, sampler=sampler)

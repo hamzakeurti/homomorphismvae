@@ -1,0 +1,49 @@
+{
+    "json": "saved/armeye/orthogonal_vae/1/config.json",
+    "n_joints": 3,
+    "fixed_joints": [
+        1,
+        2
+    ],
+    "fixed_values": [
+        0,
+        14
+    ],
+    "immobile_joints": [
+        1,
+        2
+    ],
+    "intervene": true,
+    "shuffle": true,
+    "displacement_range": [
+        -3,
+        3
+    ],
+    "img_shape": [
+        128,
+        128
+    ],
+    "data_root": "/home/hamza/datasets/armeye/sphere_v1/transparent_small/",
+    "save_path": "/home/hamza/projects/displacementae/saved/armeye/orthogonal_vae/",
+    "id": "1",
+    "load_model": false,
+    "kernel_size": 5,
+    "strides": 1,
+    "conv_channels": [
+        3,
+        16,
+        32,
+        64
+    ],
+    "hidden_units": [
+        50,
+        30
+    ],
+    "latent_units": null,
+    "device": "cuda:3",
+    "epochs": 1400,
+    "max_iter": 400,
+    "batch_size": 30,
+    "lr": 0.001,
+    "_comment": "intervention VAE on single moving joint."
+}

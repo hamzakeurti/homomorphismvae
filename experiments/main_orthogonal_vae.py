@@ -9,7 +9,7 @@ import sys
 
 import __init__
 from experiments import train_utils
-from utils import save, test
+from utils import save, test,checkpoint
 
 def kl_loss(mu, logvar):
     return 0.5 * torch.sum(torch.exp(logvar) + mu**2 - 1. - logvar)
@@ -74,20 +74,17 @@ def train(model, dataloader, optimizer, epoch, n_verbose=50):
 if __name__ == "__main__":
     config = train_utils.parse_cmd_arguments()
 
-
-    dataset, dataloader = train_utils.setup_data(config)
-    model = train_utils.setup_model(config)
-    start_epoch, end_epoch, losses, rlosses, dlosses = train_utils.setup_misc(config)
-
-    free_joints = [i for i in range(config.n_joints) if i not in config.immobile_joints]
-    model.steps = dataset.joint_steps[free_joints].to(config.device)
-    
     path = os.path.join(config.save_path, config.id)
 
+    dataset, dataloader = train_utils.setup_data(config)
 
-    optimizer = optim.Adam(params=model.parameters(), lr=config.lr)
+    free_joints = [i for i in range(config.n_joints) if i not in config.immobile_joints]
+
+    model,optimizer,start_epoch, end_epoch, losses, rlosses, dlosses = train_utils.setup_model_optimizer(config)
+    model.steps = dataset.joint_steps[free_joints].to(config.device)
+
  
-    print('Starting training')
+    print(f'Starting training at epoch {start_epoch}')
 
     model.train()
     for epoch in range(start_epoch, end_epoch):
@@ -107,3 +104,4 @@ if __name__ == "__main__":
         save.pickle_object(model, os.path.join(config.save_path, config.id),'model')
         save.pickle_object({'total': losses, 'r': rlosses, 'd': dlosses}, os.path.join(
             config.save_path, config.id), 'losses3')
+        checkpoint.save_checkpoint(model,optimizer,losses={'total': losses, 'r': rlosses, 'd': dlosses},epoch=epoch,save_path = path)

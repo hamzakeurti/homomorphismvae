@@ -20,8 +20,9 @@ class VariationalOrthogonalAE(nn.Module):
                                 conv_channels=conv_channels, linear_channels=hidden_units+[2*n_units], use_bias=True)
         self.decoder = nets.TransposedCNN(shape_out=shape, kernel_sizes=kernel_sizes, strides=strides,
                                           conv_channels=conv_channels[::-1], linear_channels=[n_units] + hidden_units[::-1])
-        self.orthogonal = OrthogonalMatrix(
-            OrthogonalMatrix.BLOCKS, n_units=n_units, device=device)
+        if self.intervene:
+            self.orthogonal = OrthogonalMatrix(
+                OrthogonalMatrix.BLOCKS, n_units=n_units, device=device)
         # self.steps = dataset.joint_steps[free_joints].to(device)
         if rotation_steps:
             self.steps = torch.tensor(rotation_steps).to(device)

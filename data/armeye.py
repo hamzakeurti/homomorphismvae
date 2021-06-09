@@ -11,7 +11,7 @@ from matplotlib import image
 
 class ArmEyeDataset(Dataset):
     LABELS = ['id','angle0','angle1','angle2','x','y','z']
-    def __init__(self,root,n_joints,intervene = False,displacement_range = [-1,1],fixed_joints=[]):
+    def __init__(self,root,n_joints,intervene = False,displacement_range = [-1,1],immobile_joints=[]):
         self.root = root
         self.labels_file = os.path.join(root,"labels.npy")
         self.labels = np.load(self.labels_file)
@@ -24,8 +24,8 @@ class ArmEyeDataset(Dataset):
         self.displacement_range = displacement_range
         self.imshape = self.load_image(0).shape
 
-        self.fixed_joints = fixed_joints
-        self.free_joints = [i for i in range(self.n_joints) if i not in self.fixed_joints]
+        self.immobile_joints = immobile_joints
+        self.free_joints = [i for i in range(self.n_joints) if i not in self.immobile_joints]
 
     def process_labels(self):
         new_labels = np.empty_like(self.labels)
@@ -61,8 +61,8 @@ class ArmEyeDataset(Dataset):
         # intervention in the vicinity in the joints space 
         joints = self.labels[i,self.joints_ids]
         #sample displacement
-        if self.fixed_joints:
-            len_dj = self.n_joints - len(self.fixed_joints)
+        if self.immobile_joints:
+            len_dj = self.n_joints - len(self.immobile_joints)
         else:
             len_dj = self.n_joints
         dj = np.random.randint(low=self.displacement_range[0],high=self.displacement_range[1],size = len_dj)
