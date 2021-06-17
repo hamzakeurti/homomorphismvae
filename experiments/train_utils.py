@@ -60,6 +60,8 @@ def parse_cmd_arguments():
                         help='number of iterations')
     parser.add_argument('--batch_size', type=int, default=20,
                         help='Number of samples per training loop')
+    parser.add_argument('--n_samples', type=int, default=500,
+                        help='Number of samples to visualize the latent distribution')
     # Optimizer
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
 

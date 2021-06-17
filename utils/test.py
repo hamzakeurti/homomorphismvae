@@ -3,7 +3,7 @@ import torch
 from utils import save
 import os
 
-def get_distributions(model,dataloader,n_batch,device):
+def get_distributions(model,dataloader,n_samples,device):
     zs = []
     labels = []
     with torch.no_grad():
@@ -17,7 +17,7 @@ def get_distributions(model,dataloader,n_batch,device):
             zs.append(z)
             labels.append(batch[1])
             print(i)
-            if i>=n_batch:
+            if i*zs[0].shape[0]>=n_samples:
                 break
     zs2 = torch.vstack(zs).cpu().numpy()
     a = torch.vstack(labels).cpu().numpy()
