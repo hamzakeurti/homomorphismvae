@@ -59,7 +59,7 @@ def train(model, dataloader, optimizer, epoch, n_verbose=50):
             dlosses.append(c_dloss / n_verbose)
 
             toprint = f'[{epoch}\t:{i+1}\t]\t'
-            toprint = f'loss = {losses[-1]}\t'
+            toprint += f'loss = {losses[-1]}\t'
             toprint += f'rloss = {rlosses[-1]}\t'
             toprint += f'dloss = {dlosses[-1]}\t'
             print(toprint)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         if b_dist:
             print(f'Getting distrib prior to epoch {epoch}')
             zs, a = test.get_distributions(
-                model, dataloader, n_batch=20, device=config.device)
+                model, dataloader, n_samples=config.n_samples, device=config.device)
             save.pickle_object({"latent": zs, "labels": a}, os.path.join(
                 config.save_path, config.id), f'distribs_{epoch}')
         print(f'Training epoch {epoch}')
