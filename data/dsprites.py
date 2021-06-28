@@ -52,7 +52,7 @@ class DspritesDataset(Dataset):
         self.classes = self.file[LATENTS][CLASSES] # Remove color label, unique color over all dataset
         self.values = self.file[LATENTS][VALUES]
         self.num_classes = self.classes[-1][1:] + 1
-        
+        self.rotation_steps = 2*np.pi/ self.num_classes[LatentIdx.ORIENT]
     
     def __len__(self):
         return self.images.shape[0]
