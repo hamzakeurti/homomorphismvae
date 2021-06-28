@@ -4,17 +4,20 @@ import argparse
 from torch.utils.data import Dataset, DataLoader
 from torch import optim
 
-from models.autoencoder import VariationalOrthogonalAE
-from data.armeye import ArmEyeDataset, FixedJointsSampler
+from models.autoencoder import VariationalOrthogonalAE,VariationalMixAE
+from data import armeye
+from data import dsprites
 from utils import save,checkpoint
 
 
-def parse_cmd_arguments():
+def parse_cmd_arguments(mode='orthogonal_vae'):
     parser = argparse.ArgumentParser()
     parser.add_argument('--json', type=str,
                         help='Json config file to load from,' +
                              'default are still filled according to argument parser.')
     # Data
+    parser.add_argument('--dataset', type=str, default='armeye', 
+                        help='Name of dataset')
     parser.add_argument('--n_joints', type=int, default=3,
                         help='Number of joints in the robot')
     parser.add_argument('--fixed_joints', type=int, nargs='+', default=[],
@@ -43,6 +46,8 @@ def parse_cmd_arguments():
     parser.add_argument('--load_model', type=bool, default=False,
                         help='whether to load model from save_path')
     # Model
+    parser.add_argument('--model',type = int,default = 0,
+                        help='choose model: \n0: othogonal vae\n1:mix vae')
     parser.add_argument('--kernel_size', type=int, default=5,
                         help='kernel size of convolutional layers')
     parser.add_argument('--strides', type=int, default=1,
@@ -65,6 +70,9 @@ def parse_cmd_arguments():
     # Optimizer
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
 
+    if mode == 'mix_vae':
+        parser = _mixed_vae_arguments(parser)
+
     config = parser.parse_args()
     if config.json:
         with open(config.json, 'r') as f:
@@ -86,6 +94,16 @@ def parse_cmd_arguments():
         json.dump(config.__dict__, f, sort_keys=False, indent=4)
     return config
 
+def _mixed_vae_arguments(parser):
+    parser.add_argument("--free_joints",type=list,default=None,
+                        help="Specify joints/latents (ground truth labels) generating the visual data to act on")
+    parser.add_argument("--rotation_idx",type=list,default = [], 
+                        help='labels to intervene on with a rotation')
+    parser.add_argument("--translation_idx",type=list,default = [], 
+                        help='labels to intervene on with a translation')
+    return parser
+
+
 class Config:
     def __init__(self):
         pass
@@ -96,11 +114,7 @@ def load_config(id, save_dir='/home/hamza/projects/displacementae/saved/armeye/o
         config.__dict__ = json.load(f)
     return config
 
-def setup_model(config):
-    path = os.path.join(config.save_path, config.id)
-    device = config.device
-    # if config.load_model:
-    #     return save.load_object(path, 'model').double().to(device)
+def setup_model_orthogonalvae(config):
     if config.intervene:
         n_latent = 2*(config.n_joints - len(config.immobile_joints))
         if n_latent == 0:
@@ -111,6 +125,21 @@ def setup_model(config):
                                     n_latent=n_latent, kernel_sizes=config.kernel_size,
                                     strides=config.strides, conv_channels=config.conv_channels, 
                                     hidden_units=config.hidden_units,intervene=config.intervene,device=config.device).double().to(config.device)
+    return model
+
+def setup_model_mixvae(config):
+    model = VariationalMixAE(img_shape=config.img_shape,
+                                    n_latent=config.n_latent, kernel_sizes=config.kernel_size,
+                                    strides=config.strides, conv_channels=config.conv_channels, 
+                                    hidden_units=config.hidden_units,intervene=config.intervene,
+                                    rotation_idx = config.rotation_idx ,translation_idx=config.translation_idx,device=config.device).double().to(config.device)
+    return model
+
+def setup_model(config):
+    if config.model == 0:# orthogonal vae
+        model = setup_model_orthogonalvae(config)
+    if config.model == 1:
+        model = setup_model_mixvae(config)
     return model
 
 def setup_misc(config):
@@ -142,10 +171,23 @@ def setup_model_optimizer(config):
     return model,optimizer,start_epoch, end_epoch, losses, rlosses, dlosses
 
 def setup_data(config):
-    dataset = ArmEyeDataset(config.data_root, n_joints=config.n_joints, intervene=config.intervene,
-                            displacement_range=config.displacement_range, immobile_joints=config.immobile_joints)
-    sampler = FixedJointsSampler(
-        config.fixed_joints, config.fixed_values, dataset, shuffle=config.shuffle)
+    if config.dataset == 'armeye':
+        dataset,sampler = setup_data_armeye(config)
+    elif config.dataset == 'dsprites':
+        dataset,sampler = setup_data_dsprites(config)
+    else:
+        raise Exception(f'No support for dataset {config.dataset}')
     dataloader = DataLoader(dataset, batch_size=config.batch_size, sampler=sampler)
-    # ,collate_fn=lambda x: [default_collate(a).to(config.device) for a in x])    
     return dataset, dataloader
+
+def setup_data_armeye(config):
+    dataset = armeye.ArmEyeDataset(config.data_root, n_joints=config.n_joints, intervene=config.intervene,
+                            displacement_range=config.displacement_range, immobile_joints=config.immobile_joints)
+    sampler = armeye.FixedJointsSampler(
+        config.fixed_joints, config.fixed_values, dataset, shuffle=config.shuffle)
+    return dataset,sampler
+
+def setup_data_dsprites(config):
+    dataset = dsprites.DspritesDataset(config.data_root,config.intervene,config.immobile_joints,config.free_joints)
+    sampler = dsprites.FixedJointsSampler(config.fixed_joints, config.fixed_values, dataset, shuffle=config.shuffle)
+    return dataset,sampler
