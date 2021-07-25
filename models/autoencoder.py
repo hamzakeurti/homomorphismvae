@@ -166,10 +166,12 @@ class VariationalMixAE(nn.Module):
             if dz is None:
                 raise Exception(
                     'Expected intervention but no displacement was provided')
-            h[self.rotation_units] = self.rotate(
-                h[self.rotation_units], dz[self.dz_rotidx])
-            h[self.translation_units] = self.translate(
-                h[self.translation_units], dz[self.dz_transidx])
+            if self.dz_rotidx:
+                h[self.rotation_units] = self.rotate(
+                    h[self.rotation_units], dz[self.dz_rotidx])
+            if self.dz_transidx:
+                h[self.translation_units] = self.translate(
+                    h[self.translation_units], dz[self.dz_transidx])
         out = self.decode(h)
         return torch.sigmoid(out), mu, logvar
 
