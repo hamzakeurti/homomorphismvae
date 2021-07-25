@@ -13,3 +13,9 @@ class TestAdaptiveRotation(unittest.TestCase):
         orth = grp.AdaptiveRotationBlock(n_units=2,learn_repr=False)
         self.assertFalse(orth.unit_repr.requires_grad)
         
+        orth = grp.AdaptiveRotationBlock(n_units=2,device='cpu')
+        self.assertEqual(str(orth.unit_repr.device),'cpu')
+        # orth = grp.AdaptiveRotationBlock(n_units=2,device='cuda:0')
+        # self.assertEqual(str(orth.unit_repr.device),'cuda:0')
+        
+        self.assertIn(orth.unit_repr,orth.parameters())

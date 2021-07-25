@@ -48,6 +48,10 @@ def parse_cmd_arguments(mode='orthogonal_vae'):
     # Model
     parser.add_argument('--model',type = int,default = 0,
                         help='choose model: \n0: othogonal vae\n1:mix vae')
+    parser.add_argument('--learn_repr',type=bool,default=False,
+                        help='Whether representation of action is learnable or static. Static corresponds to value chosen in --init_scale option')
+    parser.add_argument('--repr_scale',type=int,default=0.1,
+                        help='Scale of the unit action representation, and initial scale if --learn_repr is true')
     parser.add_argument('--kernel_size', type=int, default=5,
                         help='kernel size of convolutional layers')
     parser.add_argument('--strides', type=int, default=1,
@@ -72,6 +76,7 @@ def parse_cmd_arguments(mode='orthogonal_vae'):
 
     if mode == 'mix_vae':
         parser = _mixed_vae_arguments(parser)
+
 
     config = parser.parse_args()
     if config.json:
@@ -124,7 +129,9 @@ def setup_model_orthogonalvae(config):
     model = VariationalOrthogonalAE(img_shape=config.img_shape,
                                     n_latent=n_latent, kernel_sizes=config.kernel_size,
                                     strides=config.strides, conv_channels=config.conv_channels, 
-                                    hidden_units=config.hidden_units,intervene=config.intervene,device=config.device).double().to(config.device)
+                                    hidden_units=config.hidden_units,intervene=config.intervene,
+                                    device=config.device,learn_repr=config.learn_repr,
+                                    repr_scale=config.repr_scale).double().to(config.device)
     return model
 
 def setup_model_mixvae(config):
@@ -132,7 +139,9 @@ def setup_model_mixvae(config):
                                     n_latent=config.n_latent, kernel_sizes=config.kernel_size,
                                     strides=config.strides, conv_channels=config.conv_channels, 
                                     hidden_units=config.hidden_units,intervene=config.intervene,
-                                    rotation_idx = config.rotation_idx ,translation_idx=config.translation_idx,device=config.device).double().to(config.device)
+                                    rotation_idx = config.rotation_idx,translation_idx=config.translation_idx,
+                                    device=config.device,
+                                    learn_repr=config.learn_repr,repr_scale=config.repr_scale).double().to(config.device)
     return model
 
 def setup_model(config):
