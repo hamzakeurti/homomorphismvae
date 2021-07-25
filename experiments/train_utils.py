@@ -136,7 +136,7 @@ def setup_model_orthogonalvae(config):
 
 def setup_model_mixvae(config):
     model = VariationalMixAE(img_shape=config.img_shape,
-                                    n_latent=config.n_latent, kernel_sizes=config.kernel_size,
+                                    n_latent=config.latent_units, kernel_sizes=config.kernel_size,
                                     strides=config.strides, conv_channels=config.conv_channels, 
                                     hidden_units=config.hidden_units,intervene=config.intervene,
                                     rotation_idx = config.rotation_idx,translation_idx=config.translation_idx,
