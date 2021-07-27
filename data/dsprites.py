@@ -23,9 +23,10 @@ class DspritesDataset(Dataset):
     """
     dsprites dataset
     """
-    def __init__(self,root,intervene=False,immobile_joints = None,free_joints=None,hdf5=True):
+    def __init__(self,root,intervene=False,displacement_range=[-1,1],immobile_joints = None,free_joints=None,hdf5=True):
         self.root = root
         self.intervene = intervene
+        self.displacement_range = displacement_range
         self.n_joints = 5
         if immobile_joints is not None:
             if free_joints is not None:
@@ -48,10 +49,11 @@ class DspritesDataset(Dataset):
     def _process_hdf5(self):
         filepath = os.path.join(self.root,'dsprites.hdf5')
         self.file = h5py.File(filepath,'r')
-        self.images = self.file[IMGS]
-        self.classes = self.file[LATENTS][CLASSES] # Remove color label, unique color over all dataset
-        self.values = self.file[LATENTS][VALUES]
-        self.num_classes = self.classes[-1][1:] + 1
+        with h5py.File(filepath,'r') as f:
+            self.images = self.file[IMGS][:]
+            self.classes = self.file[LATENTS][CLASSES][:] # Remove color label, unique color over all dataset
+            self.values = self.file[LATENTS][VALUES][:]
+            self.num_classes = self.classes[-1][1:] + 1
         self.rotation_steps = 2*np.pi/ self.num_classes[LatentIdx.ORIENT]
     
     def __len__(self):
@@ -60,9 +62,12 @@ class DspritesDataset(Dataset):
     def __getitem__(self, index):
         if self.intervene:
             index2,dj = self.f_intervene(index)
-            return self.images[index],self._get_class(index),self.images[index2],self._get_class(index2),dj
+            return self._get_image(index),self._get_class(index),self._get_image(index2),self._get_class(index2),dj
         else:
-            return self.images[index],self._get_class(index)
+            return self._get_image(index),self._get_class(index)
+
+    def _get_image(self,index):
+        return np.expand_dims(self.images[index],0).astype(np.float64)
 
     def _get_class(self,index):
         return self.classes[index][1:]

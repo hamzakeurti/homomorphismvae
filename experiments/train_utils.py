@@ -25,7 +25,7 @@ def parse_cmd_arguments(mode='orthogonal_vae'):
     parser.add_argument('--fixed_values', type=int, nargs='+',
                         default=[], help='Values of fixed joints')
     parser.add_argument('--immobile_joints', type=int, nargs='+',
-                        default=[], help='Indices of fixed joints in sampling')
+                        default=[], help='Indices of fixed joints in intervention')
     parser.add_argument('--intervene', type=bool, default=True,
                         help='Whether to vary joint positions.')
     parser.add_argument('--shuffle', type=bool, default=True,
@@ -67,6 +67,8 @@ def parse_cmd_arguments(mode='orthogonal_vae'):
                         help='Number of samples per training loop')
     parser.add_argument('--n_samples', type=int, default=500,
                         help='Number of samples to visualize the latent distribution')
+    parser.add_argument('--verbose', type=int, default=1,
+                        help='Number of iterations before every print.')
     # Optimizer
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
 
@@ -129,7 +131,7 @@ def setup_model_orthogonalvae(config):
 
 def setup_model_mixvae(config):
     model = VariationalMixAE(img_shape=config.img_shape,
-                                    n_latent=config.n_latent, kernel_sizes=config.kernel_size,
+                                    n_latent=config.latent_units, kernel_sizes=config.kernel_size,
                                     strides=config.strides, conv_channels=config.conv_channels, 
                                     hidden_units=config.hidden_units,intervene=config.intervene,
                                     rotation_idx = config.rotation_idx ,translation_idx=config.translation_idx,device=config.device).double().to(config.device)
@@ -188,6 +190,6 @@ def setup_data_armeye(config):
     return dataset,sampler
 
 def setup_data_dsprites(config):
-    dataset = dsprites.DspritesDataset(config.data_root,config.intervene,config.immobile_joints,config.free_joints)
+    dataset = dsprites.DspritesDataset(config.data_root,config.intervene,config.displacement_range, config.immobile_joints,config.free_joints)
     sampler = dsprites.FixedJointsSampler(config.fixed_joints, config.fixed_values, dataset, shuffle=config.shuffle)
     return dataset,sampler

@@ -68,16 +68,14 @@ def train(model, dataloader, optimizer, epoch, n_verbose=50):
     return losses, rlosses, dlosses
 
 if __name__ == "__main__":
-    config = train_utils.parse_cmd_arguments()
+    config = train_utils.parse_cmd_arguments(mode='mix_vae')
 
     path = os.path.join(config.save_path, config.id)
 
     dataset, dataloader = train_utils.setup_data(config)
 
-    free_joints = [i for i in range(config.n_joints) if i not in config.immobile_joints]
-
     model,optimizer,start_epoch, end_epoch, losses, rlosses, dlosses = train_utils.setup_model_optimizer(config)
-    model.steps = dataset.joint_steps[free_joints].to(config.device)
+    model.steps = torch.tensor(dataset.rotation_steps).to(config.device)
 
     model.train()
     for epoch in range(start_epoch, end_epoch):
@@ -90,7 +88,7 @@ if __name__ == "__main__":
             save.pickle_object({"latent": zs, "labels": a}, os.path.join(
                 config.save_path, config.id), f'distribs_{epoch}')
         print(f'Training epoch {epoch}')
-        l = train(model, dataloader, optimizer, epoch, n_verbose=1)
+        l = train(model, dataloader, optimizer, epoch, n_verbose=config.verbose)
         losses += l[0]
         rlosses += l[1]
         dlosses += l[2]
