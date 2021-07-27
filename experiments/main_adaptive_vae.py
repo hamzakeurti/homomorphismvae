@@ -89,9 +89,11 @@ if __name__ == "__main__":
             save.pickle_object({"latent": zs, "labels": a}, os.path.join(
                 config.save_path, config.id), f'distribs_{epoch}')
             if model.dz_rotidx:
-                save.pickle_object(model.orthogonal.unit_repr,os.path.join(config.save_path, config.id), f'rot_repr_{epoch}')
+                save.pickle_object(model.orthogonal.unit_repr.data,
+                                    os.path.join(config.save_path, config.id), f'rot_repr_{epoch}')
             if model.dz_transidx:
-                save.pickle_object(model.translation_block.unit_repr,os.path.join(config.save_path, config.id), f'trans_repr_{epoch}')
+                save.pickle_object(model.translation_block.unit_repr.data,
+                                    os.path.join(config.save_path, config.id), f'trans_repr_{epoch}')
                 
 
         print(f'Training epoch {epoch}')

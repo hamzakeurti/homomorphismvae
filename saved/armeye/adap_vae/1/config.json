@@ -1,0 +1,59 @@
+{
+    "json": "saved/armeye/adap_vae/1/config.json",
+    "dataset": "armeye",
+    "n_joints": 3,
+    "fixed_joints": [
+        1,
+        2
+    ],
+    "fixed_values": [
+        20,
+        18
+    ],
+    "immobile_joints": [
+        1,
+        2
+    ],
+    "intervene": true,
+    "shuffle": true,
+    "displacement_range": [
+        -3,
+        3
+    ],
+    "img_shape": [
+        128,
+        128
+    ],
+    "data_root": "/home/hamza/datasets/armeye/sphere_v1/transparent_small/",
+    "save_path": "/home/hamza/projects/displacementae/saved/armeye/adap_vae/",
+    "id": "1",
+    "load_model": false,
+    "model": 1,
+    "learn_repr": true,
+    "repr_scale": 0.1,
+    "kernel_size": 5,
+    "strides": 1,
+    "conv_channels": [
+        3,
+        16,
+        32,
+        64
+    ],
+    "hidden_units": [
+        50,
+        30
+    ],
+    "latent_units": 2,
+    "device": "cuda:1",
+    "epochs": 1400,
+    "max_iter": 400,
+    "batch_size": 30,
+    "n_samples": 500,
+    "lr": 0.001,
+    "free_joints": null,
+    "rotation_idx": [
+        0
+    ],
+    "translation_idx": [],
+    "_comment": "No intervention VAE on single moving joint."
+}
