@@ -2,3 +2,7 @@
 *.pyc
 !.gitkeep
 .vscode
+*.json
+*.sh
+*.pickle
+*.txt
