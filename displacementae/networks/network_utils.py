@@ -26,6 +26,7 @@ from networks.cnn import CNN
 from networks.transposedcnn import TransposedCNN 
 import networks.geometric.orthogonal as orth
 import utils.misc as misc
+from networks.autoencoder import AutoEncoder
 
 def setup_network(config, dhandler, device, mode='autoencoder'):
     if mode=='autoencoder':
@@ -66,6 +67,12 @@ def setup_autoencoder_network(config, dhandler, device):
         config.variational = True
     else:
         variational = config.variational
+    
+    if not hasattr(config,'specified_grp_step'):
+        specified_step = 0
+    else:
+        specified_step = config.specified_step
+
 
     # if variational, encoder outputs mean and logvar
     encoder_outputs = (1 + variational ) * latent_units 
@@ -80,7 +87,11 @@ def setup_autoencoder_network(config, dhandler, device):
         use_bias=True, activation_fn=act_fn).to(device)
     
     orthogonal_matrix = orth.OrthogonalMatrix(
-        transform=orth.OrthogonalMatrix.BLOCKS, n_units=latent_units, 
+        transformation=orth.OrthogonalMatrix.BLOCKS, n_units=latent_units, 
         device=device, learn_params=config.learn_geometry).to(device)
+    
+    autoencoder = AutoEncoder(
+        encoder=encoder,decoder=decoder, grp_transformation=orthogonal_matrix,
+        variational=variational,specified_step=specified_step)
 
-    return encoder,decoder,orthogonal_matrix
+    return autoencoder

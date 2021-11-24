@@ -34,15 +34,33 @@ _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
 _TWO_D_MISC = Namespace()
 _TWO_D_MISC.x_range = [-5, 5]
 _TWO_D_MISC.y_range = [-5, 5]
+_TWO_D_MISC.x_range_narrow = [-0.3, 0.3]
+_TWO_D_MISC.y_range_narrow = [-0.3, 0.3]
+
 
 def plot(dhandler,nets,shared,config,logger):
     
     pass
 
-def plot_reconstruction(dhandler,nets,shared,config,logger):
-    batch = dhandler.get_val_batch()
-
-    pass
+def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode, 
+                        figname):
+    img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
+    X1 = torch.FloatTensor(img1).to(device)
+    X2 = torch.FloatTensor(img2).to(device)
+    dj = torch.FloatTensor(dj).to(device)
+    h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+    X2_hat = torch.sigmoid(h)
+    nrows = 5
+    ncols = 2
+    fig, axes = plt.subplots(nrows,ncols,figsize=(8,7))
+    for row in range(nrows):
+        axes[row,0].imshow((0.3*X1[row,0]+0.7*X2[row,0]).cpu().numpy())
+        axes[row,1].imshow(X2_hat[row,0].cpu().numpy())
+    
+    if figname is not None:
+        figname += 'reconstructions.pdf'
+        plt.savefig(figname)
+        logger.info(f'Figure saved {figname}')
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
                 epoch, vary_joints=[3], plot_latent=[0,1], figname=None):
@@ -56,7 +74,8 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     """
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
 
-    encoder = nets[0]
+    if mode == 'autoencoder':    
+        encoder = nets.encoder
 
     indices = dhandler.get_indices_vary_joints(vary_joints)
     labels = dhandler._classes[indices][:,vary_joints].squeeze()
@@ -84,14 +103,20 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
         f = ax.scatter(x=results[:,0], y=results[:,1], c=labels)
         ax.set_xlabel('latent 0', fontsize=ts)
         ax.set_ylabel('latent 1', fontsize=ts)
-        ax.set_xlim(_TWO_D_MISC.x_range)
-        ax.set_ylim(_TWO_D_MISC.y_range)
+        dx = np.abs(results).max()
+        if dx <= 0.3:
+            ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+            ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+        else:
+            ax.set_xlim(_TWO_D_MISC.x_range)
+            ax.set_ylim(_TWO_D_MISC.y_range)
         plt.colorbar(f)
     
-    figname += 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
-    figname += '_true='+ misc.ints_to_str(vary_joints) + '.pdf'
-    plt.savefig(figname)
-    logger.info(f'Figure saved {figname}')
+    if figname is not None:
+        figname += 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
+        figname += '_true='+ misc.ints_to_str(vary_joints) + '.pdf'
+        plt.savefig(figname)
+        logger.info(f'Figure saved {figname}')
     pass
 
 def plot_curve(dhandler,nets,shared,config,logger,val_name):

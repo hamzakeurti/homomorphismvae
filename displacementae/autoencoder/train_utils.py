@@ -33,6 +33,7 @@ import utils.plotting_utils as plt_utils
 import utils.sim_utils as sim_utils
 import utils.misc as misc
 
+
 def setup_optimizer(params, config):
     lr = config.lr
     weight_decay = config.weight_decay
@@ -42,29 +43,43 @@ def setup_optimizer(params, config):
         optimizer = torch.optim.SGD(params, lr=lr, weight_decay=weight_decay)
     return optimizer
 
-def evaluate(dhandler,nets,device,config,shared,logger,mode,epoch,
-            save_fig=False,plot=False):
-    
-    if plot:
-        fig_dir = os.path.join(config.out_dir,'figures')
-        figname = None
-        if save_fig:
-            figname = os.path.join(fig_dir,f'{epoch}_')
-        vary_joints = misc.str_to_ints(config.plot_vary_joints)
-        plot_latent = misc.str_to_ints(config.plot_manifold_latent)
-        if len(plot_latent)>0:
-            plt_utils.plot_manifold(dhandler, nets, shared, config, device, 
-                    logger, mode, epoch, vary_joints=vary_joints, 
-                    plot_latent=plot_latent, figname=figname)
+
+def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
+             save_fig=False, plot=False):
+    nets.eval()
+    with torch.no_grad():
+        img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
+        X1 = torch.FloatTensor(img1).to(device)
+        X2 = torch.FloatTensor(img2).to(device)
+        dj = torch.FloatTensor(dj).to(device)
+        h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+        X2_hat = torch.sigmoid(h)
+        kl_loss = var_utils.kl_loss(mu, logvar)
+        # Reconstruction
+        bce_loss = nn.BCELoss(reduction='sum')(X2_hat, X2)
+        total_loss = kl_loss + bce_loss
+        logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
+        logger.info(f'[{epoch}] loss\t{total_loss.item():.2f} =\t' +
+            f'BCE {bce_loss.item():.2f} +\tKL {kl_loss.item():.5f}')
+        if plot:
+            fig_dir = os.path.join(config.out_dir, 'figures')
+            figname = None
+            if save_fig:
+                figname = os.path.join(fig_dir, f'{epoch}_')
+            plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
+                                        logger, mode, figname)
+            vary_joints = misc.str_to_ints(config.plot_vary_joints)
+            plot_latent = misc.str_to_ints(config.plot_manifold_latent)
+            if len(plot_latent) > 0:
+                plt_utils.plot_manifold(dhandler, nets, shared, config, device,
+                                        logger, mode, epoch, vary_joints=vary_joints,
+                                        plot_latent=plot_latent, figname=figname)
+
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     n_actions = dhandler.action_shape[0]
 
-    params = []
-    for net in nets:
-        params += list(net.parameters())
-    if mode == 'autoencoder':
-        encoder,decoder,orthog_mat = nets
+    params = nets.parameters()
 
     optim = setup_optimizer(params, config)
     epochs = config.epochs
@@ -72,10 +87,10 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
 
     for epoch in range(epochs):
         if epoch % config.val_epoch == 0:
-            evaluate(dhandler, nets, device, config, shared, logger, mode, 
-                epoch, save_fig=True, plot=not config.no_plots)
+            evaluate(dhandler, nets, device, config, shared, logger, mode,
+                     epoch, save_fig=True, plot=not config.no_plots)
         logger.info(f"Training epoch {epoch}.")
-        
+
         for i, batch in enumerate(dloader):
             optim.zero_grad()
             x1, y1, x2, y2, dj = [a.to(device) for a in batch]
@@ -84,25 +99,21 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
             dj = dj.float()
             ### Forward ###
             # Through encoder
-            h = encoder(x1)
-            if config.variational:
-                mu, logvar = h[:,2*n_actions:],h[:,2*n_actions:]
-                h = var_utils.reparametrize(mu,logvar)
-            # Through geom
-            h = orthog_mat.rotate(h,dj[:,dhandler.intervened_on])
-            # Through decoder
-            x2_hat = torch.sigmoid(decoder(h))
+            h, mu, logvar = nets(x1, dj[:, dhandler.intervened_on])
 
-            logger.info(f'learned alpha {orthog_mat.alpha.item()}')
-            ### Losses
+            x2_hat = torch.sigmoid(h)
+
+            logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
+            # Losses
             # KL
-            kl_loss = var_utils.kl_loss(mu,logvar)
+            kl_loss = var_utils.kl_loss(mu, logvar)
             # Reconstruction
-            bce_loss = nn.BCELoss(reduction='sum')(x2_hat,x2)
+            bce_loss = nn.BCELoss(reduction='sum')(x2_hat, x2)
             total_loss = kl_loss + bce_loss
             total_loss.backward()
             optim.step()
-            logger.info(f'[{epoch}:{i}] loss\t{total_loss.item()} =\tBCE {bce_loss.item()} +\tKL {kl_loss.item()}')
+            logger.info(f'[{epoch}:{i}] loss\t{total_loss.item():.2f} =\t' +
+                        f'BCE {bce_loss.item():.2f} +\tKL {kl_loss.item():.5f}')
     return interrupted_training
 
 
