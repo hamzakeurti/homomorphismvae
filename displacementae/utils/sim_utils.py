@@ -60,6 +60,9 @@ def setup_environment(config):
         os.makedirs(config.out_dir)
         print("Created output folder %s." % (config.out_dir))
 
+    figs_dir = os.path.join(config.out_dir,'figures')
+    if not config.no_plots and not os.path.exists(figs_dir):
+        os.makedirs(figs_dir)
 
     # Save user configs to ensure reproducibility of this experiment.
     with open(os.path.join(config.out_dir, 'config.pickle'), 'wb') as f:

@@ -20,7 +20,9 @@
 # @version        :1.0
 # @python_version :3.7.4
 
-from autoencoder import train_utils as tutils
+import __init__
+
+import autoencoder.train_utils as tutils
 
 if __name__=='__main__':
     tutils.run()

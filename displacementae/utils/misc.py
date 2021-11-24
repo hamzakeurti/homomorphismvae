@@ -25,6 +25,14 @@ def str_to_ints(str_arg):
     Parse a string argument into a list of ints.
     """
     assert isinstance(str_arg,str)
+    if str_arg == '':
+        return []
     args = str_arg.replace('[','').replace(']','').replace('"','').split(",")
     args = [int(a.strip()) for a in args]
     return args
+
+def ints_to_str(args):
+    assert isinstance(args,list)
+    str_ret = ''
+    str_ret += ','.join([str(arg) for arg in args])
+    return str_ret
