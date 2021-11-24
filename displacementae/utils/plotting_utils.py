@@ -56,11 +56,11 @@ def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode,
     for row in range(nrows):
         axes[row,0].imshow((0.3*X1[row,0]+0.7*X2[row,0]).cpu().numpy())
         axes[row,1].imshow(X2_hat[row,0].cpu().numpy())
-    plt.close(fig)
     if figname is not None:
         figname += 'reconstructions.pdf'
         plt.savefig(figname)
         logger.info(f'Figure saved {figname}')
+    plt.close(fig)
     
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
@@ -112,14 +112,13 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             ax.set_xlim(_TWO_D_MISC.x_range)
             ax.set_ylim(_TWO_D_MISC.y_range)
         plt.colorbar(f)
-    plt.close(fig)
 
     if figname is not None:
         figname += 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
         figname += '_true='+ misc.ints_to_str(vary_joints) + '.pdf'
         plt.savefig(figname)
         logger.info(f'Figure saved {figname}')
-    pass
+    plt.close(fig)
 
 def plot_curve(dhandler,nets,shared,config,logger,val_name):
     pass
