@@ -40,10 +40,7 @@ def setup_dsprites_dataset(config):
         fixed_values=fixed_values, 
         fixed_in_intervention=fixed_in_intervention, 
         intervene=config.intervene)
-    sampler = FixedJointsSampler(
-        fixed_in_sampling, fixed_values,
-        dhandler, shuffle=config.shuffle)
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
-        sampler=sampler)
+        shuffle=config.shuffle)
     return dhandler, dloader
