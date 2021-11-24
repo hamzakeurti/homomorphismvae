@@ -21,14 +21,17 @@
 # @python_version :3.7.4
 
 from argparse import Namespace
+import os
 import torch
 import torch.nn as nn
 
 import autoencoder.train_args as train_args
 import data.data_utils as data_utils
 import networks.network_utils as net_utils
-import utils.sim_utils as sim_utils
 import networks.variational_utils as var_utils
+import utils.plotting_utils as plt_utils
+import utils.sim_utils as sim_utils
+import utils.misc as misc
 
 def setup_optimizer(params, config):
     lr = config.lr
@@ -39,6 +42,20 @@ def setup_optimizer(params, config):
         optimizer = torch.optim.SGD(params, lr=lr, weight_decay=weight_decay)
     return optimizer
 
+def evaluate(dhandler,nets,device,config,shared,logger,mode,epoch,
+            save_fig=False,plot=False):
+    
+    if plot:
+        fig_dir = os.path.join(config.out_dir,'figures')
+        figname = None
+        if save_fig:
+            figname = os.path.join(fig_dir,f'{epoch}_')
+        vary_joints = misc.str_to_ints(config.plot_vary_joints)
+        plot_latent = misc.str_to_ints(config.plot_manifold_latent)
+        if len(plot_latent)>0:
+            plt_utils.plot_manifold(dhandler, nets, shared, config, device, 
+                    logger, mode, epoch, vary_joints=vary_joints, 
+                    plot_latent=plot_latent, figname=figname)
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     n_actions = dhandler.action_shape[0]
@@ -54,7 +71,11 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     interrupted_training = False
 
     for epoch in range(epochs):
+        if epoch % config.val_epoch == 0:
+            evaluate(dhandler, nets, device, config, shared, logger, mode, 
+                epoch, save_fig=True, plot=not config.no_plots)
         logger.info(f"Training epoch {epoch}.")
+        
         for i, batch in enumerate(dloader):
             optim.zero_grad()
             x1, y1, x2, y2, dj = [a.to(device) for a in batch]
@@ -64,23 +85,24 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
             ### Forward ###
             # Through encoder
             h = encoder(x1)
-            mu, logvar = h[:,2*n_actions:],h[:,2*n_actions:]
-            h = var_utils.reparametrize(mu,logvar)
+            if config.variational:
+                mu, logvar = h[:,2*n_actions:],h[:,2*n_actions:]
+                h = var_utils.reparametrize(mu,logvar)
             # Through geom
             h = orthog_mat.rotate(h,dj[:,dhandler.intervened_on])
             # Through decoder
             x2_hat = torch.sigmoid(decoder(h))
 
-            logger.info(f'learned alpha {orthog_mat.alpha}')
+            logger.info(f'learned alpha {orthog_mat.alpha.item()}')
             ### Losses
             # KL
             kl_loss = var_utils.kl_loss(mu,logvar)
             # Reconstruction
             bce_loss = nn.BCELoss(reduction='sum')(x2_hat,x2)
             total_loss = kl_loss + bce_loss
-            logger.info(f'Total loss {total_loss} \t=BCE \t{bce_loss} \t+KL \t{kl_loss}')
             total_loss.backward()
             optim.step()
+            logger.info(f'[{epoch}:{i}] loss\t{total_loss.item()} =\tBCE {bce_loss.item()} +\tKL {kl_loss.item()}')
     return interrupted_training
 
 
