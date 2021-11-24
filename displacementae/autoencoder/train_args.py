@@ -51,8 +51,8 @@ def data_args(parser):
                         help='Whether to vary joint positions.')
     dgroup.add_argument('--shuffle', type=bool, default=True,
                         help='Shuffle the dataset.')
-    dgroup.add_argument('--displacement_range', type=int, nargs=2,
-                        default=[-3, 3], help='Range of uniform distribution '+
+    dgroup.add_argument('--displacement_range', type=str,
+                        default="-3,3", help='Range of uniform distribution '+
                         'from which to sample future joint position')
     dgroup.add_argument('--data_root', type=str, 
                         help='Root directory of the dataset directory.')
