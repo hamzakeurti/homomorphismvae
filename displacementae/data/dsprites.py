@@ -106,7 +106,8 @@ class DspritesDataset(Dataset):
             self.train_idx2 = [elem[0] for elem in train_idx2_dj]
             self.train_dj = [elem[1] for elem in train_idx2_dj]
         ### Evaluation samples
-        self.val_idx1 = rand.choice(self.all_indices,size=num_val)
+        self.val_idx1 = np.sort(
+            rand.choice(self.all_indices,size=num_val,replace=False))
         if self.intervene:
             val_idx2_dj = [self.f_intervene(i) for i in self.val_idx1]
             self.val_idx2 = [elem[0] for elem in val_idx2_dj]
@@ -139,7 +140,18 @@ class DspritesDataset(Dataset):
         imgs = np.expand_dims(imgs,axis=1)
         return imgs, labels
 
-    # def get_val_(self)
+    def get_val_batch(self):
+        idx1 = self.val_idx1
+        image1 = np.expand_dims(self._images[idx1], axis=1) 
+        cls1 = self._classes[idx1]
+        if self.intervene:
+            idx2 , dj = self.val_idx2, self.val_dj
+            image2 = np.stack([self._images[i] for i in idx2],axis=0)
+            image2 = np.expand_dims(image2, axis=1) 
+            cls2 = np.stack([self._classes[i] for i in idx2],axis=0)
+            return image1, cls1, image2, cls2, dj
+        else:
+            return image1, cls1, image1, cls1, 0
 
     def f_intervene(self,index):
         # intervention in the vicinity in the joints space 

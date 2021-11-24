@@ -33,13 +33,14 @@ def setup_dsprites_dataset(config):
     fixed_in_sampling = misc.str_to_ints(config.fixed_in_sampling)
     fixed_values = misc.str_to_ints(config.fixed_values)
     fixed_in_intervention = misc.str_to_ints(config.fixed_in_intervention)
+    intervention_range = misc.str_to_ints(config.displacement_range)
     dhandler = DspritesDataset(
         root=config.data_root, 
         rseed=config.data_random_seed, 
         fixed_in_sampling=fixed_in_sampling, 
         fixed_values=fixed_values, 
         fixed_in_intervention=fixed_in_intervention, 
-        intervene=config.intervene)
+        intervene=config.intervene, intervention_range=intervention_range)
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
         shuffle=config.shuffle)
