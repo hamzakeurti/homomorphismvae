@@ -77,7 +77,9 @@ def train_args(parser):
     tgroup.add_argument('--n_iter', type=int, default=10000,
                         help='Number of training iterations per task. ')
     tgroup.add_argument('--epochs', type=int, default=10,
-                        help='Number of epochs per task.')
+                        help='Number of epochs.')
+    tgroup.add_argument('--val_epoch', type=int, default=5,
+                        help='Number of epochs between evaluations.')
     tgroup.add_argument('--lr', type=float, default=1e-2,
                         help='Learning rate of optimizer(s).')
     tgroup.add_argument('--momentum', type=float, default=0,
@@ -99,10 +101,10 @@ def net_args(parser):
             - ``
     """
     ngroup = parser.add_argument_group('network options')
-    ngroup.add_argument('--net_act',type=str,default='sigmoid',
+    ngroup.add_argument('--net_act',type=str,default='relu',
                         choices=['sigmoid','relu','tanh','none'], 
                         help='Training batch size')
-    ngroup.add_argument('--conv_channels', type=str, default='20',
+    ngroup.add_argument('--conv_channels', type=str, default='',
                         help='Channels per layer. '+
                         'Input channels must be included')
     ngroup.add_argument('--lin_channels', type=str, default='',
@@ -121,7 +123,13 @@ def misc_args(parser,dout_dir=None):
                         help='Where to store the outputs of this simulation.')
     mgroup.add_argument('--use_cuda', action='store_true',
                         help='Whether to use GPU.')
-    mgroup.add_argument('--random_seed', default=42,
+    mgroup.add_argument('--random_seed', type=int, default=42,
                         help='Specify random seed for reproducibility')
-    
+    mgroup.add_argument('--no_plots', action='store_true', 
+                        help='Whether to plot figures')
+    mgroup.add_argument('--plot_manifold_latent', type=str, default='',
+                        help='Which latent units to visualize the manifold of.')
+    mgroup.add_argument('--plot_vary_joints', type=str, default='',
+                        help='Which joints to move' + 
+                        'to produce a manifold of latents.')
 
