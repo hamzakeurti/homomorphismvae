@@ -69,16 +69,16 @@ class OrthogonalMatrix(nn.Module):
     CAYLEY = 'cayley'
     BLOCKS = 'blocks'
 
-    def __init__(self, transform=CAYLEY, n_units=6,device = 'cpu', 
+    def __init__(self, transformation=CAYLEY, n_units=6,device = 'cpu', 
                 learn_params=False):
         nn.Module.__init__(self)
         self.device = device
-        self.transform = transform
+        self.transformation = transformation
         self.n_units = n_units        
         self.matrix_size = n_units
-        if transform == OrthogonalMatrix.CAYLEY:
+        if transformation == OrthogonalMatrix.CAYLEY:
             self.n_parameters = self.n_units*(self.n_units-1)/2
-        elif transform == OrthogonalMatrix.BLOCKS:
+        elif transformation == OrthogonalMatrix.BLOCKS:
             if self.n_units % 2 == 1:
                 raise ValueError(
                     'Latent space should have an even dimension for the matrix to be expressed in blocks of 2.')
@@ -97,7 +97,7 @@ class OrthogonalMatrix(nn.Module):
         if parameters.shape[-1] != self.n_parameters:
             raise ValueError(
                 f'Expected input last dimension to be {self.n_parameters}, received {parameters.shape[-1]}')
-        if self.transform == OrthogonalMatrix.BLOCKS:
+        if self.transformation == OrthogonalMatrix.BLOCKS:
             # parameters shape: [b,n_parameters]
             return _block_diag(self.rotation_matrices(parameters))
 
@@ -105,7 +105,7 @@ class OrthogonalMatrix(nn.Module):
         u = torch.stack([torch.cos(angle), torch.sin(angle)], dim=-1)
         return torch.tensordot(u, self.rot_basis, dims=[[-1], [0]])
     
-    def rotate(self, h, angles):
+    def transform(self, h, angles):
         """
         Function that populates an orthogonal matrix, 
         then rotates the input vector h through the obtained matrix.
