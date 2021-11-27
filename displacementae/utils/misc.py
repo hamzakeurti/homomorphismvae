@@ -36,3 +36,15 @@ def ints_to_str(args):
     str_ret = ''
     str_ret += ','.join([str(arg) for arg in args])
     return str_ret
+
+def str_to_floats(str_arg):
+    """
+    Parse a string argument into a list of ints.
+    """
+    assert isinstance(str_arg,str)
+    if str_arg == '':
+        return []
+    args = str_arg.replace('[','').replace(']','').replace('"','').split(",")
+    args = [float(a.strip()) for a in args]
+    return args
+

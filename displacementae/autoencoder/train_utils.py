@@ -52,15 +52,28 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
         X1 = torch.FloatTensor(img1).to(device)
         X2 = torch.FloatTensor(img2).to(device)
         dj = torch.FloatTensor(dj).to(device)
-        h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+        h, mu, logvar = nets(X1, dj[:, dhandler.intervened_on])
         X2_hat = torch.sigmoid(h)
-        kl_loss = var_utils.kl_loss(mu, logvar)
+        # Losses
         # Reconstruction
-        bce_loss = nn.BCELoss(reduction='sum')(X2_hat, X2)
-        total_loss = kl_loss + bce_loss
+        bce_loss = var_utils.bce_loss(X2_hat, X2)
+        if nets.variational:
+            # KL
+            kl_loss = var_utils.kl_loss(mu, logvar)
+            total_loss = config.beta * kl_loss + bce_loss
+        else:
+            total_loss = bce_loss        
         logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
-        logger.info(f'[{epoch}] loss\t{total_loss.item():.2f} =\t' +
-            f'BCE {bce_loss.item():.2f} +\tKL {kl_loss.item():.5f}')
+        log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
+        if nets.variational:
+            log_text += f'=\tBCE {bce_loss.item():.2f} '
+            log_text += f'+\tKL {kl_loss.item():.5f}'
+        logger.info(log_text)
+        if nets.grp_transform.learn_params:
+            logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
+
+
+
         if plot:
             fig_dir = os.path.join(config.out_dir, 'figures')
             figname = None
@@ -74,17 +87,14 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 plt_utils.plot_manifold(dhandler, nets, shared, config, device,
                                         logger, mode, epoch, vary_joints=vary_joints,
                                         plot_latent=plot_latent, figname=figname)
-
+    nets.train()
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
-    n_actions = dhandler.action_shape[0]
-
     params = nets.parameters()
 
     optim = setup_optimizer(params, config)
     epochs = config.epochs
     interrupted_training = False
-
     for epoch in range(epochs):
         if epoch % config.val_epoch == 0:
             evaluate(dhandler, nets, device, config, shared, logger, mode,
@@ -102,18 +112,22 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
             h, mu, logvar = nets(x1, dj[:, dhandler.intervened_on])
 
             x2_hat = torch.sigmoid(h)
-
-            logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
-            # Losses
-            # KL
-            kl_loss = var_utils.kl_loss(mu, logvar)
             # Reconstruction
-            bce_loss = nn.BCELoss(reduction='sum')(x2_hat, x2)
-            total_loss = kl_loss + bce_loss
+            bce_loss = var_utils.bce_loss(x2_hat, x2)
+            # Losses
+            if nets.variational:
+                # KL
+                kl_loss = var_utils.kl_loss(mu, logvar)
+                total_loss = config.beta * kl_loss + bce_loss
+            else:
+                total_loss = bce_loss
             total_loss.backward()
             optim.step()
-            logger.info(f'[{epoch}:{i}] loss\t{total_loss.item():.2f} =\t' +
-                        f'BCE {bce_loss.item():.2f} +\tKL {kl_loss.item():.5f}')
+            log_text = f'[{epoch}:{i}] loss\t{total_loss.item():.2f} ' 
+            if nets.variational:
+                log_text += f'=\tBCE {bce_loss.item():.2f} '
+                log_text += f'+\tKL {kl_loss.item():.5f}'
+            logger.info(log_text)
     return interrupted_training
 
 
