@@ -58,6 +58,10 @@ def data_args(parser):
                         help='Root directory of the dataset directory.')
     dgroup.add_argument('--data_random_seed', default=42,
                         help='Specify data random seed for reproducibility.')
+    dgroup.add_argument('--num_train', type=int, default=100,
+                        help='Number of training samples')
+    dgroup.add_argument('--num_val', type=int, default=15,
+                        help='Number of evaluation samples')    
     
 
 def train_args(parser):
@@ -98,7 +102,9 @@ def net_args(parser):
             - `kernel_sizes`
             - `strides`
             - `learn_geometry`
-            - ``
+            - `specified_grp_step`
+            - `variational`
+            - `beta`
     """
     ngroup = parser.add_argument_group('network options')
     ngroup.add_argument('--net_act',type=str,default='relu',
@@ -113,7 +119,22 @@ def net_args(parser):
                         help='kernel sizes of convlution layers.')
     ngroup.add_argument('--strides', type=str, default='1',
                         help='strides of convlution layers.')
-    ngroup.add_argument('--learn_geometry',action='store_true')
+    ngroup.add_argument('--learn_geometry',action='store_true', 
+                        help='Whether to learn the grp action parameters. '+
+                        'If not, these should be provided in arg '+
+                        '--specified_grp_step')
+    ngroup.add_argument('--specified_grp_step', type=str, default='0', 
+                        help='specified grp action parameters')
+    ngroup.add_argument('--variational',action='store_true', 
+                        help='Whether the network outputs ' + 
+                        'should be considered as mean and var of a gaussian.')
+    ngroup.add_argument('--beta',type=float, 
+                        help='Beta factor of the beta-VAE ' +
+                        'balances contribution of prior matching loss. ' + 
+                        'Defaults to 1.')
+                        
+                        
+
 
 def misc_args(parser,dout_dir=None):
     if dout_dir is None:
@@ -123,6 +144,8 @@ def misc_args(parser,dout_dir=None):
                         help='Where to store the outputs of this simulation.')
     mgroup.add_argument('--use_cuda', action='store_true',
                         help='Whether to use GPU.')
+    mgroup.add_argument('--cuda_number', type=int,
+                        help='if use_cuda, GPU device number.')
     mgroup.add_argument('--random_seed', type=int, default=42,
                         help='Specify random seed for reproducibility')
     mgroup.add_argument('--no_plots', action='store_true', 

@@ -47,7 +47,7 @@ class LatentIdx:
     POSY = 5
 
 class DspritesDataset(Dataset):
-    def __init__(self,root='',rseed=None, fixed_in_sampling=[], 
+    def __init__(self,root,rseed=None, fixed_in_sampling=[], 
                 fixed_values=[],fixed_in_intervention=[],intervene=True,
                 intervention_range=[-1,1], num_train = 200, num_val=30):
         super().__init__()
@@ -63,8 +63,8 @@ class DspritesDataset(Dataset):
         self._rand = rand
         self._rseed = rseed
         self.intervene = intervene
-        self.joints = np.arange(6)
         self.n_joints = 6
+        self.joints = np.arange(self.n_joints)
         self.fixed_in_sampling = fixed_in_sampling
         self.fixed_values = fixed_values
         self.varied_in_sampling = np.array([i for i in self.joints \

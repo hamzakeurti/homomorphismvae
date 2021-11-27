@@ -20,6 +20,7 @@
 # @version        :1.0
 # @python_version :3.7.4
 
+from os import error
 import torch
 
 from networks.cnn import CNN
@@ -62,16 +63,18 @@ def setup_autoencoder_network(config, dhandler, device):
     else:
         act_fn = None
 
-    if not hasattr(config,'variational'):
-        variational = 1
-        config.variational = True
-    else:
-        variational = config.variational
-    
+    variational = config.variational
+    if variational and config.beta is None:
+        config.beta = 1.
+
     if not hasattr(config,'specified_grp_step'):
         specified_step = 0
     else:
-        specified_step = config.specified_step
+        specified_step = misc.str_to_floats(config.specified_grp_step)
+        if len(specified_step) == 0 and not config.learn_geometry:
+            raise ValueError
+        if len(specified_step) == 1:
+            specified_step = specified_step[0]
 
 
     # if variational, encoder outputs mean and logvar

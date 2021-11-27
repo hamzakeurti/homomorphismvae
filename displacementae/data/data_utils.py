@@ -35,7 +35,9 @@ def setup_dsprites_dataset(config):
     fixed_in_intervention = misc.str_to_ints(config.fixed_in_intervention)
     intervention_range = misc.str_to_ints(config.displacement_range)
     dhandler = DspritesDataset(
-        root=config.data_root, 
+        root=config.data_root,
+        num_train=config.num_train,
+        num_val=config.num_val, 
         rseed=config.data_random_seed, 
         fixed_in_sampling=fixed_in_sampling, 
         fixed_values=fixed_values, 
