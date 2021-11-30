@@ -71,7 +71,10 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
         logger.info(log_text)
         if nets.grp_transform.learn_params:
             logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
-
+            if not hasattr(shared,"learned_alpha"):
+                shared.learned_alpha = []
+            shared.learned_alpha.append(nets.grp_transform.alpha.item())
+        
 
 
         if plot:
@@ -81,11 +84,11 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 figname = os.path.join(fig_dir, f'{epoch}_')
             plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
                                         logger, mode, figname)
-            vary_joints = misc.str_to_ints(config.plot_vary_joints)
+            vary_latents = misc.str_to_ints(config.plot_vary_latents)
             plot_latent = misc.str_to_ints(config.plot_manifold_latent)
             if len(plot_latent) > 0:
                 plt_utils.plot_manifold(dhandler, nets, shared, config, device,
-                                        logger, mode, epoch, vary_joints=vary_joints,
+                                        logger, mode, epoch, vary_latents=vary_latents,
                                         plot_latent=plot_latent, figname=figname)
     nets.train()
 

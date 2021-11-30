@@ -152,7 +152,7 @@ def misc_args(parser,dout_dir=None):
                         help='Whether to plot figures')
     mgroup.add_argument('--plot_manifold_latent', type=str, default='',
                         help='Which latent units to visualize the manifold of.')
-    mgroup.add_argument('--plot_vary_joints', type=str, default='',
+    mgroup.add_argument('--plot_vary_latents', type=str, default='',
                         help='Which joints to move' + 
                         'to produce a manifold of latents.')
 
