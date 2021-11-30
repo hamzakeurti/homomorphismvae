@@ -63,12 +63,13 @@ class DspritesDataset(Dataset):
         self._rand = rand
         self._rseed = rseed
         self.intervene = intervene
-        self.n_joints = 6
+        self.n_joints = 6    
         self.joints = np.arange(self.n_joints)
+        
         self.fixed_in_sampling = fixed_in_sampling
         self.fixed_values = fixed_values
-        self.varied_in_sampling = np.array([i for i in self.joints \
-            if i not in self.fixed_in_sampling])
+        self.varied_in_sampling = [i for i in self.joints \
+            if i not in self.fixed_in_sampling]
         self.fixed_in_intervention = fixed_in_intervention
         self.intervened_on = np.array([i for i in self.joints \
             if i not in self.fixed_in_intervention])
@@ -80,40 +81,52 @@ class DspritesDataset(Dataset):
         self._root = root
         
         self._images, self._classes, self._values = self._process_hdf5()
-        self.num_classes = self._classes[-1] + 1
+        self.num_latents = self._classes[-1] + 1
+        self.num_latents_varied = self.num_latents[self.varied_in_sampling]
+        self.latent_bases = np.concatenate([
+            np.cumprod(self.num_latents[::-1])[::-1][1:],[1]])
+        self.latent_bases_varied = np.concatenate([
+            np.cumprod(self.num_latents_varied[::-1])[::-1][1:],[1]])    
+        self.dataset_size = np.prod(self.num_latents_varied)
+
+
+
+
 
         data = {}
         data["in_shape"] = [1,64,64]
         data["action_shape"] = [len(self.intervened_on)]
         self._data = data
 
-        self.cumulative_product = np.concatenate([[1],np.cumprod(self.num_classes[::-1])])
+        # self.cumulative_product = np.concatenate([[1],np.cumprod(self.num_latents[::-1])])
 
-        self.cum_prod_fix = [1]
-        
-        self.n_samples = 1
-        for f,num in reversed(list(enumerate(self.num_classes))):
-            if f not in self.fixed_in_sampling:
-                self.n_samples *= num
-                self.cum_prod_fix.append(self.n_samples)
+        # self.cum_prod_fix = [1]
+        # self.n_samples = 1
+
+        # for f,num in reversed(list(enumerate(self.num_latents))):
+        #     if f not in self.fixed_in_sampling:
+        #         self.n_samples *= num
+        #         self.cum_prod_fix.append(self.n_samples)
 
         # TODO: Generate indices before and after intervention here
-        self.all_indices = self.get_indices_vary_joints(self.varied_in_sampling)
+        self.all_indices = self._get_subset_indices()
+        self.images = self._images[self.all_indices]
+        self.latents = self._classes[self.all_indices]
+
         ### Training samples:
-        self.train_idx1 = rand.choice(self.all_indices,size=num_train)
+        self.train_idx1 = rand.choice(self.dataset_size,size=num_train)
         if self.intervene:
-            train_idx2_dj = [self.f_intervene(i) for i in self.train_idx1]
-            self.train_idx2 = [elem[0] for elem in train_idx2_dj]
-            self.train_dj = [elem[1] for elem in train_idx2_dj]
+            self.train_idx2, self.train_dj = self.f_intervene2(self.train_idx1)
         ### Evaluation samples
-        self.val_idx1 = np.sort(
-            rand.choice(self.all_indices,size=num_val,replace=False))
+        self.val_idx1 = rand.choice(self.dataset_size, 
+                                    size=num_val,replace=False)
         if self.intervene:
-            val_idx2_dj = [self.f_intervene(i) for i in self.val_idx1]
-            self.val_idx2 = [elem[0] for elem in val_idx2_dj]
-            self.val_dj = [elem[1] for elem in val_idx2_dj]
+            self.val_idx2, self.val_dj = self.f_intervene2(self.val_idx1)
         
     def _process_hdf5(self):
+        """
+        opens the hdf5 dataset file.
+        """
         filepath = os.path.join(self._root,'dsprites.hdf5')
         self._file = h5py.File(filepath,'r')
         images = self._file[IMGS]
@@ -121,19 +134,47 @@ class DspritesDataset(Dataset):
         values = self._file[LATENTS][VALUES]
         return images, classes, values
 
+    def _get_subset_indices(self):
+        """
+        Generate a list of indices in the dsprites dataset corresponding to 
+        the subset of configurations corresponding to the fixed_latents. 
+        """
+        # specify all values that can be taken by each latent
+        latents_spans = [np.arange(self.num_latents[i]) \
+            if i not in self.fixed_in_sampling 
+            else np.array(self.fixed_values[self.fixed_in_sampling.index(i)]) 
+            for i in range(self.n_joints)]
+        mesh = np.meshgrid(*latents_spans)
+        mesh = [mesh[i].reshape(-1) for i in range(self.n_joints)]
+        all_latents = np.array([[mesh[i][j] for i in range(self.n_joints)] \
+            for j in range(len(mesh[0]))])
+        indices = np.dot(all_latents,self.latent_bases)
+        return indices
+
     def __len__(self):
         return self.num_train
 
     def __getitem__(self, idx):
+        # idx1 = self.train_idx1[idx]
+        # image1, cls1 = self._images[idx1], self._classes[idx1]
+        # if self.intervene:
+        #     idx2 = self.train_idx2[idx]
+        #     dj = self.train_dj[idx]
+        #     image2, cls2 = self._images[idx2], self._classes[idx2]
+        #     return image1, cls1, image2, cls2, dj
+        # else:
+        #     return image1, cls1, image1, cls1, 0
         idx1 = self.train_idx1[idx]
-        image1, cls1 = self._images[idx1], self._classes[idx1]
+        image1 = self.images[idx1]
+        latents1 = self.latents[idx1]
         if self.intervene:
             idx2 = self.train_idx2[idx]
             dj = self.train_dj[idx]
-            image2, cls2 = self._images[idx2], self._classes[idx2]
-            return image1, cls1, image2, cls2, dj
+            image2 = self.images[idx2]
+            latents2 = self.latents[idx2]
+            return image1, latents1, image2, latents2, dj
         else:
-            return image1, cls1, image1, cls1, 0
+            return image1, latents1, image1, latents1, 0
 
     def get_images_batch(self, indices):
         imgs, labels = self._images[indices], self._classes[indices]
@@ -142,16 +183,34 @@ class DspritesDataset(Dataset):
 
     def get_val_batch(self):
         idx1 = self.val_idx1
-        image1 = np.expand_dims(self._images[idx1], axis=1) 
-        cls1 = self._classes[idx1]
+        image1 = np.expand_dims(self.images[idx1], axis=1)
+        latents1 = self.latents[idx1]
         if self.intervene:
-            idx2 , dj = self.val_idx2, self.val_dj
-            image2 = np.stack([self._images[i] for i in idx2],axis=0)
-            image2 = np.expand_dims(image2, axis=1) 
-            cls2 = np.stack([self._classes[i] for i in idx2],axis=0)
-            return image1, cls1, image2, cls2, dj
+            idx2 = self.val_idx2
+            dj = self.val_dj
+            image2 = np.expand_dims(self.images[idx2], axis=1)
+            latents2 = self.latents[idx2]
+            return image1, latents1, image2, latents2, dj
         else:
-            return image1, cls1, image1, cls1, 0
+            return image1, latents1, image1, latents1, 0
+
+    def f_intervene2(self,index):
+        """"""
+        joints = self.latents[index]
+        #sample displacement
+        if self.fixed_in_intervention:
+            len_dj = self.n_joints - len(self.fixed_in_intervention)
+        else:
+            len_dj = self.n_joints
+        dj = np.zeros((joints.shape[0],self.n_joints)).squeeze()
+        dj[...,self.intervened_on] = self._rand.randint(
+            low=self.intervention_range[0],high=self.intervention_range[1]+1,
+            size = (joints.shape[0],len_dj))
+        new_joints = joints
+        new_joints,dj = self._intervene_linear(new_joints,dj)
+        new_joints,dj = self._intervene_circular(new_joints,dj)
+        indices2 = self.joints_2_index(new_joints)
+        return indices2,dj
 
     def f_intervene(self,index):
         # intervention in the vicinity in the joints space 
@@ -174,14 +233,16 @@ class DspritesDataset(Dataset):
     def _intervene_linear(self,joints,dj):
         new_joints = joints
         lin_idx = [LatentIdx.SCALE,LatentIdx.POSX,LatentIdx.POSY]
-        new_joints[lin_idx] = np.clip(joints[lin_idx] + dj[lin_idx],0,self.num_classes[lin_idx])
-        dj[lin_idx] = new_joints[lin_idx] - joints[lin_idx]
+        new_joints[...,lin_idx] = np.clip(
+            joints[...,lin_idx] + dj[...,lin_idx],0,self.num_latents[lin_idx]-1)
+        dj[...,lin_idx] = new_joints[...,lin_idx] - joints[...,lin_idx]
         return new_joints,dj
     
     def _intervene_circular(self,joints,dj):
         rot_idx = [LatentIdx.ORIENT]
         new_joints = joints
-        new_joints[rot_idx] = (joints[rot_idx] + dj[rot_idx]) % self.num_classes[rot_idx]
+        new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
+             % self.num_latents[rot_idx]
         return new_joints,dj
 
     def joints_to_index(self,joints):
@@ -189,8 +250,12 @@ class DspritesDataset(Dataset):
         base = 1
         for j,joint in reversed(list(enumerate(joints))):
             index += joint * base
-            base *= self.num_classes[j]
+            base *= self.num_latents[j]
         return index
+
+    def joints_2_index(self,joints):
+        return np.dot(
+            joints[...,self.varied_in_sampling],self.latent_bases_varied)
 
     def get_index(self,i):
         """
@@ -199,7 +264,7 @@ class DspritesDataset(Dataset):
         """
         ret = 0
         k = 0
-        for f in range(len(self.num_classes)-1,-1,-1):
+        for f in range(len(self.num_latents)-1,-1,-1):
             if f in self.fixed_in_sampling:
                 val = self.fixed_values[self.fixed_in_sampling.index(f)]
                 ret += val*self.cumulative_product[::-1][f+1] 
@@ -209,29 +274,44 @@ class DspritesDataset(Dataset):
                 k+=1
         return ret
 
-    def get_indices_vary_joints(self,vary_joints):
+    def get_indices_vary_latents(self,vary_latents):
         indices = []
-        joints = [0] * self.n_joints
-        for j in range(len(self.fixed_in_sampling)):
-            joints[self.fixed_in_sampling[j]] = self.fixed_values[j]
-        for j in self.joints:
-            if (j not in self.fixed_in_sampling) and (j not in vary_joints):
-                # pick a random value for the joint
-                joints[j] = self.num_classes[j]//2
-        self.recursive_joints_population(indices,vary_joints,joints)
+        assert np.array([j in self.varied_in_sampling for j in vary_latents]).all()
+        varied = [self.varied_in_sampling.index(i) \
+            for i in vary_latents]
+        latents_spans = [np.arange(self.num_latents_varied[i]) \
+            if i in varied 
+            else np.array(self.num_latents[i]//2) 
+            for i in range(len(self.varied_in_sampling))]
+        mesh = np.meshgrid(*latents_spans)
+        mesh = [m.reshape(-1) for m in mesh]
+        all_latents = np.array([[m[j] for m in mesh] \
+            for j in range(len(mesh[0]))])
+        indices = np.dot(all_latents,self.latent_bases_varied)
         return indices
 
-    def recursive_joints_population(self, ret_indices, vary_joints, joints,
-                                    curr_j=0):
-        joint_index = vary_joints[curr_j]
-        for val in range(self.num_classes[joint_index]):
-            joints[joint_index] = val
-            if curr_j == len(vary_joints)-1:
-                idx = self.joints_to_index(joints)
-                ret_indices.append(idx)
-            else:
-                self.recursive_joints_population(
-                    ret_indices,vary_joints,joints,curr_j+1)
+    #     joint_spans = []
+    #     joints = [0] * self.n_joints
+    #     for j in range(len(self.fixed_in_sampling)):
+    #         joints[self.fixed_in_sampling[j]] = self.fixed_values[j]
+    #     for j in self.joints:
+    #         if (j not in self.fixed_in_sampling) and (j not in vary_latents):
+    #             # pick a random value for the joint
+    #             joints[j] = self.num_latents[j]//2
+    #     self.recursive_joints_population(indices,vary_joints,joints)
+    #     return indices
+
+    # def recursive_joints_population(self, ret_indices, vary_joints, joints,
+    #                                 curr_j=0):
+    #     joint_index = vary_joints[curr_j]
+    #     for val in range(self.num_latents[joint_index]):
+    #         joints[joint_index] = val
+    #         if curr_j == len(vary_joints)-1:
+    #             idx = self.joints_to_index(joints)
+    #             ret_indices.append(idx)
+    #         else:
+    #             self.recursive_joints_population(
+    #                 ret_indices,vary_joints,joints,curr_j+1)
 
     @property
     def allowed_indices(self):
@@ -257,17 +337,17 @@ class FixedJointsSampler(Sampler):
         self.fixed = fixed_joints
         self.vals = fixed_values
         self.facs = [None]*len(dataset.joints)
-        self.num_classes = dataset.num_classes
+        self.num_latents = dataset.num_latents
         for i in range(len(self.fixed)):
             self.facs[self.fixed[i]] = self.vals[i]
         
 
-        self.cumulative_product = np.concatenate([[1],np.cumprod(self.num_classes[::-1])])
+        self.cumulative_product = np.concatenate([[1],np.cumprod(self.num_latents[::-1])])
 
         self.cum_prod_fix = [1]
         
         self.n_samples = 1
-        for f,num in reversed(list(enumerate(self.num_classes))):
+        for f,num in reversed(list(enumerate(self.num_latents))):
             if f not in self.fixed:
                 self.n_samples *= num
                 self.cum_prod_fix.append(self.n_samples)
@@ -289,7 +369,7 @@ class FixedJointsSampler(Sampler):
         """
         ret = 0
         k = 0
-        for f in range(len(self.num_classes)-1,-1,-1):
+        for f in range(len(self.num_latents)-1,-1,-1):
             if self.facs[f] is not None:
                 ret += self.facs[f]*self.cumulative_product[::-1][f+1] 
             else:
