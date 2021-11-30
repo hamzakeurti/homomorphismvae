@@ -32,7 +32,9 @@ def str_to_ints(str_arg):
     return args
 
 def ints_to_str(args):
-    assert isinstance(args,list)
+    assert isinstance(args,list) or isinstance(args, int)
+    if isinstance(args, int):
+        return str(args)
     str_ret = ''
     str_ret += ','.join([str(arg) for arg in args])
     return str_ret

@@ -70,7 +70,7 @@ def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode,
     
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
-                epoch, vary_joints=[3], plot_latent=[0,1], figname=None):
+                epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
     """
     Produces colored scatter plot of the latent representation of 
     the different positions in the joint space.
@@ -84,8 +84,8 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     if mode == 'autoencoder':    
         encoder = nets.encoder
 
-    indices = dhandler.get_indices_vary_joints(vary_joints)
-    labels = dhandler._classes[indices][:,vary_joints].squeeze()
+    indices = dhandler.get_indices_vary_latents(vary_latents)
+    latents = dhandler.latents[indices][:,vary_latents]
     batch_size = config.batch_size
     n_batches = len(indices) // batch_size + 1
     
@@ -93,38 +93,39 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
 
     for i in range(n_batches):
         batch_indices = indices[ i * batch_size : (i+1) * batch_size]
-        images, _ = dhandler.get_images_batch(batch_indices)
+        images = dhandler.images[batch_indices]
         X = torch.FloatTensor(images).to(device)
         with torch.no_grad():
             h = encoder(X)
             results.append(h[:,plot_latent].cpu().numpy())
     results = np.vstack(results).squeeze()
 
-    fig, ax = plt.subplots(figsize=(8,7))
 
-    if len(plot_latent) == 1:
-        f = ax.scatter(x=labels, y=results)
-        ax.set_xlabel('true label', fontsize=ts)
-        ax.set_ylabel('latent', fontsize=ts)
-    if len(plot_latent) == 2:
-        f = ax.scatter(x=results[:,0], y=results[:,1], c=labels)
-        ax.set_xlabel('latent 0', fontsize=ts)
-        ax.set_ylabel('latent 1', fontsize=ts)
-        dx = np.abs(results).max()
-        if dx <= 0.3:
-            ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-            ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-        else:
-            ax.set_xlim(_TWO_D_MISC.x_range)
-            ax.set_ylim(_TWO_D_MISC.y_range)
-        plt.colorbar(f)
+    for i in range(len(vary_latents)):    
+        fig, ax = plt.subplots(figsize=(8,7))
+        if len(plot_latent) == 1:
+            f = ax.scatter(x=latents[:,i], y=results)
+            ax.set_xlabel(f'true label {vary_latents[i]}', fontsize=ts)
+            ax.set_ylabel('latent', fontsize=ts)
+        if len(plot_latent) == 2:
+            f = ax.scatter(x=results[:,0], y=results[:,1], c=latents[:,i])
+            ax.set_xlabel('latent 0', fontsize=ts)
+            ax.set_ylabel('latent 1', fontsize=ts)
+            dx = np.abs(results).max()
+            if dx <= 0.3:
+                ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+                ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+            else:
+                ax.set_xlim(_TWO_D_MISC.x_range)
+                ax.set_ylim(_TWO_D_MISC.y_range)
+            plt.colorbar(f)
 
-    if figname is not None:
-        figname += 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
-        figname += '_true='+ misc.ints_to_str(vary_joints) + '.pdf'
-        plt.savefig(figname)
-        logger.info(f'Figure saved {figname}')
-    plt.close(fig)
+        if figname is not None:
+            figname1 = figname + 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
+            figname1 += '_true='+ misc.ints_to_str(vary_latents[i]) + '.pdf'
+            plt.savefig(figname1)
+            logger.info(f'Figure saved {figname1}')
+        plt.close(fig)
 
 def plot_curve(dhandler,nets,shared,config,logger,val_name):
     pass

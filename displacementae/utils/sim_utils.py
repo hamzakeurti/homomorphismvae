@@ -85,7 +85,7 @@ def setup_environment(config):
 
     ### Torch Device
     use_cuda = config.use_cuda
-    if hasattr(config, 'cuda_number'):
+    if config.cuda_number is not None:
         cuda_number = config.cuda_number
         device = torch.device(f"cuda:{cuda_number}")
         logger.info(f'Using cuda : {use_cuda} -- Device Number {cuda_number}')
