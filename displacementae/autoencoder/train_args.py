@@ -56,7 +56,7 @@ def data_args(parser):
                         'from which to sample future joint position')
     dgroup.add_argument('--data_root', type=str, 
                         help='Root directory of the dataset directory.')
-    dgroup.add_argument('--data_random_seed', default=42,
+    dgroup.add_argument('--data_random_seed', default=42,type=int,
                         help='Specify data random seed for reproducibility.')
     dgroup.add_argument('--num_train', type=int, default=100,
                         help='Number of training samples')
