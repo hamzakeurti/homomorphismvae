@@ -84,6 +84,8 @@ def train_args(parser):
                         help='Number of epochs.')
     tgroup.add_argument('--val_epoch', type=int, default=5,
                         help='Number of epochs between evaluations.')
+    tgroup.add_argument('--plot_epoch', type=int, default=200,
+                        help='Number of epochs between evaluations.')
     tgroup.add_argument('--lr', type=float, default=1e-2,
                         help='Learning rate of optimizer(s).')
     tgroup.add_argument('--momentum', type=float, default=0,

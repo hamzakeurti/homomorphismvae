@@ -38,10 +38,6 @@ _TWO_D_MISC.x_range_narrow = [-0.3, 0.3]
 _TWO_D_MISC.y_range_narrow = [-0.3, 0.3]
 
 
-def plot(dhandler,nets,shared,config,logger):
-    
-    pass
-
 def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode, 
                         figname):
     img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
@@ -127,5 +123,17 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             logger.info(f'Figure saved {figname1}')
         plt.close(fig)
 
-def plot_curve(dhandler,nets,shared,config,logger,val_name):
-    pass
+
+T_SERIES = ["bce_loss","kl_loss","learned_alpha"]
+def plot_curves(shared,config,logger,figname=None,val_name=None):
+    epochs = np.arange(len(vars(shared)[T_SERIES[0]]))*config.val_epoch
+    for key in T_SERIES:
+        if key in shared:
+            fig, ax = plt.subplots(figsize=(8,7))
+            ax.plot(epochs,vars(shared)[key])
+            ax.set_xlabel('epochs')
+            ax.set_ylabel(key)
+            if figname is not None:
+                figname1 = figname + 'curve_' + key + '.pdf'
+                plt.savefig(figname1)
+            plt.close()

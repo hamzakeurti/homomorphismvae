@@ -120,3 +120,7 @@ def backup_cli_command(config):
         f.write('# The user invoked CLI call that caused the creation of\n')
         f.write('# this output folder.\n')
         f.write(command)
+
+def save_dictionary(shared,config):
+    with open(os.path.join(config.out_dir, 'stats.json'),'w') as f:
+        json.dump(vars(shared),f,indent=4)

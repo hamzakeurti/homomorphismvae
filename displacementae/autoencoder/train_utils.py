@@ -47,48 +47,61 @@ def setup_optimizer(params, config):
 def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False):
     nets.eval()
-    with torch.no_grad():
-        img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
-        X1 = torch.FloatTensor(img1).to(device)
-        X2 = torch.FloatTensor(img2).to(device)
-        dj = torch.FloatTensor(dj).to(device)
-        h, mu, logvar = nets(X1, dj[:, dhandler.intervened_on])
-        X2_hat = torch.sigmoid(h)
-        # Losses
-        # Reconstruction
-        bce_loss = var_utils.bce_loss(X2_hat, X2)
-        if nets.variational:
-            # KL
-            kl_loss = var_utils.kl_loss(mu, logvar)
-            total_loss = config.beta * kl_loss + bce_loss
-        else:
-            total_loss = bce_loss        
-        logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
-        log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
-        if nets.variational:
-            log_text += f'=\tBCE {bce_loss.item():.2f} '
-            log_text += f'+\tKL {kl_loss.item():.5f}'
-        logger.info(log_text)
-        if nets.grp_transform.learn_params:
-            logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
-            if not hasattr(shared,"learned_alpha"):
-                shared.learned_alpha = []
-            shared.learned_alpha.append(nets.grp_transform.alpha.item())
+    if epoch == 0:
+        shared.bce_loss = []
+        if config.variational:
+            shared.kl_loss = []
+    if epoch % config.val_epoch == 0:
+
+        with torch.no_grad():
+            img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
+            X1 = torch.FloatTensor(img1).to(device)
+            X2 = torch.FloatTensor(img2).to(device)
+            dj = torch.FloatTensor(dj).to(device)
+            h, mu, logvar = nets(X1, dj[:, dhandler.intervened_on])
+            X2_hat = torch.sigmoid(h)
+            # Losses
+            # Reconstruction
+            bce_loss = var_utils.bce_loss(X2_hat, X2)
+            if nets.variational:
+                # KL
+                kl_loss = var_utils.kl_loss(mu, logvar)
+                total_loss = config.beta * kl_loss + bce_loss
+            else:
+                total_loss = bce_loss        
+            logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
+            log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
+            shared.bce_loss.append(bce_loss.item())
+            if nets.variational:
+                log_text += f'=\tBCE {bce_loss.item():.2f} '
+                log_text += f'+\tKL {kl_loss.item():.5f}'
+                shared.kl_loss.append(kl_loss.item())
+            logger.info(log_text)
+            if nets.grp_transform.learn_params:
+                logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
+                if not hasattr(shared,"learned_alpha"):
+                    shared.learned_alpha = []
+                shared.learned_alpha.append(nets.grp_transform.alpha.item())
+            if epoch % 20*config.val_epoch == 0:
+                sim_utils.save_dictionary(shared,config)
 
 
-        if plot:
-            fig_dir = os.path.join(config.out_dir, 'figures')
-            figname = None
-            if save_fig:
-                figname = os.path.join(fig_dir, f'{epoch}_')
-            plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
-                                        logger, mode, figname)
-            vary_latents = misc.str_to_ints(config.plot_vary_latents)
-            plot_latent = misc.str_to_ints(config.plot_manifold_latent)
-            if len(plot_latent) > 0:
-                plt_utils.plot_manifold(dhandler, nets, shared, config, device,
-                                        logger, mode, epoch, vary_latents=vary_latents,
-                                        plot_latent=plot_latent, figname=figname)
+            if plot and (epoch % config.plot_epoch == 0):
+                fig_dir = os.path.join(config.out_dir, 'figures')
+                figname = None
+                if save_fig:
+                    figname = os.path.join(fig_dir, f'{epoch}_')
+                    shared.figname=figname
+                plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
+                                            logger, mode, figname)
+                vary_latents = misc.str_to_ints(config.plot_vary_latents)
+                plot_latent = misc.str_to_ints(config.plot_manifold_latent)
+                if len(plot_latent) > 0:
+                    plt_utils.plot_manifold(dhandler, nets, shared, config, device,
+                                            logger, mode, epoch, 
+                                            vary_latents=vary_latents,
+                                            plot_latent=plot_latent, 
+                                            figname=figname)
     nets.train()
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
@@ -98,9 +111,8 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     epochs = config.epochs
     interrupted_training = False
     for epoch in range(epochs):
-        if epoch % config.val_epoch == 0:
-            evaluate(dhandler, nets, device, config, shared, logger, mode,
-                     epoch, save_fig=True, plot=not config.no_plots)
+        evaluate(dhandler, nets, device, config, shared, logger, mode,
+                    epoch, save_fig=True, plot=not config.no_plots)
         logger.info(f"Training epoch {epoch}.")
 
         for i, batch in enumerate(dloader):
@@ -130,6 +142,7 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
                 log_text += f'+\tKL {kl_loss.item():.5f}'
             logger.info(log_text)
+    plt_utils.plot_curves(shared,config,logger,figname=shared.figname)
     return interrupted_training
 
 
