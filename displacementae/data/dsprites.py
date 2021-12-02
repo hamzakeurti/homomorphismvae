@@ -89,28 +89,13 @@ class DspritesDataset(Dataset):
             np.cumprod(self.num_latents_varied[::-1])[::-1][1:],[1]])    
         self.dataset_size = np.prod(self.num_latents_varied)
 
-
-
-
-
         data = {}
         data["in_shape"] = [1,64,64]
         data["action_shape"] = [len(self.intervened_on)]
         self._data = data
 
-        # self.cumulative_product = np.concatenate([[1],np.cumprod(self.num_latents[::-1])])
-
-        # self.cum_prod_fix = [1]
-        # self.n_samples = 1
-
-        # for f,num in reversed(list(enumerate(self.num_latents))):
-        #     if f not in self.fixed_in_sampling:
-        #         self.n_samples *= num
-        #         self.cum_prod_fix.append(self.n_samples)
-
-        # TODO: Generate indices before and after intervention here
         self.all_indices = self._get_subset_indices()
-        self.images = self._images[self.all_indices]
+        self.images = np.expand_dims(self._images[self.all_indices],1)
         self.latents = self._classes[self.all_indices]
 
         ### Training samples:
@@ -155,15 +140,6 @@ class DspritesDataset(Dataset):
         return self.num_train
 
     def __getitem__(self, idx):
-        # idx1 = self.train_idx1[idx]
-        # image1, cls1 = self._images[idx1], self._classes[idx1]
-        # if self.intervene:
-        #     idx2 = self.train_idx2[idx]
-        #     dj = self.train_dj[idx]
-        #     image2, cls2 = self._images[idx2], self._classes[idx2]
-        #     return image1, cls1, image2, cls2, dj
-        # else:
-        #     return image1, cls1, image1, cls1, 0
         idx1 = self.train_idx1[idx]
         image1 = self.images[idx1]
         latents1 = self.latents[idx1]
@@ -183,12 +159,12 @@ class DspritesDataset(Dataset):
 
     def get_val_batch(self):
         idx1 = self.val_idx1
-        image1 = np.expand_dims(self.images[idx1], axis=1)
+        image1 = self.images[idx1]
         latents1 = self.latents[idx1]
         if self.intervene:
             idx2 = self.val_idx2
             dj = self.val_dj
-            image2 = np.expand_dims(self.images[idx2], axis=1)
+            image2 = self.images[idx2]
             latents2 = self.latents[idx2]
             return image1, latents1, image2, latents2, dj
         else:
@@ -240,9 +216,11 @@ class DspritesDataset(Dataset):
     
     def _intervene_circular(self,joints,dj):
         rot_idx = [LatentIdx.ORIENT]
+        # Last coincides with first 
+        num_latents = self.num_latents[rot_idx] -1
         new_joints = joints
         new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
-             % self.num_latents[rot_idx]
+             % num_latents
         return new_joints,dj
 
     def joints_to_index(self,joints):

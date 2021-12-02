@@ -74,7 +74,6 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             if not hasattr(shared,"learned_alpha"):
                 shared.learned_alpha = []
             shared.learned_alpha.append(nets.grp_transform.alpha.item())
-        
 
 
         if plot:
@@ -94,7 +93,7 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     params = nets.parameters()
-
+    
     optim = setup_optimizer(params, config)
     epochs = config.epochs
     interrupted_training = False
@@ -107,8 +106,8 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
         for i, batch in enumerate(dloader):
             optim.zero_grad()
             x1, y1, x2, y2, dj = [a.to(device) for a in batch]
-            x1 = x1.unsqueeze(1).float()
-            x2 = x2.unsqueeze(1).float()
+            x1 = x1.float()
+            x2 = x2.float()
             dj = dj.float()
             ### Forward ###
             # Through encoder
