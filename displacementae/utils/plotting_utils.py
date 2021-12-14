@@ -97,11 +97,13 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     results = np.vstack(results).squeeze()
 
 
-    for i in range(len(vary_latents)):    
+    for i in range(len(vary_latents)):
+        latent = vary_latents[i]
+        latent_name = dhandler.get_latent_name(latent)
         fig, ax = plt.subplots(figsize=(8,7))
         if len(plot_latent) == 1:
             f = ax.scatter(x=latents[:,i], y=results)
-            ax.set_xlabel(f'true label {vary_latents[i]}', fontsize=ts)
+            ax.set_xlabel(f'true label {latent}', fontsize=ts)
             ax.set_ylabel('latent', fontsize=ts)
         if len(plot_latent) == 2:
             f = ax.scatter(x=results[:,0], y=results[:,1], c=latents[:,i])
@@ -115,10 +117,10 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
                 ax.set_xlim(_TWO_D_MISC.x_range)
                 ax.set_ylim(_TWO_D_MISC.y_range)
             plt.colorbar(f)
-
+        ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
             figname1 = figname + 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
-            figname1 += '_true='+ misc.ints_to_str(vary_latents[i]) + '.pdf'
+            figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
         plt.close(fig)

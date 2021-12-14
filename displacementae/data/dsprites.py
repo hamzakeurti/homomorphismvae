@@ -46,6 +46,8 @@ class LatentIdx:
     POSX = 4
     POSY = 5
 
+LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
+
 class DspritesDataset(Dataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
                 fixed_values=[],fixed_in_intervention=[],intervene=True,
@@ -151,6 +153,9 @@ class DspritesDataset(Dataset):
             return image1, latents1, image2, latents2, dj
         else:
             return image1, latents1, image1, latents1, 0
+
+    def get_latent_name(self,id):
+        return LATENT_NAMES[id]
 
     def get_images_batch(self, indices):
         imgs, labels = self._images[indices], self._classes[indices]
