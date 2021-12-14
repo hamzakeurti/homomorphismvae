@@ -1,6 +1,4 @@
-# This file provides a pytorch dataset object to load samples from the arm eye dataset.
-# The dataset is generated from a view of a simulated invisble robotic arm holding a visible object.
-# Variation comes from joints movements.
+
 
 import os
 import torch
@@ -10,22 +8,54 @@ import numpy as np
 from matplotlib import image
 
 class ArmEyeDataset(Dataset):
+    """
+    A pytorch dataset object to load samples from the arm eye dataset.
+    The dataset is generated from a view of a simulated invisble robotic arm holding a visible object.
+    Variation comes from joints movements.
+    """
     LABELS = ['id','angle0','angle1','angle2','x','y','z']
-    def __init__(self,root,n_joints,intervene = False,displacement_range = [-1,1],immobile_joints=[]):
+    def __init__(self, root, intervene = False, intervention_range = [-1,1], 
+                n_joints=3, rseed=None, fixed_in_sampling=[], 
+                fixed_values=[],fixed_in_intervention=[], num_train=200, 
+                num_val=30):
+        super().__init__()
+
+        if rseed is not None:
+            rand = np.random.RandomState(rseed)
+        else:
+            rand = np.random
+
+        self.num_train = num_train
+        self.num_val = num_val
+        
         self.root = root
         self.labels_file = os.path.join(root,"labels.npy")
         self.labels = np.load(self.labels_file)
         self.n_joints = n_joints
-        self.joints_ids = np.arange(1,n_joints+1)
+        self.joints = np.arange(1,n_joints+1)
         self.pos_ids = np.arange(n_joints+1,n_joints+4)
         self.labels = self.process_labels()
 
         self.intervene = intervene
-        self.displacement_range = displacement_range
-        self.imshape = self.load_image(0).shape
+        self.n_joints = n_joints
+        self.fixed_in_sampling = fixed_in_sampling
+        self.fixed_values = fixed_values
+        self.varied_in_sampling = np.array([i for i in self.joints \
+            if i not in self.fixed_in_sampling])
+        self.fixed_in_intervention = fixed_in_intervention
+        self.intervened_on = np.array([i for i in self.joints \
+            if i not in self.fixed_in_intervention])
+        if not self.intervene:
+            self.intervened_on = np.array([])
+            self.fixed_in_intervention = self.joints
 
-        self.immobile_joints = immobile_joints
-        self.free_joints = [i for i in range(self.n_joints) if i not in self.immobile_joints]
+
+        data = {}
+        data["in_shape"] = self.load_image(0).shape
+        data["action_shape"] = [len(self.intervened_on)]
+        self._data = data
+
+        
 
     def process_labels(self):
         new_labels = np.empty_like(self.labels)
@@ -34,10 +64,9 @@ class ArmEyeDataset(Dataset):
         self.joint_n_vals = np.empty(self.n_joints,dtype=int)
         
         for i in range(self.n_joints):
-            unique_vals,new_labels[:,self.joints_ids[i]] = np.unique(self.labels[:,self.joints_ids[i]],return_inverse=True)
+            unique_vals,new_labels[:,self.joints[i]+1] = np.unique(self.labels[:,self.joints[i]+1],return_inverse=True)
             self.joint_steps[i] = unique_vals[1]-unique_vals[0]
             self.joint_n_vals[i] = len(unique_vals)
-        self.joint_steps = torch.DoubleTensor(self.joint_steps)
         return new_labels
 
     def __getitem__(self,i):
@@ -61,13 +90,16 @@ class ArmEyeDataset(Dataset):
         # intervention in the vicinity in the joints space 
         joints = self.labels[i,self.joints_ids]
         #sample displacement
-        if self.immobile_joints:
-            len_dj = self.n_joints - len(self.immobile_joints)
+        if self.fixed_in_intervention:
+            len_dj = self.n_joints - len(self.fixed_in_intervention)
         else:
             len_dj = self.n_joints
-        dj = np.random.randint(low=self.displacement_range[0],high=self.displacement_range[1],size = len_dj)
+        dj = np.zeros(self.n_joints)
+        dj[self.intervened_on] = self._rand.randint(
+            low=self.intervention_range[0],high=self.intervention_range[1]+1,
+            size = len_dj)
         new_joints = joints
-        new_joints[self.free_joints] = (joints[self.free_joints] + dj) % self.joint_n_vals[self.free_joints]
+        new_joints[self.intervened_on] = (joints[self.intervened_on] + dj) % self.joint_n_vals[self.intervened_on]
         i2 = self.get_index(new_joints)
         return i2,dj
 
@@ -78,6 +110,14 @@ class ArmEyeDataset(Dataset):
             index += joints[j] * base
             base *= num
         return int(index)
+    
+    @property
+    def in_shape(self):
+        return self._data["in_shape"]
+
+    @property
+    def action_shape(self):
+        return self._data["action_shape"]
 
 
 class FixedJointsSampler(Sampler):
@@ -126,6 +166,8 @@ class FixedJointsSampler(Sampler):
                 k+=1
         return ret
 
+if __name__ == '__main__':
+    pass
 
 # if __name__ == '__main__':
 #     root = os.path.expanduser('~/datasets/armeye/sphere_v1/transparent_small/')

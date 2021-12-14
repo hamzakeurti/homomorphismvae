@@ -1,9 +1,31 @@
+#!/usr/bin/env python3
+# Copyright 2021 Hamza Keurti
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# @title          :displacementae/networks/geometric/orthogonal.py
+# @author         :Hamza Keurti
+# @contact        :hkeurti@ethz.ch
+# @created        :17/11/2021
+# @version        :1.0
+# @python_version :3.7.4
+
 import torch
 import torch.nn as nn
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from models import nets
+# from models import nets
 
 def _block_diag(m):
     """
@@ -37,7 +59,6 @@ def _attach_dim(v, n_dim_to_prepend=0, n_dim_to_append=0):
         + v.shape
         + torch.Size([1] * n_dim_to_append))
 
-
 class OrthogonalMatrix(nn.Module):
     """
     A torch module that parametrizes a O(n) subgroup, to allow for matrix optimization within the orthogonal group.
@@ -48,75 +69,52 @@ class OrthogonalMatrix(nn.Module):
     CAYLEY = 'cayley'
     BLOCKS = 'blocks'
 
-    def __init__(self, transform=CAYLEY, n_units=6,device = 'cpu'):
+    def __init__(self, transformation=CAYLEY, n_units=6,device = 'cpu', 
+                learn_params=False):
         nn.Module.__init__(self)
         self.device = device
-        self.transform = transform
+        self.transformation = transformation
         self.n_units = n_units        
         self.matrix_size = n_units
-        if transform == OrthogonalMatrix.CAYLEY:
+        if transformation == OrthogonalMatrix.CAYLEY:
             self.n_parameters = self.n_units*(self.n_units-1)/2
-        if transform == OrthogonalMatrix.BLOCKS:
+        elif transformation == OrthogonalMatrix.BLOCKS:
             if self.n_units % 2 == 1:
                 raise ValueError(
                     'Latent space should have an even dimension for the matrix to be expressed in blocks of 2.')
             self.n_parameters = self.n_units//2  # Number of blocks
-            self.rot_basis = torch.DoubleTensor([
+            self.rot_basis = torch.FloatTensor([
                 [[1., 0.],
                  [0., 1.]],
                 [[0., -1.],
                  [1., 0.]]]).to(device)
+        self.learn_params = learn_params
+        if learn_params:
+            self.alpha = nn.parameter.Parameter(
+                torch.rand([self.n_parameters])/10)
 
     def forward(self, parameters):
         if parameters.shape[-1] != self.n_parameters:
             raise ValueError(
                 f'Expected input last dimension to be {self.n_parameters}, received {parameters.shape[-1]}')
-        if self.transform == OrthogonalMatrix.BLOCKS:
+        if self.transformation == OrthogonalMatrix.BLOCKS:
             # parameters shape: [b,n_parameters]
             return _block_diag(self.rotation_matrices(parameters))
 
     def rotation_matrices(self, angle):
         u = torch.stack([torch.cos(angle), torch.sin(angle)], dim=-1)
         return torch.tensordot(u, self.rot_basis, dims=[[-1], [0]])
-
-
-class VariationalOrthogonalAE(nn.Module):
-    def __init__(self, img_shape, n_latent, kernel_sizes, strides, conv_channels, hidden_units, rotation_steps=None, device='cpu'):
-        super().__init__()
-        shape = img_shape
-        self.n_units = n_latent
-        n_units = n_latent
-        self.activate_latent = None
-        self.encoder = nets.CNN(shape_in=shape, kernel_sizes=kernel_sizes, strides=strides,
-                                conv_channels=conv_channels, linear_channels=hidden_units+[2*n_units], use_bias=True)
-        self.decoder = nets.TransposedCNN(shape_out=shape, kernel_sizes=kernel_sizes, strides=strides,
-                                          conv_channels=conv_channels[::-1], linear_channels=[n_units] + hidden_units[::-1])
-        self.orthogonal = OrthogonalMatrix(
-            OrthogonalMatrix.BLOCKS, n_units=n_units, device=device)
-        # self.steps = dataset.joint_steps[free_joints].to(device)
-        if rotation_steps:
-            self.steps = torch.tensor(rotation_steps).to(device)
-
-    def encode(self, x):
-        return self.encoder(x)
-
-    def decode(self, z):
-        return self.decoder(z)
-
-    def rotate(self, h, dz):
-        angles = dz*self.steps
-        O = self.orthogonal(angles)
+    
+    def transform(self, h, angles):
+        """
+        Function that populates an orthogonal matrix, 
+        then rotates the input vector h through the obtained matrix.
+        
+        Args:
+            h: vector to transform
+            angles: parameters of the rotation matrix
+        """
+        if self.learn_params:
+            angles = self.alpha*angles
+        O = self.forward(angles)
         return torch.matmul(O, h.unsqueeze(-1)).squeeze(dim=-1)
-
-    def forward(self, x, dz):
-        z = self.encode(x)
-        mu, logvar = z[:, :self.n_units], z[:, self.n_units:]
-        h = self.reparametrize(mu, logvar)
-        z2 = self.rotate(h, dz)
-        out = self.decode(z2)
-        return torch.sigmoid(out), mu, logvar
-
-    def reparametrize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(mu)
-        return mu + eps*std
