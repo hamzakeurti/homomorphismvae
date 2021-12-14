@@ -58,7 +58,10 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             X1 = torch.FloatTensor(img1).to(device)
             X2 = torch.FloatTensor(img2).to(device)
             dj = torch.FloatTensor(dj).to(device)
-            h, mu, logvar = nets(X1, dj[:, dhandler.intervened_on])
+            if config.intervene:
+                h, mu, logvar = nets(X1, dj[:, dhandler.intervened_on])
+            else:
+                h, mu, logvar = nets(X1, None)
             X2_hat = torch.sigmoid(h)
             # Losses
             # Reconstruction
@@ -122,13 +125,14 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
             x2 = x2.float()
             dj = dj.float()
             ### Forward ###
-            # Through encoder
-            h, mu, logvar = nets(x1, dj[:, dhandler.intervened_on])
-
+            if config.intervene:
+                h, mu, logvar = nets(x1, dj[:, dhandler.intervened_on])
+            else:
+                h, mu, logvar = nets(x1, None)
             x2_hat = torch.sigmoid(h)
+            ### Losses
             # Reconstruction
             bce_loss = var_utils.bce_loss(x2_hat, x2)
-            # Losses
             if nets.variational:
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
@@ -137,6 +141,7 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                 total_loss = bce_loss
             total_loss.backward()
             optim.step()
+            ### Logging
             log_text = f'[{epoch}:{i}] loss\t{total_loss.item():.2f} ' 
             if nets.variational:
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
