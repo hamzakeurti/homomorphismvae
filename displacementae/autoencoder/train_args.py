@@ -47,7 +47,7 @@ def data_args(parser):
                         help='Values of fixed joints')
     dgroup.add_argument('--fixed_in_intervention', type=str, default='', 
                         help='Indices of fixed joints in intervention')
-    dgroup.add_argument('--intervene', type=bool, default=True,
+    dgroup.add_argument('--intervene', action='store_true',
                         help='Whether to vary joint positions.')
     dgroup.add_argument('--shuffle', type=bool, default=True,
                         help='Shuffle the dataset.')
@@ -107,6 +107,7 @@ def net_args(parser):
             - `specified_grp_step`
             - `variational`
             - `beta`
+            - `n_free_latents`
     """
     ngroup = parser.add_argument_group('network options')
     ngroup.add_argument('--net_act',type=str,default='relu',
@@ -118,7 +119,7 @@ def net_args(parser):
     ngroup.add_argument('--lin_channels', type=str, default='',
                         help='linear channels.')
     ngroup.add_argument('--kernel_sizes', type=str, default='5',
-                        help='kernel sizes of convlution layers.')
+                        help='kernel sizes of convolution layers.')
     ngroup.add_argument('--strides', type=str, default='1',
                         help='strides of convlution layers.')
     ngroup.add_argument('--learn_geometry',action='store_true', 
@@ -134,8 +135,9 @@ def net_args(parser):
                         help='Beta factor of the beta-VAE ' +
                         'balances contribution of prior matching loss. ' + 
                         'Defaults to 1.')
-                        
-                        
+    ngroup.add_argument('--n_free_units',type=int, default=0, 
+                        help='number of representation units ' +
+                        'not transformed by the action representations.')
 
 
 def misc_args(parser,dout_dir=None):
@@ -157,4 +159,3 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--plot_vary_latents', type=str, default='',
                         help='Which joints to move' + 
                         'to produce a manifold of latents.')
-

@@ -44,7 +44,10 @@ def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode,
     X1 = torch.FloatTensor(img1).to(device)
     X2 = torch.FloatTensor(img2).to(device)
     dj = torch.FloatTensor(dj).to(device)
-    h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+    if config.intervene:
+        h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+    else:
+        h, mu, logvar = nets(X2, None)
     X2_hat = torch.sigmoid(h)
     nrows = 5
     ncols = 3
