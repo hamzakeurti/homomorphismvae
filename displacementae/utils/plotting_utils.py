@@ -49,9 +49,9 @@ def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode,
     else:
         h, mu, logvar = nets(X2, None)
     X2_hat = torch.sigmoid(h)
-    nrows = 5
+    nrows = 7
     ncols = 3
-    fig, axes = plt.subplots(nrows,ncols,figsize=(8,7))
+    fig, axes = plt.subplots(nrows,ncols,figsize=(5,8))
     kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
     for row in range(nrows):
         axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
@@ -60,10 +60,12 @@ def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode,
         axes[row,0].axis('off')
         axes[row,1].axis('off')
         axes[row,2].axis('off')
+    plt.subplots_adjust(wspace=0, hspace=0.1)
+
 
     if figname is not None:
         figname += 'reconstructions.pdf'
-        plt.savefig(figname)
+        plt.savefig(figname,bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
     plt.close(fig)
     
