@@ -32,6 +32,7 @@ import networks.variational_utils as var_utils
 import utils.plotting_utils as plt_utils
 import utils.sim_utils as sim_utils
 import utils.misc as misc
+import utils.checkpoint as ckpt
 
 
 def setup_optimizer(params, config):
@@ -147,6 +148,14 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
                 log_text += f'+\tKL {kl_loss.item():.5f}'
             logger.info(log_text)
+    
+    if config.checkpoint:
+        checkpoint_dir = os.path.join(config.out_dir,"checkpoint")
+        losses = {
+            key:val for (key,val) in vars(shared).items() if 'loss' in key}
+        ckpt.save_checkpoint( nets, optim, losses=losses, epoch=epochs-1, 
+            save_path=checkpoint_dir)
+
     plt_utils.plot_curves(shared,config,logger,figname=shared.figname)
     return interrupted_training
 
