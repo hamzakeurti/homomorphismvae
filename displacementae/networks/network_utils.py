@@ -52,7 +52,9 @@ def setup_autoencoder_network(config, dhandler, device):
         strides = strides[0]
              
     conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
-    latent_units = dhandler.action_shape[0] * 2
+    n_free_units = config.n_free_units
+    transformed_units = dhandler.action_shape[0] * 2
+    latent_units =  transformed_units + n_free_units
     lin_channels = misc.str_to_ints(config.lin_channels)
     if config.net_act=='relu':
         act_fn = torch.relu
@@ -90,7 +92,7 @@ def setup_autoencoder_network(config, dhandler, device):
         use_bias=True, activation_fn=act_fn).to(device)
     
     orthogonal_matrix = orth.OrthogonalMatrix(
-        transformation=orth.OrthogonalMatrix.BLOCKS, n_units=latent_units, 
+        transformation=orth.OrthogonalMatrix.BLOCKS, n_units=transformed_units, 
         device=device, learn_params=config.learn_geometry).to(device)
     
     autoencoder = AutoEncoder(

@@ -63,6 +63,10 @@ def setup_environment(config):
     figs_dir = os.path.join(config.out_dir,'figures')
     if not config.no_plots and not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
+    
+    ckpt_dir = os.path.join(config.out_dir,'checkpoint')
+    if config.checkpoint and not os.path.exists(ckpt_dir):
+        os.makedirs(ckpt_dir) 
 
     # Save user configs to ensure reproducibility of this experiment.
     with open(os.path.join(config.out_dir, 'config.pickle'), 'wb') as f:

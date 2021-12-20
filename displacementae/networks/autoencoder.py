@@ -21,6 +21,7 @@
 # @python_version :3.7.4
 
 import torch.nn as nn
+import torch
 
 import networks.variational_utils as var_utils
 
@@ -47,6 +48,7 @@ class AutoEncoder(nn.Module):
         self.specified_step = specified_step
         self.variational = variational
         self.intervene = intervene
+        self.n_transform_units = self.grp_transform.n_units
 
     def forward(self, x, dz):
         h = x
@@ -59,11 +61,12 @@ class AutoEncoder(nn.Module):
             # Through geom
             if not self.grp_transform.learn_params:
                 dz = dz * self.specified_step
-            h = self.grp_transform.transform(h, dz)
+            transformed_h = \
+                self.grp_transform.transform(h[:,:self.n_transform_units], dz)
+            h = torch.hstack([transformed_h,h[:,self.n_transform_units:]])
         # Through decoder
         h = self.decoder(h)
         if self.variational:
             return h, mu, logvar
         else:
             return h, None, None
-            
