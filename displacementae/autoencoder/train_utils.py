@@ -102,10 +102,14 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 vary_latents = misc.str_to_ints(config.plot_vary_latents)
                 plot_latent = misc.str_to_ints(config.plot_manifold_latent)
                 if len(plot_latent) > 0:
-                    plt_utils.plot_manifold(dhandler, nets, shared, config, device,
-                                            logger, mode, epoch, 
-                                            vary_latents=vary_latents,
-                                            plot_latent=plot_latent, 
+                    if not isinstance(plot_latent[0],list):
+                        plot_latent = [plot_latent]
+                        vary_latents = [vary_latents]
+                    for i in range(len(plot_latent)):
+                        plt_utils.plot_manifold(dhandler, nets, shared, config, 
+                                            device, logger, mode, epoch, 
+                                            vary_latents=vary_latents[i],
+                                            plot_latent=plot_latent[i], 
                                             figname=figname)
     nets.train()
 

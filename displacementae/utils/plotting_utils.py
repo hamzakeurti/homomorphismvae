@@ -109,11 +109,11 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
         if len(plot_latent) == 1:
             f = ax.scatter(x=latents[:,i], y=results)
             ax.set_xlabel(f'true label {latent}', fontsize=ts)
-            ax.set_ylabel('latent', fontsize=ts)
+            ax.set_ylabel(f'latent {plot_latent[0]}', fontsize=ts)
         if len(plot_latent) == 2:
             f = ax.scatter(x=results[:,0], y=results[:,1], c=latents[:,i])
-            ax.set_xlabel('latent 0', fontsize=ts)
-            ax.set_ylabel('latent 1', fontsize=ts)
+            ax.set_xlabel(f'latent {plot_latent[0]}', fontsize=ts)
+            ax.set_ylabel(f'latent {plot_latent[1]}', fontsize=ts)
             dx = np.abs(results).max()
             if dx <= 0.3:
                 ax.set_xlim(_TWO_D_MISC.x_range_narrow)
