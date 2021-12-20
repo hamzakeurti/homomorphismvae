@@ -229,8 +229,9 @@ class DspritesDataset(Dataset):
 
         """
         rot_idx = self.rot_idx
+        num_latents = self.num_latents[rot_idx]
         # Last coincides with first 
-        num_latents = self.num_latents[rot_idx] -1
+        num_latents[0] = num_latents[0] - 1
         new_joints = joints
         new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
              % num_latents
