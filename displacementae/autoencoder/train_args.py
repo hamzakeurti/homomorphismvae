@@ -159,3 +159,6 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--plot_vary_latents', type=str, default='',
                         help='Which joints to move' + 
                         'to produce a manifold of latents.')
+    mgroup.add_argument('--checkpoint', action='store_true', 
+                        help='Saves a checkpoint of the model and optimizer '+
+                        'at the end of training')
