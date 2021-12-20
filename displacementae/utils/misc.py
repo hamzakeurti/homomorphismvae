@@ -35,6 +35,9 @@ def str_to_ints(str_arg):
         args = args.replace('[','').replace(']','').replace('"','').split(",")
         args = [int(a.strip()) for a in args]
         ret.append(args)
+    
+    if len(ret) == 1:
+        ret = ret[0]
     return ret
 
 def ints_to_str(args):
