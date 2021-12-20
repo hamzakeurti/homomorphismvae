@@ -50,22 +50,26 @@ LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 
 class DspritesDataset(Dataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
-                fixed_values=[],fixed_in_intervention=[],intervene=True,
-                intervention_range=[-1,1], num_train = 200, num_val=30):
+                fixed_values=[], fixed_in_intervention=[], intervene=True,
+                intervention_range=[-1,1], num_train = 200, num_val=30,
+                cyclic_trans=False):
         super().__init__()
 
+        # Random generator
         if rseed is not None:
             rand = np.random.RandomState(rseed)
         else:
             rand = np.random
+        self._rand = rand
+        self._rseed = rseed
 
+        # Number of samples
         self.num_train = num_train
         self.num_val = num_val
 
-        self._rand = rand
-        self._rseed = rseed
+        # latents config
         self.intervene = intervene
-        self.n_joints = 6    
+        self.n_joints = 6
         self.joints = np.arange(self.n_joints)
         
         self.fixed_in_sampling = fixed_in_sampling
@@ -79,11 +83,20 @@ class DspritesDataset(Dataset):
             self.intervened_on = np.array([])
             self.fixed_in_intervention = self.joints
         self.intervention_range = intervention_range
-        
+        # Types of latents
+        if not cyclic_trans:
+            self.lin_idx = [LatentIdx.SCALE,LatentIdx.POSX,LatentIdx.POSY]
+            self.rot_idx = [LatentIdx.ORIENT]
+        else:
+            self.lin_idx = [LatentIdx.SCALE]
+            self.rot_idx = [LatentIdx.ORIENT,LatentIdx.POSX,LatentIdx.POSY]
+
+        # Read Data from file.
         self._root = root
-        
         self._images, self._classes, self._values = self._process_hdf5()
-        self.num_latents = self._classes[-1] + 1
+        
+        # Number of values for each latent
+        self.num_latents = self._classes[-1] + 1 
         self.num_latents_varied = self.num_latents[self.varied_in_sampling]
         self.latent_bases = np.concatenate([
             np.cumprod(self.num_latents[::-1])[::-1][1:],[1]])
@@ -96,6 +109,7 @@ class DspritesDataset(Dataset):
         data["action_shape"] = [len(self.intervened_on)]
         self._data = data
 
+        # Get Dataset subset corresponding to fixed_in_sampling constraint.
         self.all_indices = self._get_subset_indices()
         self.images = np.expand_dims(self._images[self.all_indices],1)
         self.latents = self._classes[self.all_indices]
@@ -103,12 +117,12 @@ class DspritesDataset(Dataset):
         ### Training samples:
         self.train_idx1 = rand.choice(self.dataset_size,size=num_train)
         if self.intervene:
-            self.train_idx2, self.train_dj = self.f_intervene2(self.train_idx1)
+            self.train_idx2, self.train_dj = self.f_intervene(self.train_idx1)
         ### Evaluation samples
         self.val_idx1 = rand.choice(self.dataset_size, 
                                     size=num_val,replace=False)
         if self.intervene:
-            self.val_idx2, self.val_dj = self.f_intervene2(self.val_idx1)
+            self.val_idx2, self.val_dj = self.f_intervene(self.val_idx1)
         
     def _process_hdf5(self):
         """
@@ -155,9 +169,15 @@ class DspritesDataset(Dataset):
             return image1, latents1, image1, latents1, 0
 
     def get_latent_name(self,id):
+        """
+        Returns the name of the latent corresponding to the input id.
+        """
         return LATENT_NAMES[id]
 
     def get_images_batch(self, indices):
+        """
+        Returns a batch of images and labels corresponding to input indices.
+        """
         imgs, labels = self._images[indices], self._classes[indices]
         imgs = np.expand_dims(imgs,axis=1)
         return imgs, labels
@@ -175,7 +195,7 @@ class DspritesDataset(Dataset):
         else:
             return image1, latents1, image1, latents1, 0
 
-    def f_intervene2(self,index):
+    def f_intervene(self,index):
         """"""
         joints = self.latents[index]
         #sample displacement
@@ -193,34 +213,22 @@ class DspritesDataset(Dataset):
         indices2 = self.joints_2_index(new_joints)
         return indices2,dj
 
-    def f_intervene(self,index):
-        # intervention in the vicinity in the joints space 
-        joints = self._classes[index]
-        #sample displacement
-        if self.fixed_in_intervention:
-            len_dj = self.n_joints - len(self.fixed_in_intervention)
-        else:
-            len_dj = self.n_joints
-        dj = np.zeros(self.n_joints)
-        dj[self.intervened_on] = self._rand.randint(
-            low=self.intervention_range[0],high=self.intervention_range[1]+1,
-            size = len_dj)
-        new_joints = joints
-        new_joints,dj = self._intervene_linear(new_joints,dj)
-        new_joints,dj = self._intervene_circular(new_joints,dj)
-        i2 = self.joints_to_index(new_joints)
-        return i2,dj
 
     def _intervene_linear(self,joints,dj):
         new_joints = joints
-        lin_idx = [LatentIdx.SCALE,LatentIdx.POSX,LatentIdx.POSY]
+        lin_idx = self.lin_idx
         new_joints[...,lin_idx] = np.clip(
             joints[...,lin_idx] + dj[...,lin_idx],0,self.num_latents[lin_idx]-1)
         dj[...,lin_idx] = new_joints[...,lin_idx] - joints[...,lin_idx]
         return new_joints,dj
     
     def _intervene_circular(self,joints,dj):
-        rot_idx = [LatentIdx.ORIENT]
+        """
+        Adds a displacement on latents with a cyclic topology.
+
+
+        """
+        rot_idx = self.rot_idx
         # Last coincides with first 
         num_latents = self.num_latents[rot_idx] -1
         new_joints = joints
@@ -273,29 +281,6 @@ class DspritesDataset(Dataset):
         indices = np.dot(all_latents,self.latent_bases_varied)
         return indices
 
-    #     joint_spans = []
-    #     joints = [0] * self.n_joints
-    #     for j in range(len(self.fixed_in_sampling)):
-    #         joints[self.fixed_in_sampling[j]] = self.fixed_values[j]
-    #     for j in self.joints:
-    #         if (j not in self.fixed_in_sampling) and (j not in vary_latents):
-    #             # pick a random value for the joint
-    #             joints[j] = self.num_latents[j]//2
-    #     self.recursive_joints_population(indices,vary_joints,joints)
-    #     return indices
-
-    # def recursive_joints_population(self, ret_indices, vary_joints, joints,
-    #                                 curr_j=0):
-    #     joint_index = vary_joints[curr_j]
-    #     for val in range(self.num_latents[joint_index]):
-    #         joints[joint_index] = val
-    #         if curr_j == len(vary_joints)-1:
-    #             idx = self.joints_to_index(joints)
-    #             ret_indices.append(idx)
-    #         else:
-    #             self.recursive_joints_population(
-    #                 ret_indices,vary_joints,joints,curr_j+1)
-
     @property
     def allowed_indices(self):
         if hasattr(self,'_allowed_indices'):
@@ -312,6 +297,25 @@ class DspritesDataset(Dataset):
     def action_shape(self):
         return self._data["action_shape"]
     
+    # def f_intervene(self,index):
+    #     # intervention in the vicinity in the joints space 
+    #     joints = self._classes[index]
+    #     #sample displacement
+    #     if self.fixed_in_intervention:
+    #         len_dj = self.n_joints - len(self.fixed_in_intervention)
+    #     else:
+    #         len_dj = self.n_joints
+    #     dj = np.zeros(self.n_joints)
+    #     dj[self.intervened_on] = self._rand.randint(
+    #         low=self.intervention_range[0],high=self.intervention_range[1]+1,
+    #         size = len_dj)
+    #     new_joints = joints
+    #     new_joints,dj = self._intervene_linear(new_joints,dj)
+    #     new_joints,dj = self._intervene_circular(new_joints,dj)
+    #     i2 = self.joints_to_index(new_joints)
+    #     return i2,dj
+
+
 class FixedJointsSampler(Sampler):
     def __init__(self,fixed_joints,fixed_values,dataset=None,shuffle=False):
         super().__init__(None)

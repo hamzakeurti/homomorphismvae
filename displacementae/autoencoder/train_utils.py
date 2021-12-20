@@ -82,10 +82,11 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 shared.kl_loss.append(kl_loss.item())
             logger.info(log_text)
             if nets.grp_transform.learn_params:
-                logger.info(f'learned alpha {nets.grp_transform.alpha.item()}')
+                alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
+                logger.info(f'learned alpha {alpha}')
                 if not hasattr(shared,"learned_alpha"):
                     shared.learned_alpha = []
-                shared.learned_alpha.append(nets.grp_transform.alpha.item())
+                shared.learned_alpha.append(list(alpha))
             if epoch % 20*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
 

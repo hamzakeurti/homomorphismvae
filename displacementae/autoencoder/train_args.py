@@ -61,7 +61,9 @@ def data_args(parser):
     dgroup.add_argument('--num_train', type=int, default=100,
                         help='Number of training samples')
     dgroup.add_argument('--num_val', type=int, default=15,
-                        help='Number of evaluation samples')    
+                        help='Number of evaluation samples')
+    dgroup.add_argument('--cyclic_trans', action='store_true',
+                        help='considers position as a cyclic latent.')
     
 
 def train_args(parser):

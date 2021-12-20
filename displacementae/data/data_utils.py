@@ -42,7 +42,8 @@ def setup_dsprites_dataset(config):
         fixed_in_sampling=fixed_in_sampling, 
         fixed_values=fixed_values, 
         fixed_in_intervention=fixed_in_intervention, 
-        intervene=config.intervene, intervention_range=intervention_range)
+        intervene=config.intervene, intervention_range=intervention_range,
+        cyclic_trans=config.cyclic_trans)
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
         shuffle=config.shuffle)
