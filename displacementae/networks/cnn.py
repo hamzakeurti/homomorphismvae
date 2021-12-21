@@ -71,8 +71,8 @@ class CNN(nn.Module):
         self._fm_shapes = [list(shape_in)]
         for l in range(n_conv):
             h, w = self._fm_shapes[l]
-            new_h = (h - self._kernel_sizes[l])/self._strides[l] + 1
-            new_w = (w - self._kernel_sizes[l])/self._strides[l] + 1
+            new_h = (h - self._kernel_sizes[l])//self._strides[l] + 1
+            new_w = (w - self._kernel_sizes[l])//self._strides[l] + 1
             self._fm_shapes.append([new_h, new_w])
 
         n_lin = 0 if linear_channels is None else len(linear_channels)
