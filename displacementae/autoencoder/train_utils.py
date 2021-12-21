@@ -90,27 +90,27 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             if epoch % 20*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
 
-
-            if plot and (epoch % config.plot_epoch == 0):
-                fig_dir = os.path.join(config.out_dir, 'figures')
-                figname = None
-                if save_fig:
-                    figname = os.path.join(fig_dir, f'{epoch}_')
-                    shared.figname=figname
-                plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
-                                            logger, mode, figname)
-                vary_latents = misc.str_to_ints(config.plot_vary_latents)
-                plot_latent = misc.str_to_ints(config.plot_manifold_latent)
-                if len(plot_latent) > 0:
-                    if not isinstance(plot_latent[0],list):
-                        plot_latent = [plot_latent]
-                        vary_latents = [vary_latents]
-                    for i in range(len(plot_latent)):
-                        plt_utils.plot_manifold(dhandler, nets, shared, config, 
-                                            device, logger, mode, epoch, 
-                                            vary_latents=vary_latents[i],
-                                            plot_latent=plot_latent[i], 
-                                            figname=figname)
+    if plot and (epoch % config.plot_epoch == 0):
+        with torch.no_grad():
+            fig_dir = os.path.join(config.out_dir, 'figures')
+            figname = None
+            if save_fig:
+                figname = os.path.join(fig_dir, f'{epoch}_')
+                shared.figname=figname
+            plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
+                                        logger, mode, figname)
+            vary_latents = misc.str_to_ints(config.plot_vary_latents)
+            plot_latent = misc.str_to_ints(config.plot_manifold_latent)
+            if len(plot_latent) > 0:
+                if not isinstance(plot_latent[0],list):
+                    plot_latent = [plot_latent]
+                    vary_latents = [vary_latents]
+                for i in range(len(plot_latent)):
+                    plt_utils.plot_manifold(dhandler, nets, shared, config, 
+                                        device, logger, mode, epoch, 
+                                        vary_latents=vary_latents[i],
+                                        plot_latent=plot_latent[i], 
+                                        figname=figname)
     nets.train()
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
