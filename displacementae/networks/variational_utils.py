@@ -34,7 +34,7 @@ def reparametrize(mu, logvar):
 
 def kl_loss(mu, logvar):
     loss = torch.exp(logvar) + mu**2 - 1. - logvar
-    return 0.5 * torch.sum(loss)
+    return 0.5 * torch.sum(loss)/mu.shape[0]
 
 def bce_loss(x_hat, x):
     return nn.BCELoss(reduction='sum')(x_hat, x)/x.shape[0]
