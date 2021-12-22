@@ -128,7 +128,7 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
         
         logger.info(f"Training epoch {epoch}.")
         scheduler.toggle_train(
-            [nets.encoder,nets.decoder], [nets.grp_transform],epoch)
+            [nets.encoder,nets.grp_transform], [nets.decoder],epoch)
         
         for i, batch in enumerate(dloader):
             optim.zero_grad()
