@@ -44,14 +44,25 @@ def setup_autoencoder_network(config, dhandler, device):
     an expanding path back into the input space. 
     """
     in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
+    conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
+    
     kernel_sizes = misc.str_to_ints(config.kernel_sizes)
     strides = misc.str_to_ints(config.strides)
     if len(kernel_sizes) == 1:
         kernel_sizes = kernel_sizes[0]
     if len(strides) == 1:
         strides = strides[0]
-             
-    conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
+    
+    if isinstance(strides,list):
+        trans_strides = strides[::-1]
+    else:
+        trans_strides = strides
+
+    if isinstance(kernel_sizes, list):
+        trans_kernel = kernel_sizes[::-1]
+    else:
+        trans_kernel = kernel_sizes
+    
     n_free_units = config.n_free_units
     transformed_units = dhandler.action_shape[0] * 2
     latent_units =  transformed_units + n_free_units
@@ -86,8 +97,8 @@ def setup_autoencoder_network(config, dhandler, device):
         linear_channels=lin_channels+[encoder_outputs],
         use_bias=True, activation_fn=act_fn).to(device)
     
-    decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=kernel_sizes,
-        strides=strides, conv_channels=conv_channels[::-1],
+    decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,
+        strides=trans_strides, conv_channels=conv_channels[::-1],
         linear_channels=[latent_units]+lin_channels[::-1],
         use_bias=True, activation_fn=act_fn).to(device)
     
