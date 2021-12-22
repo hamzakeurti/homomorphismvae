@@ -48,14 +48,14 @@ def setup_optimizer(params, config):
 
 def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False):
-    nets.eval()
-    if epoch == 0:
-        shared.bce_loss = []
-        if config.variational:
-            shared.kl_loss = []
-    if epoch % config.val_epoch == 0:
+    with torch.no_grad():
+        nets.eval()
+        if epoch == 0:
+            shared.bce_loss = []
+            if config.variational:
+                shared.kl_loss = []
+        if epoch % config.val_epoch == 0:
 
-        with torch.no_grad():
             img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
             X1 = torch.FloatTensor(img1).to(device)
             X2 = torch.FloatTensor(img2).to(device)
@@ -91,8 +91,7 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             if epoch % 20*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
 
-    if plot and (epoch % config.plot_epoch == 0):
-        with torch.no_grad():
+        if plot and (epoch % config.plot_epoch == 0):
             fig_dir = os.path.join(config.out_dir, 'figures')
             figname = None
             if save_fig:
@@ -116,7 +115,7 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     params = nets.parameters()
-    scheduler = schdl.Scheduler()
+    scheduler = schdl.Scheduler(2)
     optim = setup_optimizer(params, config)
     epochs = config.epochs
     interrupted_training = False
@@ -128,7 +127,9 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
         
         logger.info(f"Training epoch {epoch}.")
         scheduler.toggle_train(
-            [nets.encoder,nets.grp_transform], [nets.decoder],epoch)
+            [nets.encoder,nets.grp_transform,nets.decoder], 
+            [nets.encoder,nets.decoder],
+            epoch)
         
         for i, batch in enumerate(dloader):
             optim.zero_grad()

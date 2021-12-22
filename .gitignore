@@ -9,3 +9,6 @@
 *.pdf
 *.tar
 *.jpg
+docs/*
+*.png
+*.gif

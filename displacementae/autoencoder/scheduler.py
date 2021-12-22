@@ -28,13 +28,13 @@ class Scheduler():
 
     def toggle_train(self, nets1, nets2, epoch):
         """
-        Switches 
+        Switches requires grad on/off every `toggle_every` epochs.
         """ 
-        if (epoch//2) % self.toggle_every:
-            for net1 in nets1:
-                toggle_grad(net1,True)
+        if (epoch//2) % self.toggle_every == 0:
             for net2 in nets2:
                 toggle_grad(net2,False)
+            for net1 in nets1:
+                toggle_grad(net1,True)
         else:
             for net1 in nets1:
                 toggle_grad(net1,False)
