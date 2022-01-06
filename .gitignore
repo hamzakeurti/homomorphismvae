@@ -9,12 +9,6 @@
 *.pdf
 *.tar
 *.jpg
-<<<<<<< HEAD
-docs/*
-*.png
-*.gif
-=======
 *.png
 *.gif
 docs/*
->>>>>>> master
