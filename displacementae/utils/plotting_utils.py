@@ -60,9 +60,13 @@ def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode,
         axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
         axes[row,1].imshow(X2[row,0].cpu().numpy(),**kwargs)
         axes[row,2].imshow(X2_hat[row,0].cpu().numpy(),**kwargs)
-        axes[row,0].axis('off')
-        axes[row,1].axis('off')
-        axes[row,2].axis('off')
+        if config.plot_on_black:
+            for i in range(3):
+                axes[row,i].axes.xaxis.set_visible(False)
+                axes[row,i].axes.yaxis.set_visible(False)
+        else:
+            for i in range(3):
+                axes[row,i].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
 
