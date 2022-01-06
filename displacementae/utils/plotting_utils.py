@@ -110,6 +110,10 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             results.append(h[:,plot_latent].cpu().numpy())
     results = np.vstack(results).squeeze()
 
+    if config.plot_on_black:
+        kwargs={'cmap':'summer'}
+    else:
+        kwargs={}
 
     for i in range(len(vary_latents)):
         latent = vary_latents[i]
@@ -120,7 +124,8 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             ax.set_xlabel(f'true label {latent}', fontsize=ts)
             ax.set_ylabel(f'latent {plot_latent[0]}', fontsize=ts)
         if len(plot_latent) == 2:
-            f = ax.scatter(x=results[:,0], y=results[:,1], c=latents[:,i])
+            f = ax.scatter(x=results[:,0], y=results[:,1], c=latents[:,i],
+                            **kwargs)
             ax.set_xlabel(f'latent {plot_latent[0]}', fontsize=ts)
             ax.set_ylabel(f'latent {plot_latent[1]}', fontsize=ts)
             dx = np.abs(results).max()
