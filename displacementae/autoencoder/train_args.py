@@ -154,6 +154,8 @@ def misc_args(parser,dout_dir=None):
                         help='if use_cuda, GPU device number.')
     mgroup.add_argument('--random_seed', type=int, default=42,
                         help='Specify random seed for reproducibility')
+    mgroup.add_argument('--plot_on_black', action='store_true', 
+                        help='Whether to plot using dark background style')
     mgroup.add_argument('--no_plots', action='store_true', 
                         help='Whether to plot figures')
     mgroup.add_argument('--plot_manifold_latent', type=str, default='',
