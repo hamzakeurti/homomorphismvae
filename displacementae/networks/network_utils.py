@@ -65,7 +65,7 @@ def setup_autoencoder_network(config, dhandler, device):
     
     n_free_units = config.n_free_units
     transformed_units = dhandler.action_shape[0] * 2
-    latent_units =  transformed_units + n_free_units
+    repr_units =  transformed_units + n_free_units
     lin_channels = misc.str_to_ints(config.lin_channels)
     if config.net_act=='relu':
         act_fn = torch.relu
@@ -91,7 +91,7 @@ def setup_autoencoder_network(config, dhandler, device):
 
 
     # if variational, encoder outputs mean and logvar
-    encoder_outputs = (1 + variational ) * latent_units 
+    encoder_outputs = (1 + variational ) * repr_units 
     encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes, strides=strides,
         conv_channels=conv_channels,
         linear_channels=lin_channels+[encoder_outputs],
@@ -99,7 +99,7 @@ def setup_autoencoder_network(config, dhandler, device):
     
     decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,
         strides=trans_strides, conv_channels=conv_channels[::-1],
-        linear_channels=[latent_units]+lin_channels[::-1],
+        linear_channels=[repr_units]+lin_channels[::-1],
         use_bias=True, activation_fn=act_fn).to(device)
     
     orthogonal_matrix = orth.OrthogonalMatrix(

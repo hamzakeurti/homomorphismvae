@@ -49,6 +49,7 @@ class AutoEncoder(nn.Module):
         self.variational = variational
         self.intervene = intervene
         self.n_transform_units = self.grp_transform.n_units
+        self.n_repr_units = decoder._lin_channels[0]
 
     def forward(self, x, dz):
         h = x

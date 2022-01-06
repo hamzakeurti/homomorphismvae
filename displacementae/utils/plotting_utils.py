@@ -87,6 +87,12 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     corresponding images are forwarded through the encoder.
     Resulting latent units are 
     """
+    n_repr_units = nets.n_repr_units
+    if max(plot_latent) >= n_repr_units:
+        raise ValueError(
+            "Requested plotting a representational unit which index: "+
+            f"{max(plot_latent)} is too large for the "+
+            f"number of representational units: {n_repr_units}")
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
     if config.plot_on_black:
         plt.style.use('dark_background')
