@@ -40,6 +40,9 @@ _TWO_D_MISC.y_range_narrow = [-0.3, 0.3]
 
 def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode, 
                         figname):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+        
     img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(img1).to(device)
     X2 = torch.FloatTensor(img2).to(device)
@@ -81,7 +84,9 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     Resulting latent units are 
     """
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
-
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+    
     if mode == 'autoencoder':    
         encoder = nets.encoder
 
@@ -133,6 +138,8 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
 
 T_SERIES = ["bce_loss","kl_loss","learned_alpha"]
 def plot_curves(shared,config,logger,figname=None,val_name=None):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
     epochs = np.arange(len(vars(shared)[T_SERIES[0]]))*config.val_epoch
     for key in T_SERIES:
         if key in shared:
