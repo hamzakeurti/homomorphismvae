@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2021 Hamza Keurti
+# Copyright 2022 Hamza Keurti
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,27 @@ import networks.geometric.prodrepr.action_lookup as al
 import networks.variational_utils as var_utils
 
 class AutoencoderProdrep(ae.AutoEncoder):
+    """An autoencoder with a transformation of the latent from a known action.
+    The transformation is a matrix multiplication with an SO(n) matrix 
+    represented by a product of matrices of 2D rotations. 
+
+    Args:
+        encoder (`torch.nn.Module`): Maps the input to a latent representation, 
+                or, if :param:variational is `True` to a posterior distribution.
+        decoder (`torch.nn.Module`): Maps from the latent space back to the 
+                input space.
+        n_actions (int): Number of possible actions.
+        n_repr_units (int): Total number of representation units.
+        n_transform_units (int): Number of representation units acted on by the 
+                action representation.
+        variational (bool): Whether this is a variational autoencoder. 
+                If `True`, the :method:`forward` outputs the reconstruction, 
+                the mean and logvar.  
+    """
     def __init__(self,encoder, decoder, n_actions, n_repr_units, 
                  n_transform_units, variational=True):
+        """Constructor Method
+        """
         super().__init__(encoder, decoder, variational=variational, 
                 n_repr_units = n_repr_units, grp_transformation = None, 
                 specified_step=0, intervene=True)
@@ -38,6 +57,21 @@ class AutoencoderProdrep(ae.AutoEncoder):
                                              dim=self.n_transform_units)
 
     def forward(self, x, a):
+        """
+        encodes input signals, transforms with input actions then decodes.
+
+        Args:
+            x (ndarray): input signal.
+            a (ndarray): input actions. Each action is an int in the range 
+                        (0,n_actions).
+
+
+        Returns:
+            (ndarray): If :param:`variational` is `False`: 
+                            output of the decoder. 
+                       If :param:`variational` is `True`:
+                            output of decoder, mu, logvar.
+        """
         h = x
         # Through encoder
         h = self.encoder(x)
