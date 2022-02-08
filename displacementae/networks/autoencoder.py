@@ -27,8 +27,8 @@ import networks.variational_utils as var_utils
 
 class AutoEncoder(nn.Module):
 
-    def __init__(self, encoder, decoder, grp_transformation, specified_step=0,
-                 variational=True, intervene=True):
+    def __init__(self, encoder, decoder, grp_transformation, n_repr_units, 
+                 specified_step=0, variational=True, intervene=True):
         """
         An autoencoder neural network with group transformation applied to th 
 
@@ -48,8 +48,12 @@ class AutoEncoder(nn.Module):
         self.specified_step = specified_step
         self.variational = variational
         self.intervene = intervene
-        self.n_transform_units = self.grp_transform.n_units
-        self.n_repr_units = decoder._lin_channels[0]
+        if grp_transformation is not None:
+            self.n_transform_units = self.grp_transform.n_units
+        else:
+            self.n_transform_units = 0
+        self.n_repr_units = n_repr_units
+
 
     def forward(self, x, dz):
         h = x
