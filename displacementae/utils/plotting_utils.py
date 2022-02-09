@@ -38,7 +38,7 @@ _TWO_D_MISC.x_range_narrow = [-0.3, 0.3]
 _TWO_D_MISC.y_range_narrow = [-0.3, 0.3]
 
 
-def plot_reconstruction(dhandler, nets, shared, config, device, logger, mode, 
+def plot_reconstruction(dhandler, nets, config, device, logger, 
                         figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
