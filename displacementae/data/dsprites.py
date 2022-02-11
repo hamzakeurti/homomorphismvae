@@ -52,7 +52,7 @@ class DspritesDataset(Dataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
                 fixed_values=[], fixed_in_intervention=[], intervene=True,
                 intervention_range=[-1,1], num_train = 200, num_val=30,
-                cyclic_trans=False):
+                cyclic_trans=False, dist = 'uniform'):
         super().__init__()
 
         # Random generator
@@ -62,6 +62,9 @@ class DspritesDataset(Dataset):
             rand = np.random
         self._rand = rand
         self._rseed = rseed
+
+        # Distribution
+        self.dist = dist
 
         # Number of samples
         self.num_train = num_train
@@ -103,6 +106,12 @@ class DspritesDataset(Dataset):
         self.latent_bases_varied = np.concatenate([
             np.cumprod(self.num_latents_varied[::-1])[::-1][1:],[1]])    
         self.dataset_size = np.prod(self.num_latents_varied)
+
+        #number of unit actions
+        if self.fixed_in_intervention:
+            self.action_dim = self.n_joints - len(self.fixed_in_intervention)
+        else:
+            self.action_dim  = self.n_joints
 
         data = {}
         data["in_shape"] = [1,64,64]
@@ -168,6 +177,15 @@ class DspritesDataset(Dataset):
         else:
             return image1, latents1, image1, latents1, 0
 
+    @property
+    def n_actions(self):
+        if self.dist == 'uniform':
+            return  (self.intervention_range[1] - self.intervention_range[0])\
+                    ** self.action_dim
+        if self.dist == 'disentangled':
+            return (self.intervention_range[1] - self.intervention_range[0])\
+                    * self.action_dim
+    
     def get_latent_name(self,id):
         """
         Returns the name of the latent corresponding to the input id.
@@ -199,20 +217,41 @@ class DspritesDataset(Dataset):
         """"""
         joints = self.latents[index]
         #sample displacement
-        if self.fixed_in_intervention:
-            len_dj = self.n_joints - len(self.fixed_in_intervention)
-        else:
-            len_dj = self.n_joints
         dj = np.zeros((joints.shape[0],self.n_joints)).squeeze()
-        dj[...,self.intervened_on] = self._rand.randint(
-            low=self.intervention_range[0],high=self.intervention_range[1]+1,
-            size = (joints.shape[0],len_dj))
+        dj[...,self.intervened_on] = self._sample_displacement(
+            self.intervention_range,joints.shape[0],dist = self.dist)
+        # dj[...,self.intervened_on] = self._rand.randint(
+        #     low=self.intervention_range[0],high=self.intervention_range[1]+1,
+        #     size = (joints.shape[0],len_dj)) # TODO: Make a function for this.
+        
         new_joints = joints
         new_joints,dj = self._intervene_linear(new_joints,dj)
         new_joints,dj = self._intervene_circular(new_joints,dj)
         indices2 = self.joints_2_index(new_joints)
         return indices2,dj
 
+    def _sample_displacement(self,range,n_samples,dist='uniform'):
+        """Sample displacements around initial latent vector.
+
+        Args:
+            range, list: Lower and upper bound of displacement values.
+            n_samples, int: Number of samples.
+            dim, int: Dimensionality of the displacement vector.
+            dist, str: Distribution choice to sample from, defaults to 'uniform'
+        
+        Returns:
+            ndarray: displacement vector.
+        TODO test
+        """
+        if dist == 'uniform':
+            d = self._rand.randint(low=range[0], high=range[1]+1, 
+                                   size=(n_samples,self.action_dim))
+        elif dist == 'disentangled':
+            mask = self._rand.randint(self.action_dim,size=n_samples)
+            d = np.zeros(shape=(n_samples,self.action_dim))
+            d[mask] = self._rand.randint(low=range[0], high=range[1]+1, 
+                                   size=(n_samples,1))
+        return d
 
     def _intervene_linear(self,joints,dj):
         new_joints = joints
@@ -274,7 +313,8 @@ class DspritesDataset(Dataset):
         latents_spans = [np.arange(self.num_latents_varied[i]) \
             if i in varied 
             else np.array(self.num_latents[i]//2) 
-            for i in range(len(self.varied_in_sampling))]
+            for i in range(len(self.varied_in_sampling))] # TODO this probably wrong
+        print(latents_spans)
         mesh = np.meshgrid(*latents_spans)
         mesh = [m.reshape(-1) for m in mesh]
         all_latents = np.array([[m[j] for m in mesh] \
