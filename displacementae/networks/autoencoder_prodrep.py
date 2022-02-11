@@ -25,6 +25,7 @@ import torch
 import networks.autoencoder as ae
 import networks.geometric.prodrepr.action_lookup as al
 import networks.variational_utils as var_utils
+import utils.data_utils as udutils
 
 class AutoencoderProdrep(ae.AutoEncoder):
     """An autoencoder with a transformation of the latent from a known action.
@@ -63,7 +64,7 @@ class AutoencoderProdrep(ae.AutoEncoder):
         Args:
             x (ndarray): input signal.
             a (ndarray): input actions. Each action is an int in the range 
-                        (0,n_actions).
+                        (0,n_actions). TODO input is a normal acion converted within function call?
 
 
         Returns:
@@ -72,6 +73,7 @@ class AutoencoderProdrep(ae.AutoEncoder):
                        If :param:`variational` is `True`:
                             output of decoder, mu, logvar.
         """
+        a = udutils.action_to_id(a)
         h = x
         # Through encoder
         h = self.encoder(x)
