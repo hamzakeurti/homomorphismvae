@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_prodred.py
+# @title          :displacementae/autoencoder/train_prodrepr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :09/02/2022
@@ -22,7 +22,8 @@
 
 import __init__
 
-import autoencoder.train_utils as tutils
+
+import utils.train_utils as ututils
 
 if __name__=='__main__':
-    tutils.run(mode='prodrep')
+    ututils.run(mode='autoencoder',repr='prodrepr')
