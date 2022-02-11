@@ -27,9 +27,11 @@ from networks.cnn import CNN
 from networks.transposedcnn import TransposedCNN 
 import networks.geometric.orthogonal as orth
 import utils.misc as misc
-from networks.autoencoder import AutoEncoder
+import networks.autoencoder as ae
+import networks.autoencoder_prodrep as aeprod
 
 BLOCK_REPR = 'blockrepr'
+PROD_REPR = 'prodrepr'
 AUTOENCODER = 'autoencoder'
 
 def setup_network(config, dhandler, device, mode=AUTOENCODER, 
@@ -53,9 +55,9 @@ def setup_autoencoder_network(config, dhandler, device, repr):
         dhandler (dataset): Handler for dataset.
         device (str): indicates device where parameters are stored.
         repr (str): Indicates which group representation to use for the 
-                    observed actions.
+                    observed actions. in ['block_repr','prod_repr']
                     if 'block_repr': group representation is block diagonal 
-                    2D rotation matrices.
+                        2D rotation matrices.
     """
     in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
     conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
@@ -118,13 +120,19 @@ def setup_autoencoder_network(config, dhandler, device, repr):
     
     if repr == BLOCK_REPR:
         orthogonal_matrix = orth.OrthogonalMatrix(
-            transformation=orth.OrthogonalMatrix.BLOCKS, n_units=transformed_units, 
-            device=device, learn_params=config.learn_geometry).to(device)
+            transformation=orth.OrthogonalMatrix.BLOCKS, 
+            n_units=transformed_units, device=device, 
+            learn_params=config.learn_geometry).to(device)
         
-        autoencoder = AutoEncoder(
-            encoder=encoder,decoder=decoder, grp_transformation=orthogonal_matrix,
+        autoencoder = ae.AutoEncoder(
+            encoder=encoder,decoder=decoder, 
+            grp_transformation=orthogonal_matrix,
             variational=variational,specified_step=specified_step, 
             n_repr_units=repr_units, intervene=config.intervene)
+    elif repr == PROD_REPR:
+        autoencoder = aeprod.AutoencoderProdrep(encoder,decoder,4,# TODO fix this
+                                                repr_units,transformed_units,
+                                                variational=variational)
         
     else:
         raise NotImplementedError
