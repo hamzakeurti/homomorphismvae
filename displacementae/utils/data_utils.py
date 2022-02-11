@@ -27,6 +27,7 @@ Collection of methods used to adjust data to different approaches.
 """
 
 import numpy as np
+import torch
 
 def action_to_id(a):
     """
@@ -46,8 +47,9 @@ def action_to_id(a):
         implement in more general cases where action is not necessarily sparse.
     """
     dim = a.shape[-1]
-    bases = 1+np.arange(dim)
-    return np.maximum(a,0)@(bases) + np.minimum(a,0)@(-bases-dim)
+    bases = 1+torch.arange(dim)
+    return torch.zeros()
+    # return torch.relu(a)@(bases) + torch.relu(-a)@(bases+dim) # TODO 
 
     
 
