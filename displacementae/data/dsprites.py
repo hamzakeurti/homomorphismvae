@@ -308,17 +308,19 @@ class DspritesDataset(Dataset):
     def get_indices_vary_latents(self,vary_latents):
         indices = []
         assert np.array([j in self.varied_in_sampling for j in vary_latents]).all()
-        varied = [self.varied_in_sampling.index(i) \
-            for i in vary_latents]
-        latents_spans = [np.arange(self.num_latents_varied[i]) \
-            if i in varied 
-            else np.array(self.num_latents[i]//2) 
-            for i in range(len(self.varied_in_sampling))] # TODO this probably wrong
-        print(latents_spans)
+
+        latents_spans = []
+        for i in range(self.n_joints):
+            if i in vary_latents:
+                latents_spans.append(np.arange(self.num_latents[i]))
+            elif i in self.varied_in_sampling:
+                latents_spans.append(self.num_latents[i]//2)
+
         mesh = np.meshgrid(*latents_spans)
         mesh = [m.reshape(-1) for m in mesh]
         all_latents = np.array([[m[j] for m in mesh] \
             for j in range(len(mesh[0]))])
+        
         indices = np.dot(all_latents,self.latent_bases_varied)
         return indices
 
