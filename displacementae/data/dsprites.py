@@ -219,10 +219,8 @@ class DspritesDataset(Dataset):
         #sample displacement
         dj = np.zeros((joints.shape[0],self.n_joints)).squeeze()
         dj[...,self.intervened_on] = self._sample_displacement(
-            self.intervention_range,joints.shape[0],dist = self.dist)
-        # dj[...,self.intervened_on] = self._rand.randint(
-        #     low=self.intervention_range[0],high=self.intervention_range[1]+1,
-        #     size = (joints.shape[0],len_dj)) # TODO: Make a function for this.
+            self.intervention_range, self.action_dim, joints.shape[0],
+            dist = self.dist)
         
         new_joints = joints
         new_joints,dj = self._intervene_linear(new_joints,dj)
@@ -230,7 +228,7 @@ class DspritesDataset(Dataset):
         indices2 = self.joints_2_index(new_joints)
         return indices2,dj
 
-    def _sample_displacement(self,range,n_samples,dist='uniform'):
+    def _sample_displacement(self,range,dim,n_samples,dist='uniform'):
         """Sample displacements around initial latent vector.
 
         Args:
@@ -245,11 +243,12 @@ class DspritesDataset(Dataset):
         """
         if dist == 'uniform':
             d = self._rand.randint(low=range[0], high=range[1]+1, 
-                                   size=(n_samples,self.action_dim))
+                                   size=(n_samples,dim))
         elif dist == 'disentangled':
-            mask = self._rand.randint(self.action_dim,size=n_samples)
-            d = np.zeros(shape=(n_samples,self.action_dim))
-            d[mask] = self._rand.randint(low=range[0], high=range[1]+1, 
+            eye = np.eye(dim)
+            # Random one hot vectors
+            mask = eye[self._rand.randint(dim,size=n_samples)] 
+            d = mask * self._rand.randint(low=range[0], high=range[1]+1, 
                                    size=(n_samples,1))
         return d
 
