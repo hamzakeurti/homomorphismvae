@@ -47,9 +47,8 @@ def action_to_id(a):
         implement in more general cases where action is not necessarily sparse.
     """
     dim = a.shape[-1]
-    bases = 1+torch.arange(dim)
-    return torch.zeros()
-    # return torch.relu(a)@(bases) + torch.relu(-a)@(bases+dim) # TODO 
+    bases = 1+torch.arange(dim).type_as(a)
+    return (torch.relu(a)@(bases) + torch.relu(-a)@(bases+dim)).int() # TODO 
 
     
 

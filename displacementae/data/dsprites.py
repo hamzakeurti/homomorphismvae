@@ -237,7 +237,6 @@ class DspritesDataset(Dataset):
         
         Returns:
             ndarray: displacement vector.
-        TODO test
         """
         if dist == 'uniform':
             d = self._rand.randint(low=range[0], high=range[1]+1, 
