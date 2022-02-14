@@ -180,10 +180,10 @@ class DspritesDataset(Dataset):
     @property
     def n_actions(self):
         if self.dist == 'uniform':
-            return  (self.intervention_range[1] - self.intervention_range[0])\
+            return  (self.intervention_range[1] - self.intervention_range[0]+1)\
                     ** self.action_dim
         if self.dist == 'disentangled':
-            return (self.intervention_range[1] - self.intervention_range[0])\
+            return (self.intervention_range[1] - self.intervention_range[0]+1)\
                     * self.action_dim
     
     def get_latent_name(self,id):

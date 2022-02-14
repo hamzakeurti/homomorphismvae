@@ -130,7 +130,8 @@ def setup_autoencoder_network(config, dhandler, device, repr):
             variational=variational,specified_step=specified_step, 
             n_repr_units=repr_units, intervene=config.intervene)
     elif repr == PROD_REPR:
-        autoencoder = aeprod.AutoencoderProdrep(encoder,decoder,4,# TODO fix this
+        autoencoder = aeprod.AutoencoderProdrep(encoder,decoder,
+                                                dhandler.n_actions,# TODO fix this
                                                 repr_units,transformed_units,
                                                 variational=variational)
         
