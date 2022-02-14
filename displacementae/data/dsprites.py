@@ -221,9 +221,7 @@ class DspritesDataset(Dataset):
         dj[...,self.intervened_on] = self._sample_displacement(
             self.intervention_range, self.action_dim, joints.shape[0],
             dist = self.dist)
-        
-        new_joints = joints
-        new_joints,dj = self._intervene_linear(new_joints,dj)
+        new_joints,dj = self._intervene_linear(joints,dj)
         new_joints,dj = self._intervene_circular(new_joints,dj)
         indices2 = self.joints_2_index(new_joints)
         return indices2,dj
@@ -253,7 +251,7 @@ class DspritesDataset(Dataset):
         return d
 
     def _intervene_linear(self,joints,dj):
-        new_joints = joints
+        new_joints = joints.copy()
         lin_idx = self.lin_idx
         new_joints[...,lin_idx] = np.clip(
             joints[...,lin_idx] + dj[...,lin_idx],0,self.num_latents[lin_idx]-1)
@@ -270,7 +268,7 @@ class DspritesDataset(Dataset):
         num_latents = self.num_latents[rot_idx]
         # Last coincides with first 
         num_latents[0] = num_latents[0] - 1
-        new_joints = joints
+        new_joints = joints.copy()
         new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
              % num_latents
         return new_joints,dj
