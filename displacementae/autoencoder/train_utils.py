@@ -34,6 +34,9 @@ import utils.sim_utils as sim_utils
 import utils.misc as misc
 import utils.checkpoint as ckpt
 
+import networks.geometric.orthogonal as orth
+import networks.autoencoder_prodrep as aeprod
+
 
 def setup_optimizer(params, config):
     lr = config.lr
@@ -81,7 +84,8 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 log_text += f'+\tKL {kl_loss.item():.5f}'
                 shared.kl_loss.append(kl_loss.item())
             logger.info(log_text)
-            if nets.grp_transform.learn_params:
+            if isinstance(nets.grp_transform,orth.OrthogonalMatrix) and \
+                                        nets.grp_transform.learn_params:
                 alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
                 logger.info(f'learned alpha {alpha}')
                 if not hasattr(shared,"learned_alpha"):
@@ -147,6 +151,10 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                 total_loss = bce_loss
             total_loss.backward()
             optim.step()
+            if isinstance(nets,aeprod.AutoencoderProdrep):
+                # Clear the stored matrices so they are regenerated at next 
+                # iteration. 
+                nets.grp_transform.clear_representations()
             ### Logging
             log_text = f'[{epoch}:{i}] loss\t{total_loss.item():.2f} ' 
             if nets.variational:
