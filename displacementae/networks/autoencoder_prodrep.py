@@ -46,7 +46,7 @@ class AutoencoderProdrep(ae.AutoEncoder):
                 the mean and logvar.  
     """
     def __init__(self,encoder, decoder, n_actions, n_repr_units, 
-                 n_transform_units, variational=True):
+                 n_transform_units, variational=True, device='cpu'):
         """Constructor Method
         """
         super().__init__(encoder, decoder, variational=variational, 
@@ -55,7 +55,7 @@ class AutoencoderProdrep(ae.AutoEncoder):
         self.n_transform_units = n_transform_units
         self.n_actions = n_actions
         self.grp_transform = al.ActionLookup(self.n_actions,
-                                             dim=self.n_transform_units)
+                                        dim=self.n_transform_units).to(device)
 
     def forward(self, x, a):
         """

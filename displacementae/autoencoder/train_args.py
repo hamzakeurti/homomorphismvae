@@ -23,7 +23,7 @@
 import argparse
 from datetime import datetime
 
-def parse_cmd_arguments():
+def parse_cmd_arguments(repr):
     curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     description = 'Geometric Autoencoder'
     dout_dir = './out/run_'+curr_date
@@ -32,6 +32,8 @@ def parse_cmd_arguments():
     train_args(parser)
     net_args(parser)
     misc_args(parser,dout_dir)
+    if repr == 'prodrepr':
+        prodrepr_args(parser)
     config = parser.parse_args()
     return config
 
@@ -166,3 +168,8 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--checkpoint', action='store_true', 
                         help='Saves a checkpoint of the model and optimizer '+
                         'at the end of training')
+
+def prodrepr_args(parser):
+    pgroup = parser.add_argument_group('Prod Repr options')
+    pgroup.add_argument('--repr_dim', type=int, 
+                        help='Dimensionality of the group representation.')

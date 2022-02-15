@@ -80,8 +80,14 @@ def setup_autoencoder_network(config, dhandler, device, repr):
         trans_kernel = kernel_sizes
     
     n_free_units = config.n_free_units
-    transformed_units = dhandler.action_shape[0] * 2
+
+    if repr == BLOCK_REPR:
+        transformed_units = dhandler.action_shape[0] * 2
+    elif repr == PROD_REPR:
+        transformed_units = config.repr_dim
+
     repr_units =  transformed_units + n_free_units
+
     lin_channels = misc.str_to_ints(config.lin_channels)
     if config.net_act=='relu':
         act_fn = torch.relu
@@ -128,12 +134,12 @@ def setup_autoencoder_network(config, dhandler, device, repr):
             encoder=encoder,decoder=decoder, 
             grp_transformation=orthogonal_matrix,
             variational=variational,specified_step=specified_step, 
-            n_repr_units=repr_units, intervene=config.intervene)
+            n_repr_units=repr_units, intervene=config.intervene).to(device)
     elif repr == PROD_REPR:
-        autoencoder = aeprod.AutoencoderProdrep(encoder,decoder,
-                                                dhandler.n_actions,# TODO fix this
-                                                repr_units,transformed_units,
-                                                variational=variational)
+        autoencoder = aeprod.AutoencoderProdrep(encoder=encoder,decoder=decoder,
+                n_actions=dhandler.n_actions,# TODO fix this
+                n_repr_units=repr_units, n_transform_units=transformed_units,
+                variational=variational,device = device).to(device)
         
     else:
         raise NotImplementedError

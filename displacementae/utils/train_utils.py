@@ -43,7 +43,7 @@ def run(mode='autoencoder',repr='blockrepr'):
     if mode == 'autoencoder':
         import autoencoder.train_args as train_args
         import autoencoder.train_utils as tutils    
-    config = train_args.parse_cmd_arguments()
+    config = train_args.parse_cmd_arguments(repr=repr)
     # setup environment
     device, logger = sim_utils.setup_environment(config)
     sim_utils.backup_cli_command(config)
