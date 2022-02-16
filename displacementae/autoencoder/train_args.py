@@ -56,6 +56,9 @@ def data_args(parser):
     dgroup.add_argument('--displacement_range', type=str,
                         default="-3,3", help='Range of uniform distribution '+
                         'from which to sample future joint position')
+    dgroup.add_argument('--distrib', type=str, default='uniform', 
+                        help='Displacement sampling distribution',
+                        choices=['uniform','disentangled'])
     dgroup.add_argument('--data_root', type=str, 
                         help='Root directory of the dataset directory.')
     dgroup.add_argument('--data_random_seed', default=42,type=int,
