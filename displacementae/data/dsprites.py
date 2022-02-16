@@ -108,7 +108,7 @@ class DspritesDataset(Dataset):
         self.dataset_size = np.prod(self.num_latents_varied)
 
         #number of unit actions
-        if self.fixed_in_intervention:
+        if len(self.fixed_in_intervention)>0:
             self.action_dim = self.n_joints - len(self.fixed_in_intervention)
         else:
             self.action_dim  = self.n_joints
