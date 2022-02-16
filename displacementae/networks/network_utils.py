@@ -134,12 +134,14 @@ def setup_autoencoder_network(config, dhandler, device, repr):
             encoder=encoder,decoder=decoder, 
             grp_transformation=orthogonal_matrix,
             variational=variational,specified_step=specified_step, 
-            n_repr_units=repr_units, intervene=config.intervene).to(device)
+            n_repr_units=repr_units, intervene=config.intervene, 
+            spherical=config.spherical)
     elif repr == PROD_REPR:
         autoencoder = aeprod.AutoencoderProdrep(encoder=encoder,decoder=decoder,
-                n_actions=dhandler.n_actions,# TODO fix this
+                n_actions=dhandler.n_actions,
                 n_repr_units=repr_units, n_transform_units=transformed_units,
                 variational=variational,device = device).to(device)
+
         
     else:
         raise NotImplementedError

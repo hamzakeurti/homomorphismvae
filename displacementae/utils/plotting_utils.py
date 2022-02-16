@@ -96,9 +96,6 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
     if config.plot_on_black:
         plt.style.use('dark_background')
-    
-    if mode == 'autoencoder':    
-        encoder = nets.encoder
 
     indices = dhandler.get_indices_vary_latents(vary_latents)
     latents = dhandler.latents[indices][:,vary_latents]
@@ -112,7 +109,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
         images = dhandler.images[batch_indices]
         X = torch.FloatTensor(images).to(device)
         with torch.no_grad():
-            h = encoder(X)
+            h, mu, logvar = nets.encode(X)
             results.append(h[:,plot_latent].cpu().numpy())
     results = np.vstack(results).squeeze()
 
