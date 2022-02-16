@@ -140,7 +140,10 @@ def net_args(parser):
     ngroup.add_argument('--n_free_units',type=int, default=0, 
                         help='number of representation units ' +
                         'not transformed by the action representations.')
-
+    ngroup.add_argument('--spherical',action='store_true', 
+                        help='If True, the representation vector is ' + 
+                        'normalized prior to being forwarded to transform or ' +
+                        'decoder')
 
 def misc_args(parser,dout_dir=None):
     if dout_dir is None:

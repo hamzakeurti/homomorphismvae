@@ -124,7 +124,8 @@ def setup_autoencoder_network(config, dhandler, device, repr):
         autoencoder = AutoEncoder(
             encoder=encoder,decoder=decoder, grp_transformation=orthogonal_matrix,
             variational=variational,specified_step=specified_step, 
-            n_repr_units=repr_units, intervene=config.intervene)
+            n_repr_units=repr_units, intervene=config.intervene, 
+            spherical=config.spherical)
         
     else:
         raise NotImplementedError
