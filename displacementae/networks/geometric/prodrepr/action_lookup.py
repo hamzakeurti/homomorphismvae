@@ -34,12 +34,13 @@ import torch
 import networks.geometric.prodrepr.product_representation as rep
 
 class ActionLookup(nn.Module):
-    def __init__(self, n_actions, dim):
+    def __init__(self, n_actions, dim, device='cpu'):
         super().__init__()
         self.dim = dim
         self.n_actions = n_actions
-        self.action_reps = [
-            rep.ProductRepresentation(dim) for _ in range(n_actions)]
+        self.device = device
+        self.action_reps = nn.ModuleList([
+            rep.ProductRepresentation(dim,device) for _ in range(n_actions)])
         
     def forward(self, z, action):
         """

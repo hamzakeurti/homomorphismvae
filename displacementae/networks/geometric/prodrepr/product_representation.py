@@ -32,8 +32,9 @@ import torch
 import torch.nn as nn
 
 class ProductRepresentation(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, device):
         super().__init__()
+        self.device = device
         self.dim = dim
         self.n_params = int(dim*(dim-1)/2) 
         self.thetas = nn.parameter.Parameter(
@@ -59,7 +60,7 @@ class ProductRepresentation(nn.Module):
                     k+=1
                     c, s = torch.cos(theta_ij), torch.sin(theta_ij)
 
-                    rotation_i = torch.eye(self.dim, self.dim)
+                    rotation_i = torch.eye(self.dim, self.dim,device=self.device)
                     rotation_i[i, i] = c
                     rotation_i[i, i+j+1] = s
                     rotation_i[j+i+1, i] = -s

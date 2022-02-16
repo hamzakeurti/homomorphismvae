@@ -55,7 +55,7 @@ class AutoencoderProdrep(ae.AutoEncoder):
         self.n_transform_units = n_transform_units
         self.n_actions = n_actions
         self.grp_transform = al.ActionLookup(self.n_actions,
-                                        dim=self.n_transform_units).to(device)
+                        dim=self.n_transform_units,device=device)
 
     def forward(self, x, a):
         """
