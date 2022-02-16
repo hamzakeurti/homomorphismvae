@@ -140,7 +140,8 @@ def setup_autoencoder_network(config, dhandler, device, repr):
         autoencoder = aeprod.AutoencoderProdrep(encoder=encoder,decoder=decoder,
                 n_actions=dhandler.n_actions,
                 n_repr_units=repr_units, n_transform_units=transformed_units,
-                variational=variational,device = device).to(device)
+                variational=variational,device = device, 
+                spherical=config.spherical).to(device)
 
         
     else:

@@ -46,12 +46,13 @@ class AutoencoderProdrep(ae.AutoEncoder):
                 the mean and logvar.  
     """
     def __init__(self,encoder, decoder, n_actions, n_repr_units, 
-                 n_transform_units, variational=True, device='cpu'):
+                 n_transform_units, variational=True, device='cpu', 
+                 spherical=False):
         """Constructor Method
         """
         super().__init__(encoder, decoder, variational=variational, 
                 n_repr_units = n_repr_units, grp_transformation = None, 
-                specified_step=0, intervene=True)
+                specified_step=0, intervene=True, spherical=spherical)
         self.n_transform_units = n_transform_units
         self.n_actions = n_actions
         self.grp_transform = al.ActionLookup(self.n_actions,
@@ -73,15 +74,12 @@ class AutoencoderProdrep(ae.AutoEncoder):
                        If :param:`variational` is `True`:
                             output of decoder, mu, logvar.
         """
-        a = udutils.action_to_id(a)
         h = x
         # Through encoder
-        h = self.encoder(x)
-        if self.variational:
-            half = h.shape[1]//2
-            mu, logvar = h[:, : half], h[:, half:]
-            h = var_utils.reparametrize(mu, logvar)
+        h, mu, logvar = self.encode(h)
+
         # Through geometry
+        a = udutils.action_to_id(a)
         temp = []
         for i in range(x.shape[0]):
             temp.append(
