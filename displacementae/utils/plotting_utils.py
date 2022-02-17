@@ -34,6 +34,8 @@ _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
 _TWO_D_MISC = Namespace()
 _TWO_D_MISC.x_range = [-5, 5]
 _TWO_D_MISC.y_range = [-5, 5]
+_TWO_D_MISC.x_range_medium = [-1.2, 1.2]
+_TWO_D_MISC.y_range_medium = [-1.2, 1.2]
 _TWO_D_MISC.x_range_narrow = [-0.3, 0.3]
 _TWO_D_MISC.y_range_narrow = [-0.3, 0.3]
 
@@ -132,7 +134,10 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             ax.set_xlabel(f'latent {plot_latent[0]}', fontsize=ts)
             ax.set_ylabel(f'latent {plot_latent[1]}', fontsize=ts)
             dx = np.abs(results).max()
-            if dx <= 0.3:
+            if config.spherical:
+                ax.set_xlim(_TWO_D_MISC.x_range_medium)
+                ax.set_ylim(_TWO_D_MISC.y_range_medium)
+            elif dx <= 0.3:
                 ax.set_xlim(_TWO_D_MISC.x_range_narrow)
                 ax.set_ylim(_TWO_D_MISC.y_range_narrow)
             else:
