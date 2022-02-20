@@ -48,7 +48,7 @@ def action_to_id(a):
     """
     dim = a.shape[-1]
     bases = 1+torch.arange(dim).type_as(a)
-    return (torch.relu(a)@(bases) + torch.relu(-a)@(bases+dim)).int() # TODO 
+    return (torch.relu(a)@(bases) + torch.relu(-a)@(bases+dim)).int()  
 
     
 

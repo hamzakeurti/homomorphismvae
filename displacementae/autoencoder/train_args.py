@@ -179,3 +179,11 @@ def prodrepr_args(parser):
     pgroup = parser.add_argument_group('Prod Repr options')
     pgroup.add_argument('--repr_dim', type=int, 
                         help='Dimensionality of the group representation.')
+    pgroup.add_argument('--entanglement_loss', action='store_true', 
+                        help='Whether to use the entanglement loss.')
+    pgroup.add_argument('--entanglement_weight', type=float, default=0.01, 
+                        help='Weight of the entanglement loss.')
+    pgroup.add_argument('--plot_thetas', action='store_true', 
+                        help='Whether to plot the learned thetas.')
+    
+    

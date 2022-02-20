@@ -50,11 +50,14 @@ def setup_optimizer(params, config):
 
 def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False):
+    is_prodrepr = isinstance(nets,aeprod.AutoencoderProdrep)
     nets.eval()
     if epoch == 0:
         shared.bce_loss = []
         if config.variational:
             shared.kl_loss = []
+        if is_prodrepr and config.entanglement_loss:
+            shared.tang_loss = []
     if epoch % config.val_epoch == 0:
 
         with torch.no_grad():
@@ -76,6 +79,9 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 total_loss = config.beta * kl_loss + bce_loss
             else:
                 total_loss = bce_loss        
+            if is_prodrepr and config.entanglement_loss:
+                tang_loss = nets.entanglement_loss()
+                total_loss += config.entanglement_weight * tang_loss
             logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
             log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
             shared.bce_loss.append(bce_loss.item())
@@ -83,6 +89,9 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
                 log_text += f'+\tKL {kl_loss.item():.5f}'
                 shared.kl_loss.append(kl_loss.item())
+            if is_prodrepr and config.entanglement_loss:
+                log_text += f'=\tTANG {tang_loss.item():.2f}'
+                shared.tang_loss.append(tang_loss.item())
             logger.info(log_text)
             if isinstance(nets.grp_transform,orth.OrthogonalMatrix) and \
                                         nets.grp_transform.learn_params:
@@ -115,9 +124,13 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                                         vary_latents=vary_latents[i],
                                         plot_latent=plot_latent[i], 
                                         figname=figname)
+            if is_prodrepr and config.plot_thetas:
+                plt_utils.plot_thetas(dhandler, nets, config, logger, figname=figname)
     nets.train()
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
+    is_prodrepr = isinstance(nets,aeprod.AutoencoderProdrep)
+    
     params = nets.parameters()
     
     optim = setup_optimizer(params, config)
@@ -143,12 +156,14 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
             ### Losses
             # Reconstruction
             bce_loss = var_utils.bce_loss(x2_hat, x2)
+            total_loss = bce_loss
             if nets.variational:
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
-                total_loss = config.beta * kl_loss + bce_loss
-            else:
-                total_loss = bce_loss
+                total_loss += config.beta * kl_loss
+            if is_prodrepr and config.entanglement_loss:
+                tang_loss = nets.entanglement_loss()
+                total_loss += config.entanglement_weight * tang_loss
             total_loss.backward()
             optim.step()
             if isinstance(nets,aeprod.AutoencoderProdrep):
@@ -160,6 +175,9 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
             if nets.variational:
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
                 log_text += f'+\tKL {kl_loss.item():.5f}'
+            if is_prodrepr and config.entanglement_loss:
+                log_text += f'=\tTANG {tang_loss.item():.2f}'
+
             logger.info(log_text)
     
     if config.checkpoint:
