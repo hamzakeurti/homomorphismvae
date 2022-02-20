@@ -78,3 +78,9 @@ class ActionLookup(nn.Module):
         rep_thetas = torch.load(path)
         for rep in self.action_reps:
             rep.set_thetas(rep_thetas.pop(0))
+
+    def entanglement_loss(self):
+        loss = 0
+        for rep in self.action_reps:
+            loss += rep.entanglement_loss()
+        return loss/self.n_actions

@@ -97,3 +97,6 @@ class AutoencoderProdrep(ae.AutoEncoder):
             return h, mu, logvar
         else:
             return h, None, None
+
+    def entanglement_loss(self):
+        return self.grp_transform.entanglement_loss()

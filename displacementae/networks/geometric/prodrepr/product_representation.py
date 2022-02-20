@@ -79,3 +79,7 @@ class ProductRepresentation(nn.Module):
             self.__matrix = chain_mult(mats)
                                     
         return self.__matrix
+
+    def entanglement_loss(self):
+        params = self.thetas.pow(2)
+        return params.sum() - params.max()
