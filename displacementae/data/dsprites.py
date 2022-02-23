@@ -207,15 +207,14 @@ class DspritesDataset(Dataset):
         dj[...,self.intervened_on] = self._rand.randint(
             low=self.intervention_range[0],high=self.intervention_range[1]+1,
             size = (joints.shape[0],len_dj))
-        new_joints = joints
-        new_joints,dj = self._intervene_linear(new_joints,dj)
+        new_joints,dj = self._intervene_linear(joints,dj)
         new_joints,dj = self._intervene_circular(new_joints,dj)
         indices2 = self.joints_2_index(new_joints)
         return indices2,dj
 
 
     def _intervene_linear(self,joints,dj):
-        new_joints = joints
+        new_joints = joints.copy()
         lin_idx = self.lin_idx
         new_joints[...,lin_idx] = np.clip(
             joints[...,lin_idx] + dj[...,lin_idx],0,self.num_latents[lin_idx]-1)
@@ -232,7 +231,7 @@ class DspritesDataset(Dataset):
         num_latents = self.num_latents[rot_idx]
         # Last coincides with first 
         num_latents[0] = num_latents[0] - 1
-        new_joints = joints
+        new_joints = joints.copy()
         new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
              % num_latents
         return new_joints,dj
@@ -269,16 +268,19 @@ class DspritesDataset(Dataset):
     def get_indices_vary_latents(self,vary_latents):
         indices = []
         assert np.array([j in self.varied_in_sampling for j in vary_latents]).all()
-        varied = [self.varied_in_sampling.index(i) \
-            for i in vary_latents]
-        latents_spans = [np.arange(self.num_latents_varied[i]) \
-            if i in varied 
-            else np.array(self.num_latents[i]//2) 
-            for i in range(len(self.varied_in_sampling))]
+
+        latents_spans = []
+        for i in range(self.n_joints):
+            if i in vary_latents:
+                latents_spans.append(np.arange(self.num_latents[i]))
+            elif i in self.varied_in_sampling:
+                latents_spans.append(self.num_latents[i]//2)
+
         mesh = np.meshgrid(*latents_spans)
         mesh = [m.reshape(-1) for m in mesh]
         all_latents = np.array([[m[j] for m in mesh] \
             for j in range(len(mesh[0]))])
+        
         indices = np.dot(all_latents,self.latent_bases_varied)
         return indices
 

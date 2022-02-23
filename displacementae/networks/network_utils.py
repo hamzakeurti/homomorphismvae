@@ -29,19 +29,33 @@ import networks.geometric.orthogonal as orth
 import utils.misc as misc
 from networks.autoencoder import AutoEncoder
 
-def setup_network(config, dhandler, device, mode='autoencoder'):
-    if mode=='autoencoder':
-        return setup_autoencoder_network(config, dhandler, device)
-    elif mode=='contrastive':
-        return
+BLOCK_REPR = 'blockrepr'
+AUTOENCODER = 'autoencoder'
 
-def setup_autoencoder_network(config, dhandler, device):
+def setup_network(config, dhandler, device, mode=AUTOENCODER, 
+                  repr=BLOCK_REPR):
+    if mode==AUTOENCODER:
+        return setup_autoencoder_network(config, dhandler, device, 
+                                         repr)
+    else:
+        raise NotImplementedError
+
+def setup_autoencoder_network(config, dhandler, device, repr):
     """
     Sets up an autoencoder with a geometric transformation of the latent units.
     
     The autoencoder consists of a contracting path, 
     a geometric transformation of the latent space and
-    an expanding path back into the input space. 
+    an expanding path back into the input space.
+
+    Args:
+        config (Namespace): configuration of the experiment, obtained from cli.
+        dhandler (dataset): Handler for dataset.
+        device (str): indicates device where parameters are stored.
+        repr (str): Indicates which group representation to use for the 
+                    observed actions.
+                    if 'block_repr': group representation is block diagonal 
+                    2D rotation matrices.
     """
     in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
     conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
@@ -65,7 +79,7 @@ def setup_autoencoder_network(config, dhandler, device):
     
     n_free_units = config.n_free_units
     transformed_units = dhandler.action_shape[0] * 2
-    latent_units =  transformed_units + n_free_units
+    repr_units =  transformed_units + n_free_units
     lin_channels = misc.str_to_ints(config.lin_channels)
     if config.net_act=='relu':
         act_fn = torch.relu
@@ -91,7 +105,7 @@ def setup_autoencoder_network(config, dhandler, device):
 
 
     # if variational, encoder outputs mean and logvar
-    encoder_outputs = (1 + variational ) * latent_units 
+    encoder_outputs = (1 + variational ) * repr_units 
     encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes, strides=strides,
         conv_channels=conv_channels,
         linear_channels=lin_channels+[encoder_outputs],
@@ -99,16 +113,21 @@ def setup_autoencoder_network(config, dhandler, device):
     
     decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,
         strides=trans_strides, conv_channels=conv_channels[::-1],
-        linear_channels=[latent_units]+lin_channels[::-1],
+        linear_channels=[repr_units]+lin_channels[::-1],
         use_bias=True, activation_fn=act_fn).to(device)
     
-    orthogonal_matrix = orth.OrthogonalMatrix(
-        transformation=orth.OrthogonalMatrix.BLOCKS, n_units=transformed_units, 
-        device=device, learn_params=config.learn_geometry).to(device)
-    
-    autoencoder = AutoEncoder(
-        encoder=encoder,decoder=decoder, grp_transformation=orthogonal_matrix,
-        variational=variational,specified_step=specified_step,
-        intervene=config.intervene)
+    if repr == BLOCK_REPR:
+        orthogonal_matrix = orth.OrthogonalMatrix(
+            transformation=orth.OrthogonalMatrix.BLOCKS, n_units=transformed_units, 
+            device=device, learn_params=config.learn_geometry).to(device)
+        
+        autoencoder = AutoEncoder(
+            encoder=encoder,decoder=decoder, grp_transformation=orthogonal_matrix,
+            variational=variational,specified_step=specified_step, 
+            n_repr_units=repr_units, intervene=config.intervene, 
+            spherical=config.spherical)
+        
+    else:
+        raise NotImplementedError
 
     return autoencoder

@@ -140,7 +140,10 @@ def net_args(parser):
     ngroup.add_argument('--n_free_units',type=int, default=0, 
                         help='number of representation units ' +
                         'not transformed by the action representations.')
-
+    ngroup.add_argument('--spherical',action='store_true', 
+                        help='If True, the representation vector is ' + 
+                        'normalized prior to being forwarded to transform or ' +
+                        'decoder')
 
 def misc_args(parser,dout_dir=None):
     if dout_dir is None:
@@ -166,3 +169,6 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--checkpoint', action='store_true', 
                         help='Saves a checkpoint of the model and optimizer '+
                         'at the end of training')
+    mgroup.add_argument('--plot_pca', action='store_true', 
+                        help='Plots scatter of representations projected '+
+                             'along 2 main pca components')

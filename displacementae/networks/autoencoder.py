@@ -22,24 +22,40 @@
 
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 import networks.variational_utils as var_utils
 
 class AutoEncoder(nn.Module):
 
-    def __init__(self, encoder, decoder, grp_transformation, specified_step=0,
-                 variational=True, intervene=True):
+    def __init__(self, encoder, decoder, grp_transformation, n_repr_units, 
+                 specified_step=0, variational=True, intervene=True, 
+                 spherical = False):
         """
-        An autoencoder neural network with group transformation applied to th 
+        An autoencoder neural network with group transformation applied to 
+        the latent space.
 
         Args:
-            shape_in (tuple, optional): tuple of height, width of the input, 
-                channels should be specified in conv_channels argument.
-            kernel_sizes (int, optional): [description]. Defaults to 5.
-            conv_channels (list, optional): [description].
-            linear_channels (list, optional): [description]. Defaults to [20].
-            use_bias (bool, optional): [description]. Defaults to True.
-            use_bn (bool, optional): [description]. Defaults to True.
+            encoder, nn.Module: Encoder Network. Maps inputs to a representation 
+                            vector or to parameters of a posterior distribution 
+                            in the variational case. 
+            decoder, nn.Module: Decoder Network. Maps a representation 
+                            vector back in the input space. 
+            grp_transformation, nn.Module: Maps an action to a transformation of
+                            the representation space.
+            n_repr_units, int: Dimensionality of the representation space.
+                            :note: In the variational case, this does not 
+                            correspond to the dimensionality of the 
+                            encoder's output space.
+            specified_step, array: If parameters of the grp_transformation are 
+                            not learned, they can be provided through this 
+                            argument. defaults to 0
+            variational, bool: If True, the encoder describes a distribution instead 
+                            of being deterministic, defaults to True.
+            intervene, bool: If true actions are provided and are used to transform 
+                            the encoded representations, defaults to True.
+            spherical, bool: If True, the encoder's outputs (the location part 
+                            in the variational case) is normalized.
         """
         nn.Module.__init__(self)
         self.encoder = encoder
@@ -48,15 +64,30 @@ class AutoEncoder(nn.Module):
         self.specified_step = specified_step
         self.variational = variational
         self.intervene = intervene
-        self.n_transform_units = self.grp_transform.n_units
+        self.spherical = spherical
+        if grp_transformation is not None:
+            self.n_transform_units = self.grp_transform.n_units
+        else:
+            self.n_transform_units = 0
+        self.n_repr_units = n_repr_units
 
-    def forward(self, x, dz):
-        h = x
+    def encode(self,x):
         h = self.encoder(x)
         if self.variational:
             half = h.shape[1]//2
             mu, logvar = h[:, : half], h[:, half:]
             h = var_utils.reparametrize(mu, logvar)
+        if self.spherical:
+            h = F.normalize(h).squeeze()
+        if self.variational:
+            return h, mu, logvar
+        else:
+            return h, None, None
+
+    def forward(self, x, dz):
+        h = x
+        h, mu, logvar = self.encode(h)
+
         if self.intervene:
             # Through geom
             if not self.grp_transform.learn_params:

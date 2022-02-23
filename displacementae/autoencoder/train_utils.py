@@ -97,16 +97,22 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             if save_fig:
                 figname = os.path.join(fig_dir, f'{epoch}_')
                 shared.figname=figname
-            plt_utils.plot_reconstruction(dhandler, nets, shared, config, device,
-                                        logger, mode, figname)
+            plt_utils.plot_reconstruction(dhandler, nets, config, device,
+                                        logger, figname)
             vary_latents = misc.str_to_ints(config.plot_vary_latents)
             plot_latent = misc.str_to_ints(config.plot_manifold_latent)
             if len(plot_latent) > 0:
                 if not isinstance(plot_latent[0],list):
                     plot_latent = [plot_latent]
                     vary_latents = [vary_latents]
-                for i in range(len(plot_latent)):
-                    plt_utils.plot_manifold(dhandler, nets, shared, config, 
+                for i in range(len(vary_latents)):
+                    if config.plot_pca:
+                        plt_utils.plot_manifold_pca(dhandler, nets, shared, config, 
+                                            device, logger, mode, epoch, 
+                                            vary_latents=vary_latents[i],
+                                            figname=figname)    
+                    else:
+                        plt_utils.plot_manifold(dhandler, nets, shared, config, 
                                         device, logger, mode, epoch, 
                                         vary_latents=vary_latents[i],
                                         plot_latent=plot_latent[i], 
@@ -170,22 +176,3 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
 
     plt_utils.plot_curves(shared,config,logger,figname=shared.figname)
     return interrupted_training
-
-
-def run(mode='autoencoder'):
-    # parse commands
-    config = train_args.parse_cmd_arguments()
-    # setup environment
-    device, logger = sim_utils.setup_environment(config)
-    sim_utils.backup_cli_command(config)
-    # setup dataset
-    dhandler, dloader = data_utils.setup_data(config)
-    # setup models
-    nets = net_utils.setup_network(config, dhandler, device, mode=mode)
-    # setup shared
-    shared = Namespace()
-
-    logger.info('### Training ###')
-    finished_training = train(dhandler, dloader, nets,
-                              config, shared, device, logger, mode)
-    return

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train.py
+# @title          :displacementae/autoencoder/train_blockrepr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :10/11/2021
@@ -22,7 +22,7 @@
 
 import __init__
 
-import autoencoder.train_utils as tutils
+import utils.train_utils as ututils
 
 if __name__=='__main__':
-    tutils.run()
+    ututils.run(mode='autoencoder',repr='blockrepr')
