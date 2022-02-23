@@ -26,6 +26,7 @@ import torch
 from argparse import Namespace
 
 import utils.misc as misc
+from sklearn.random_projection import GaussianRandomProjection
 
 
 _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
@@ -146,6 +147,76 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
         plt.close(fig)
+
+def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
+                epoch, vary_latents=[3], figname=None):
+    """
+    Produces colored scatter plot of the latent representation of 
+    the different positions in the joint space.
+
+    A 1D or 2D grid of joint positions are generated, 
+    corresponding images are forwarded through the encoder.
+    Resulting latent units are 
+    """
+    n_repr_units = nets.n_repr_units
+    ts, lw, ms = _DEFAULT_PLOT_CONFIG
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+
+    indices = dhandler.get_indices_vary_latents(vary_latents)
+    latents = dhandler.latents[indices][:,vary_latents]
+    batch_size = config.batch_size
+    n_batches = len(indices) // batch_size + 1
+    
+    results = []
+
+    for i in range(n_batches):
+        batch_indices = indices[ i * batch_size : (i+1) * batch_size]
+        images = dhandler.images[batch_indices]
+        X = torch.FloatTensor(images).to(device)
+        with torch.no_grad():
+            h, mu, logvar = nets.encode(X)
+            results.append(h[:,:].cpu().numpy())
+    results = np.vstack(results).squeeze()
+
+    # PCA Projection
+    pca = GaussianRandomProjection(n_components=2)
+    latent2d = pca.fit_transform(results)
+
+
+    if config.plot_on_black:
+        kwargs={'cmap':'summer'}
+    else:
+        kwargs={}
+
+    for i in range(len(vary_latents)):
+        latent = vary_latents[i]
+        latent_name = dhandler.get_latent_name(latent)
+        fig, ax = plt.subplots(figsize=(8,7))
+
+        f = ax.scatter(x=latent2d[:,0], y=latent2d[:,1], c=latents[:,i],
+                        **kwargs)
+        ax.set_xlabel(f'latent component 0', fontsize=ts)
+        ax.set_ylabel(f'latent component 1', fontsize=ts)
+        dx = np.abs(latent2d).max()
+        if dx <= 0.3:
+            ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+            ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+        else:
+            ax.set_xlim(_TWO_D_MISC.x_range)
+            ax.set_ylim(_TWO_D_MISC.y_range)
+        
+        plt.colorbar(f)
+        
+        ax.set_title('Manifold latent for latent: ' + latent_name)
+        if figname is not None:
+            figname1 = figname + 'repr_manifold_pca' 
+            figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
+            plt.savefig(figname1)
+            logger.info(f'Figure saved {figname1}')
+        plt.close(fig)
+
+
 
 
 T_SERIES = ["bce_loss","kl_loss","learned_alpha"]

@@ -105,8 +105,14 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 if not isinstance(plot_latent[0],list):
                     plot_latent = [plot_latent]
                     vary_latents = [vary_latents]
-                for i in range(len(plot_latent)):
-                    plt_utils.plot_manifold(dhandler, nets, shared, config, 
+                for i in range(len(vary_latents)):
+                    if config.plot_pca:
+                        plt_utils.plot_manifold_pca(dhandler, nets, shared, config, 
+                                            device, logger, mode, epoch, 
+                                            vary_latents=vary_latents[i],
+                                            figname=figname)    
+                    else:
+                        plt_utils.plot_manifold(dhandler, nets, shared, config, 
                                         device, logger, mode, epoch, 
                                         vary_latents=vary_latents[i],
                                         plot_latent=plot_latent[i], 
