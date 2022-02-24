@@ -174,7 +174,10 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--checkpoint', action='store_true', 
                         help='Saves a checkpoint of the model and optimizer '+
                         'at the end of training')
-
+    mgroup.add_argument('--plot_pca', action='store_true', 
+                        help='Plots scatter of representations projected '+
+                             'along 2 main pca components')
+    
 def prodrepr_args(parser):
     pgroup = parser.add_argument_group('Prod Repr options')
     pgroup.add_argument('--repr_dim', type=int, 
@@ -185,5 +188,3 @@ def prodrepr_args(parser):
                         help='Weight of the entanglement loss.')
     pgroup.add_argument('--plot_thetas', action='store_true', 
                         help='Whether to plot the learned thetas.')
-    
-    
