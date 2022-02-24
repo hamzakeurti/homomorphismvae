@@ -26,6 +26,7 @@ import torch
 import torch.nn as nn
 
 import autoencoder.train_args as train_args
+import autoencoder.scheduler as schdl
 import data.data_utils as data_utils
 import networks.network_utils as net_utils
 import networks.variational_utils as var_utils
@@ -50,8 +51,8 @@ def setup_optimizer(params, config):
 
 def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False):
-    is_prodrepr = isinstance(nets,aeprod.AutoencoderProdrep)
     nets.eval()
+    is_prodrepr = isinstance(nets,aeprod.AutoencoderProdrep)
     if epoch == 0:
         shared.bce_loss = []
         if config.variational:
@@ -59,7 +60,6 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
         if is_prodrepr and config.entanglement_loss:
             shared.tang_loss = []
     if epoch % config.val_epoch == 0:
-
         with torch.no_grad():
             img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
             X1 = torch.FloatTensor(img1).to(device)
@@ -103,8 +103,7 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             if epoch % 20*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
 
-    if plot and (epoch % config.plot_epoch == 0):
-        with torch.no_grad():
+        if plot and (epoch % config.plot_epoch == 0):
             fig_dir = os.path.join(config.out_dir, 'figures')
             figname = None
             if save_fig:
@@ -131,16 +130,23 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
     is_prodrepr = isinstance(nets,aeprod.AutoencoderProdrep)
     
+    scheduler = schdl.Scheduler(2)
     params = nets.parameters()
-    
     optim = setup_optimizer(params, config)
     epochs = config.epochs
     interrupted_training = False
+    
     for epoch in range(epochs):
+        
         evaluate(dhandler, nets, device, config, shared, logger, mode,
                     epoch, save_fig=True, plot=not config.no_plots)
+        
         logger.info(f"Training epoch {epoch}.")
-
+        scheduler.toggle_train(
+            [nets.encoder,nets.grp_transform,nets.decoder], 
+            [nets.encoder,nets.decoder],
+            epoch)
+        
         for i, batch in enumerate(dloader):
             optim.zero_grad()
             x1, y1, x2, y2, dj = [a.to(device) for a in batch]
