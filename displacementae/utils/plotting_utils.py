@@ -46,16 +46,17 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
                         figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
-        
-    img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
-    X1 = torch.FloatTensor(img1).to(device)
-    X2 = torch.FloatTensor(img2).to(device)
-    dj = torch.FloatTensor(dj).to(device)
-    if config.intervene:
-        h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
-    else:
-        h, mu, logvar = nets(X2, None)
-    X2_hat = torch.sigmoid(h)
+
+    with torch.no_grad():
+        img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
+        X1 = torch.FloatTensor(img1).to(device)
+        X2 = torch.FloatTensor(img2).to(device)
+        dj = torch.FloatTensor(dj).to(device)
+        if config.intervene:
+            h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+        else:
+            h, mu, logvar = nets(X2, None)
+        X2_hat = torch.sigmoid(h)
     nrows = 7
     ncols = 3
     fig, axes = plt.subplots(nrows,ncols,figsize=(5,8))

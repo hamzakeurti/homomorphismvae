@@ -82,26 +82,26 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
             if is_prodrepr and config.entanglement_loss:
                 tang_loss = nets.entanglement_loss()
                 total_loss += config.entanglement_weight * tang_loss
-            logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
-            log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
-            shared.bce_loss.append(bce_loss.item())
-            if nets.variational:
-                log_text += f'=\tBCE {bce_loss.item():.2f} '
-                log_text += f'+\tKL {kl_loss.item():.5f}'
-                shared.kl_loss.append(kl_loss.item())
-            if is_prodrepr and config.entanglement_loss:
-                log_text += f'=\tTANG {tang_loss.item():.2f}'
-                shared.tang_loss.append(tang_loss.item())
-            logger.info(log_text)
-            if isinstance(nets.grp_transform,orth.OrthogonalMatrix) and \
-                                        nets.grp_transform.learn_params:
-                alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
-                logger.info(f'learned alpha {alpha}')
-                if not hasattr(shared,"learned_alpha"):
-                    shared.learned_alpha = []
-                shared.learned_alpha.append(list(alpha))
-            if epoch % 20*config.val_epoch == 0:
-                sim_utils.save_dictionary(shared,config)
+        logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
+        log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
+        shared.bce_loss.append(bce_loss.item())
+        if nets.variational:
+            log_text += f'=\tBCE {bce_loss.item():.2f} '
+            log_text += f'+\tKL {kl_loss.item():.5f}'
+            shared.kl_loss.append(kl_loss.item())
+        if is_prodrepr and config.entanglement_loss:
+            log_text += f'=\tTANG {tang_loss.item():.2f}'
+            shared.tang_loss.append(tang_loss.item())
+        logger.info(log_text)
+        if isinstance(nets.grp_transform,orth.OrthogonalMatrix) and \
+                                    nets.grp_transform.learn_params:
+            alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
+            logger.info(f'learned alpha {alpha}')
+            if not hasattr(shared,"learned_alpha"):
+                shared.learned_alpha = []
+            shared.learned_alpha.append(list(alpha))
+        if epoch % 20*config.val_epoch == 0:
+            sim_utils.save_dictionary(shared,config)
 
         if plot and (epoch % config.plot_epoch == 0):
             fig_dir = os.path.join(config.out_dir, 'figures')
