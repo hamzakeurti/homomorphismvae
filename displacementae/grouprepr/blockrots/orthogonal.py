@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/networks/geometric/orthogonal.py
+# @title          :displacementae/grouprepr/blockrots/orthogonal.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :17/11/2021
