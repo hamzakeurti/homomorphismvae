@@ -50,8 +50,8 @@ LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 
 class DspritesDataset(Dataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
-                fixed_values=[], fixed_in_intervention=[], intervene=True,
-                intervention_range=[-1,1], num_train = 200, num_val=30,
+                fixed_values=[], fixed_in_action=[], transitions_on=True,
+                action_range=[-1,1], num_train = 200, num_val=30,
                 cyclic_trans=False):
         super().__init__()
 
@@ -68,7 +68,7 @@ class DspritesDataset(Dataset):
         self.num_val = num_val
 
         # latents config
-        self.intervene = intervene
+        self.transitions_on = transitions_on
         self.n_joints = 6
         self.joints = np.arange(self.n_joints)
         
@@ -76,13 +76,13 @@ class DspritesDataset(Dataset):
         self.fixed_values = fixed_values
         self.varied_in_sampling = [i for i in self.joints \
             if i not in self.fixed_in_sampling]
-        self.fixed_in_intervention = fixed_in_intervention
-        self.intervened_on = np.array([i for i in self.joints \
-            if i not in self.fixed_in_intervention])
-        if not self.intervene:
-            self.intervened_on = np.array([])
-            self.fixed_in_intervention = self.joints
-        self.intervention_range = intervention_range
+        self.fixed_in_action = fixed_in_action
+        self.varied_in_action = np.array([i for i in self.joints \
+            if i not in self.fixed_in_action])
+        if not self.transitions_on:
+            self.varied_in_action = np.array([])
+            self.fixed_in_action = self.joints
+        self.transition_range = action_range
         # Types of latents
         if not cyclic_trans:
             self.lin_idx = [LatentIdx.SCALE,LatentIdx.POSX,LatentIdx.POSY]
@@ -106,7 +106,7 @@ class DspritesDataset(Dataset):
 
         data = {}
         data["in_shape"] = [1,64,64]
-        data["action_shape"] = [len(self.intervened_on)]
+        data["action_shape"] = [len(self.varied_in_action)]
         self._data = data
 
         # Get Dataset subset corresponding to fixed_in_sampling constraint.
@@ -116,12 +116,12 @@ class DspritesDataset(Dataset):
 
         ### Training samples:
         self.train_idx1 = rand.choice(self.dataset_size,size=num_train)
-        if self.intervene:
+        if self.transitions_on:
             self.train_idx2, self.train_dj = self.f_intervene(self.train_idx1)
         ### Evaluation samples
         self.val_idx1 = rand.choice(self.dataset_size, 
                                     size=num_val,replace=False)
-        if self.intervene:
+        if self.transitions_on:
             self.val_idx2, self.val_dj = self.f_intervene(self.val_idx1)
         
     def _process_hdf5(self):
@@ -159,7 +159,7 @@ class DspritesDataset(Dataset):
         idx1 = self.train_idx1[idx]
         image1 = self.images[idx1]
         latents1 = self.latents[idx1]
-        if self.intervene:
+        if self.transitions_on:
             idx2 = self.train_idx2[idx]
             dj = self.train_dj[idx]
             image2 = self.images[idx2]
@@ -186,7 +186,7 @@ class DspritesDataset(Dataset):
         idx1 = self.val_idx1
         image1 = self.images[idx1]
         latents1 = self.latents[idx1]
-        if self.intervene:
+        if self.transitions_on:
             idx2 = self.val_idx2
             dj = self.val_dj
             image2 = self.images[idx2]
@@ -199,13 +199,13 @@ class DspritesDataset(Dataset):
         """"""
         joints = self.latents[index]
         #sample displacement
-        if self.fixed_in_intervention:
-            len_dj = self.n_joints - len(self.fixed_in_intervention)
+        if self.fixed_in_action:
+            len_dj = self.n_joints - len(self.fixed_in_action)
         else:
             len_dj = self.n_joints
         dj = np.zeros((joints.shape[0],self.n_joints)).squeeze()
-        dj[...,self.intervened_on] = self._rand.randint(
-            low=self.intervention_range[0],high=self.intervention_range[1]+1,
+        dj[...,self.varied_in_action] = self._rand.randint(
+            low=self.transition_range[0],high=self.transition_range[1]+1,
             size = (joints.shape[0],len_dj))
         new_joints,dj = self._intervene_linear(joints,dj)
         new_joints,dj = self._intervene_circular(new_joints,dj)
@@ -290,7 +290,7 @@ class DspritesDataset(Dataset):
             pass
         else:
             self._allowed_indices = [self.get_index(i) for i in range(self.n_samples)]
-            return self._allowed_indices
+        return self._allowed_indices
 
     @property
     def in_shape(self):
