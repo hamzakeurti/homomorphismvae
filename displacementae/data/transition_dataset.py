@@ -25,8 +25,9 @@ Abstract Dataset class for transitions tuple :math:`(o_t,g_t,o_{t+1})`.
 """
 
 import numpy as np
+from torch.utils.data import Dataset
 
-class TransitionDataset:
+class TransitionDataset(Dataset):
     def __init__(self, root, num_train, num_val, rseed=None):
         
         # Random generator
@@ -93,5 +94,10 @@ class TransitionDataset:
         pass
 
     def observe_n_transitions(self,idx):
-        # TODO
-        pass
+        indices = [idx]
+        transitions = []
+        for i in range(self.n_transitions):
+            idx2, dj = self.transition(indices[-1])
+            indices.append(idx2)
+            transitions.append(dj)
+        return indices,transitions
