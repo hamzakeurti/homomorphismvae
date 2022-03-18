@@ -28,7 +28,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 class TransitionDataset(Dataset):
-    def __init__(self, root, num_train, num_val, rseed=None):
+    def __init__(self, rseed=None, transitions_on=True, n_transitions=None):
         
         # Random generator
         if rseed is not None:
@@ -39,8 +39,8 @@ class TransitionDataset(Dataset):
         self._rseed = rseed
 
         # Number of samples
-        self.num_train = num_train
-        self.num_val = num_val
+        self.num_train = 0
+        self.num_val = 0
 
         # Latents Config
         self.transitions_on = True
@@ -55,19 +55,17 @@ class TransitionDataset(Dataset):
         self.varied_in_action = []
         self.transition_range = []
 
+        # Number of transitions
+        if not transitions_on:
+            self.n_transitions = 0
+        elif n_transitions is None:
+            self.n_transitions = 1
+        else:
+            self.n_transitions = n_transitions
         
-        # data root
-        self.root = root
 
     def __getitem__(self,idx):
-        images, latents, dj = [], [], []
-
-        indices = self.train_idx[idx]
-        for index in indices:
-            images.append(self.images[index])
-            latents.append(self.latents[index])  
-        dj = self.train_dj[idx]
-        return images, latents, dj
+        pass
 
     def __len__(self):
         pass
@@ -94,10 +92,11 @@ class TransitionDataset(Dataset):
         pass
 
     def observe_n_transitions(self,idx):
-        indices = [idx]
-        transitions = []
+        indices = np.empty(shape=(idx.shape[-1],self.n_transitions+1), dtype=int)
+        transitions = np.empty(shape=(idx.shape[-1],self.n_transitions,self.n_latents))
+        indices[:,0] = idx
         for i in range(self.n_transitions):
-            idx2, dj = self.transition(indices[-1])
-            indices.append(idx2)
-            transitions.append(dj)
+            idx2, dj = self.transition(indices[:,i])
+            indices[:,i+1]= idx2
+            transitions[:,i] = dj
         return indices,transitions

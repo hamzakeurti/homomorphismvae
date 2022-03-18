@@ -22,7 +22,7 @@
 
 from torch.utils.data import DataLoader
 
-from data.dsprites import DspritesDataset, FixedJointsSampler
+from data.dsprites import DspritesDataset
 import utils.misc as misc
 
 def setup_data(config):

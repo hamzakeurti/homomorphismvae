@@ -55,12 +55,16 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
     if epoch % config.val_epoch == 0:
 
         with torch.no_grad():
-            img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
-            X1 = torch.FloatTensor(img1).to(device)
-            X2 = torch.FloatTensor(img2).to(device)
-            dj = torch.FloatTensor(dj).to(device)
+            imgs, latents, dj = dhandler.get_val_batch()
+            X1 = torch.FloatTensor(imgs[:,0]).to(device)
             if config.intervene:
-                h, mu, logvar = nets(X1, dj[:, dhandler.intervened_on])
+                X2 = torch.FloatTensor(imgs[:,1]).to(device)
+            else:
+                X2 = X1.clone()
+                
+            dj = torch.FloatTensor(dj).to(device).squeeze()
+            if config.intervene:
+                h, mu, logvar = nets(X1, dj[:, dhandler.varied_in_action])
             else:
                 h, mu, logvar = nets(X1, None)
             X2_hat = torch.sigmoid(h)
@@ -132,13 +136,16 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
 
         for i, batch in enumerate(dloader):
             optim.zero_grad()
-            x1, y1, x2, y2, dj = [a.to(device) for a in batch]
-            x1 = x1.float()
-            x2 = x2.float()
-            dj = dj.float()
+            imgs, latents, dj = (a.to(device) for a in batch)
+            dj = dj.float().squeeze()
+            x1 = imgs[:,0].float().to(device)
+            if config.intervene:
+                x2 = imgs[:,1].float().to(device)
+            else:
+                x2 = x1.clone()
             ### Forward ###
             if config.intervene:
-                h, mu, logvar = nets(x1, dj[:, dhandler.intervened_on])
+                h, mu, logvar = nets(x1, dj[:, dhandler.varied_in_action])
             else:
                 h, mu, logvar = nets(x1, None)
             x2_hat = torch.sigmoid(h)
