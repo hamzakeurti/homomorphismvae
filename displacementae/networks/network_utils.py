@@ -25,7 +25,7 @@ import torch
 
 from networks.cnn import CNN
 from networks.transposedcnn import TransposedCNN 
-import networks.geometric.orthogonal as orth
+import grouprepr.blockrots.orthogonal as orth
 import utils.misc as misc
 from networks.autoencoder import AutoEncoder
 

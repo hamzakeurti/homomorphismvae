@@ -46,12 +46,15 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
     if config.plot_on_black:
         plt.style.use('dark_background')
         
-    img1, cls1, img2, cls2, dj = dhandler.get_val_batch()
-    X1 = torch.FloatTensor(img1).to(device)
-    X2 = torch.FloatTensor(img2).to(device)
-    dj = torch.FloatTensor(dj).to(device)
+    imgs, latents, dj = dhandler.get_val_batch()
+    X1 = torch.FloatTensor(imgs[:,0]).to(device)
     if config.intervene:
-        h, mu, logvar = nets(X2, dj[:, dhandler.intervened_on])
+        X2 = torch.FloatTensor(imgs[:,1]).to(device)
+    else:
+        X2 = X1.clone()
+    dj = torch.FloatTensor(dj).to(device).squeeze()
+    if config.intervene:
+        h, mu, logvar = nets(X2, dj[:, dhandler.varied_in_action])
     else:
         h, mu, logvar = nets(X2, None)
     X2_hat = torch.sigmoid(h)
