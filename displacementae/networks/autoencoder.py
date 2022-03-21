@@ -28,7 +28,7 @@ import networks.variational_utils as var_utils
 
 class AutoEncoder(nn.Module):
 
-    def __init__(self, encoder, decoder, grp_transformation, n_repr_units, 
+    def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
                  specified_step=0, variational=True, intervene=True, 
                  spherical = False):
         """
@@ -60,13 +60,13 @@ class AutoEncoder(nn.Module):
         nn.Module.__init__(self)
         self.encoder = encoder
         self.decoder = decoder
-        self.grp_transform = grp_transformation
+        self.grp_morphism = grp_morphism
         self.specified_step = specified_step
         self.variational = variational
         self.intervene = intervene
         self.spherical = spherical
-        if grp_transformation is not None:
-            self.n_transform_units = self.grp_transform.n_units
+        if grp_morphism is not None:
+            self.n_transform_units = self.grp_morphism.n_units
         else:
             self.n_transform_units = 0
         self.n_repr_units = n_repr_units
@@ -86,14 +86,16 @@ class AutoEncoder(nn.Module):
 
     def forward(self, x, dz):
         h = x
+        
+        # Through encoder
         h, mu, logvar = self.encode(h)
 
         if self.intervene:
             # Through geom
-            if not self.grp_transform.learn_params:
+            if not self.grp_morphism.learn_params:
                 dz = dz * self.specified_step
             transformed_h = \
-                self.grp_transform.transform(h[:,:self.n_transform_units], dz)
+                self.grp_morphism.transform(h[:,:self.n_transform_units], dz)
             h = torch.hstack([transformed_h,h[:,self.n_transform_units:]])
         # Through decoder
         h = self.decoder(h)

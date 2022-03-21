@@ -39,7 +39,11 @@ def run(mode='autoencoder',repr='blockrepr'):
     # parse commands
     if mode == 'autoencoder':
         import autoencoder.train_args as train_args
-        import autoencoder.train_utils as tutils    
+        import autoencoder.train_utils as tutils
+    elif mode == 'homomorphism':
+        import homomorphism.train_args as train_args
+        import homomorphism.train_utils as tutils
+
     config = train_args.parse_cmd_arguments()
     # setup environment
     device, logger = sim_utils.setup_environment(config)
