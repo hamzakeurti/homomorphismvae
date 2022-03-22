@@ -22,7 +22,7 @@
 
 from datetime import datetime
 
-def data_args(parser):
+def data_args(parser, mode='autoencoder'):
     dgroup = parser.add_argument_group('Data options')
     dgroup.add_argument('--dataset', type=str, default='armeye', 
                         help='Name of dataset',choices=['armeye','dsprites'])
@@ -51,7 +51,9 @@ def data_args(parser):
                         help='Number of evaluation samples')
     dgroup.add_argument('--cyclic_trans', action='store_true',
                         help='considers position as a cyclic latent.')
-    
+    if mode == 'homomorphism':
+        dgroup.add_argument('--n_steps', type=int, default=2,
+                        help='Number of observed transitions per example.')
 
 def train_args(parser):
     """

@@ -27,36 +27,36 @@ import torch.nn.functional as F
 import networks.variational_utils as var_utils
 
 class AutoEncoder(nn.Module):
+    """
+    An autoencoder neural network with group transformation applied to 
+    the latent space.
+
+    Args:
+        encoder, nn.Module: Encoder Network. Maps inputs to a representation 
+                        vector or to parameters of a posterior distribution 
+                        in the variational case. 
+        decoder, nn.Module: Decoder Network. Maps a representation 
+                        vector back in the input space. 
+        grp_transformation, nn.Module: Maps an action to a transformation of
+                        the representation space.
+        n_repr_units, int: Dimensionality of the representation space.
+                        :note: In the variational case, this does not 
+                        correspond to the dimensionality of the 
+                        encoder's output space.
+        specified_step, array: If parameters of the grp_transformation are 
+                        not learned, they can be provided through this 
+                        argument. defaults to 0
+        variational, bool: If True, the encoder describes a distribution instead 
+                        of being deterministic, defaults to True.
+        intervene, bool: If true actions are provided and are used to transform 
+                        the encoded representations, defaults to True.
+        spherical, bool: If True, the encoder's outputs (the location part 
+                        in the variational case) is normalized.
+    """
 
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
                  specified_step=0, variational=True, intervene=True, 
                  spherical = False):
-        """
-        An autoencoder neural network with group transformation applied to 
-        the latent space.
-
-        Args:
-            encoder, nn.Module: Encoder Network. Maps inputs to a representation 
-                            vector or to parameters of a posterior distribution 
-                            in the variational case. 
-            decoder, nn.Module: Decoder Network. Maps a representation 
-                            vector back in the input space. 
-            grp_transformation, nn.Module: Maps an action to a transformation of
-                            the representation space.
-            n_repr_units, int: Dimensionality of the representation space.
-                            :note: In the variational case, this does not 
-                            correspond to the dimensionality of the 
-                            encoder's output space.
-            specified_step, array: If parameters of the grp_transformation are 
-                            not learned, they can be provided through this 
-                            argument. defaults to 0
-            variational, bool: If True, the encoder describes a distribution instead 
-                            of being deterministic, defaults to True.
-            intervene, bool: If true actions are provided and are used to transform 
-                            the encoded representations, defaults to True.
-            spherical, bool: If True, the encoder's outputs (the location part 
-                            in the variational case) is normalized.
-        """
         nn.Module.__init__(self)
         self.encoder = encoder
         self.decoder = decoder

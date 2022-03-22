@@ -26,12 +26,13 @@ from datetime import datetime
 import utils.args as args
 
 def parse_cmd_arguments(description=''):
+    mode='homomorphism'
     curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     if not description:
         description = 'N Steps Autoencoder'
     dout_dir = './out/run_'+curr_date
     parser = argparse.ArgumentParser(description=description)
-    args.data_args(parser)
+    args.data_args(parser,mode)
     args.train_args(parser)
     args.net_args(parser)
     args.misc_args(parser,dout_dir)

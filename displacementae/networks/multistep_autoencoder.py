@@ -26,8 +26,7 @@ import networks.autoencoder as ae
 
 class MultistepAutoencoder(ae.AutoEncoder):
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
-                 n_transform_units, variational=True, spherical=False, 
-                 n_steps = 1):
+                 n_transform_units, variational=True, spherical=False):        
         """
         An Autoencoder with multiple future observation prediction through 
         group representation.
@@ -43,14 +42,11 @@ class MultistepAutoencoder(ae.AutoEncoder):
                         of being deterministic, defaults to True.
         spherical, bool: If True, the encoder's outputs (the location part 
                         in the variational case) is normalized.
-        n_steps, int: Number of observed transitions. Transitions are mapped to
-                        matrices through the group morphism 
         """
         super().__init__(encoder=encoder,decoder=decoder,
                          grp_morphism=grp_morphism, n_repr_units=n_repr_units,
                          variational=variational, spherical=spherical)
         self.n_transform_units = n_transform_units
-        self.n_steps = n_steps
 
 
     def forward(self, x, dz):
@@ -62,31 +58,30 @@ class MultistepAutoencoder(ae.AutoEncoder):
         `grp_morphism`, matrices are applied to the obtained representation.
         """
         h = x
+        n_steps = dz.shape[1]
     
         # Through encoder
         h, mu, logvar = self.encode(h)
 
         h_out = torch.empty(
-            size=[x.shape[0] + [self.n_steps, self.n_repr_units]])
-
-        out = torch.empty(
-            size=[x.shape[0] + [self.n_steps] + list(x.shape[1:])])
+            size=[x.shape[0] + [n_steps, self.n_repr_units]])
 
         if self.n_repr_units > self.n_transform_units:
             # The part of the transformation that is not transformed 
             # is repeated for all transition steps.
             h_out[:,:,self.n_transform_units:] = \
-                                    h.unsqueeze(1).repeat(1,self.n_steps,1)
+                                    h[:,self.n_transform_units:]\
+                                        .unsqueeze(1).repeat(1,n_steps,1)
         # Through geometry
-        for i in range(self.n_steps):
+        for i in range(n_steps):
             h_out[:,:,:self.n_transform_units] = \
                 self.grp_morphism.transform( h[:,:self.n_transform_units], 
                                         dz[:,:i+1])
                 
         # Through decoder
         h_out = h_out.view(-1, self.n_repr_units)
-        h_out = self.decoder(h_out)
-        h_out = h_out.view(x.shape[0],self.n_steps,*x.shape[1:])
+        h_out = self.decoder(h_out[:,:])
+        h_out = h_out.view(x.shape[0],n_steps,*x.shape[1:])
         if self.variational:
             return h_out, mu, logvar
         else:

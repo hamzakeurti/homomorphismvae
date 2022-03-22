@@ -100,3 +100,6 @@ class TransitionDataset(Dataset):
             indices[:,i+1]= idx2
             transitions[:,i] = dj
         return indices,transitions
+    
+    def get_val_batch(self):
+        pass

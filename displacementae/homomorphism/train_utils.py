@@ -26,13 +26,14 @@ import torch
 import torch.nn as nn
 
 import data.data_utils as data_utils
+import data.transition_dataset as trns_data
 import networks.network_utils as net_utils
 import networks.variational_utils as var_utils
 import utils.plotting_utils as plt_utils
 import utils.sim_utils as sim_utils
 import utils.misc as misc
 import utils.checkpoint as ckpt
-
+import networks.multistep_autoencoder as ms_ae
 
 def setup_optimizer(params, config):
     lr = config.lr
@@ -44,55 +45,56 @@ def setup_optimizer(params, config):
     return optimizer
 
 
-def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
+def evaluate(dhandler:trns_data.TransitionDataset, 
+             nets:ms_ae.MultistepAutoencoder, 
+             device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False):
     nets.eval()
     if epoch == 0:
-        shared.bce_loss1 = []
-        shared.bce_loss2 = []
+        shared.bce_loss = []
         if config.variational:
             shared.kl_loss = []
     if epoch % config.val_epoch == 0:
 
         with torch.no_grad():
-            img1, cls1, img2, cls2, dj1, img3, cls3, dj2 = dhandler.get_val_batch()
-            X1 = torch.FloatTensor(img1).to(device)
-            X2 = torch.FloatTensor(img2).to(device)
-            X3 = torch.FloatTensor(img3).to(device)
-            dj1 = torch.FloatTensor(dj1).to(device)
-            dj2 = torch.FloatTensor(dj2).to(device)
-            
+            batch = dhandler.get_val_batch()
+            imgs, latents, dj = [elem.to(device) for elem in batch]
+            # imgs is of shape [batch_size, n_steps+1, channels, height, width]
+            # dj is of shape [batch_size, n_steps, n_actions]
+
+            imgs = imgs.float()
+            dj = dj.float()
+
+            x1 = imgs[:,0] # initial observed image
+            xi = imgs[:,1:] # All other images to predict
             ### Forward ###
-            # First reconstruction
-            h1, mu1, logvar1 = nets(X1, dj1[:, dhandler.intervened_on])
-            x2_hat = torch.sigmoid(h1)
-            # Second reconstruction
-            h2, mu2, logvar2 = nets(X1, 
-                [dj1[:, dhandler.intervened_on],dj2[:, dhandler.intervened_on]])
-            x3_hat = torch.sigmoid(h2)
+            h, mu, logvar = nets(x1, dj[:, :, dhandler.intervened_on])
+            xi_hat = torch.sigmoid(h)
             ### Losses
             # Reconstruction
-            bce_loss1 = var_utils.bce_loss(x2_hat, X2)
-            bce_loss2 = var_utils.bce_loss(x3_hat, X3)
+            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'None')
+            bce_loss_per_image =\
+                bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
+            bce_loss = bce_loss_per_image.sum()/config.n_steps
+            total_loss = bce_loss
             if nets.variational:
                 # KL
-                kl_loss = var_utils.kl_loss(mu1, logvar1)
-                total_loss = config.beta * kl_loss + bce_loss1 + bce_loss2
-            else:
-                total_loss = bce_loss1 + bce_loss2
+                kl_loss = var_utils.kl_loss(mu, logvar)
+                total_loss += config.beta * kl_loss
 
             ### Logging
             logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
             log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
-            log_text += f'=\tBCE1 {bce_loss1.item():.2f} '
-            log_text += f'=\tBCE2 {bce_loss2.item():.2f} '
+            log_text += f'=\tBCE {bce_loss.item():.2f} '
 
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'
             logger.info(log_text)
+            if nets.variational:
+                log_text += f'+\tKL {kl_loss.item():.5f}'
+            logger.info(log_text)
             # Losses
-            shared.bce_loss1.append(bce_loss1.item())
-            shared.bce_loss2.append(bce_loss2.item())
+            shared.bce_loss.append(bce_loss_per_image.item())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
             if nets.grp_transform.learn_params:
@@ -133,7 +135,7 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                                         figname=figname)
     nets.train()
 
-def train(dhandler, dloader, nets, config, shared, device, logger, mode):
+def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, device, logger, mode):
     params = nets.parameters()
     
     optim = setup_optimizer(params, config)
@@ -146,36 +148,35 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
 
         for i, batch in enumerate(dloader):
             optim.zero_grad()
-            x1, y1, x2, y2, dj1, x3, y3, dj2 = [a.to(device) for a in batch]
-            x1 = x1.float()
-            x2 = x2.float()
-            x3 = x3.float()
-            dj1 = dj1.float()
-            dj2 = dj2.float()
+
+            imgs, latents, dj = [elem.to(device) for elem in batch]
+            # imgs is of shape [batch_size, n_steps+1, channels, height, width]
+            # dj is of shape [batch_size, n_steps, n_actions]
+
+            imgs = imgs.float()
+            dj = dj.float()
+
+            x1 = imgs[:,0] # initial observed image
+            xi = imgs[:,1:] # All other images to predict
             ### Forward ###
-            # First reconstruction
-            h1, mu1, logvar1 = nets(x1, dj1[:, dhandler.intervened_on])
-            x2_hat = torch.sigmoid(h1)
-            # Second reconstruction
-            h2, mu2, logvar2 = nets(x1, 
-                [dj1[:, dhandler.intervened_on],dj2[:, dhandler.intervened_on]])
-            x3_hat = torch.sigmoid(h2)
+            h, mu, logvar = nets(x1, dj[:, :, dhandler.intervened_on])
+            xi_hat = torch.sigmoid(h)
             ### Losses
             # Reconstruction
-            bce_loss1 = var_utils.bce_loss(x2_hat, x2)
-            bce_loss2 = var_utils.bce_loss(x3_hat, x3)
+            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'None')
+            bce_loss_per_image =\
+                bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
+            bce_loss = bce_loss_per_image.sum()/config.n_steps
+            total_loss = bce_loss
             if nets.variational:
                 # KL
-                kl_loss = var_utils.kl_loss(mu1, logvar1)
-                total_loss = config.beta * kl_loss + bce_loss1 + bce_loss2
-            else:
-                total_loss = bce_loss1 + bce_loss2
+                kl_loss = var_utils.kl_loss(mu, logvar)
+                total_loss += config.beta * kl_loss
             total_loss.backward()
             optim.step()
             ### Logging
             log_text = f'[{epoch}:{i}] loss\t{total_loss.item():.2f} '
-            log_text += f'=\tBCE1 {bce_loss1.item():.2f} '
-            log_text += f'=\tBCE2 {bce_loss2.item():.2f} '
+            log_text += f'=\tBCE {bce_loss.item():.2f} '
 
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'

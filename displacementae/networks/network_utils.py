@@ -106,8 +106,8 @@ def setup_autoencoder_network(config, dhandler, device, repr):
 
     # if variational, encoder outputs mean and logvar
     encoder_outputs = (1 + variational ) * repr_units 
-    encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes, strides=strides,
-        conv_channels=conv_channels,
+    encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes, 
+        strides=strides, conv_channels=conv_channels,
         linear_channels=lin_channels+[encoder_outputs],
         use_bias=True, activation_fn=act_fn).to(device)
     
@@ -118,11 +118,12 @@ def setup_autoencoder_network(config, dhandler, device, repr):
     
     if repr == BLOCK_REPR:
         orthogonal_matrix = orth.OrthogonalMatrix(
-            transformation=orth.OrthogonalMatrix.BLOCKS, n_units=transformed_units, 
-            device=device, learn_params=config.learn_geometry).to(device)
+            transformation=orth.OrthogonalMatrix.BLOCKS, 
+            n_units=transformed_units, device=device, 
+            learn_params=config.learn_geometry).to(device)
         
         autoencoder = AutoEncoder(
-            encoder=encoder,decoder=decoder, grp_transformation=orthogonal_matrix,
+            encoder=encoder,decoder=decoder, grp_morphism=orthogonal_matrix,
             variational=variational,specified_step=specified_step, 
             n_repr_units=repr_units, intervene=config.intervene, 
             spherical=config.spherical)
