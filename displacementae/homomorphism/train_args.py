@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/homomorphsim/train_args.py
+# @title          :displacementae/homomorphism/train_args.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :03/21/2022
+# @created        :10/03/2022
 # @version        :1.0
 # @python_version :3.7.4
 
