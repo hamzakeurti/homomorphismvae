@@ -28,35 +28,22 @@ from networks.transposedcnn import TransposedCNN
 import grouprepr.blockrots.orthogonal as orth
 import utils.misc as misc
 from networks.autoencoder import AutoEncoder
+from networks.multistep_autoencoder import MultistepAutoencoder
 
 BLOCK_REPR = 'blockrepr'
 AUTOENCODER = 'autoencoder'
 
+
 def setup_network(config, dhandler, device, mode=AUTOENCODER, 
                   repr=BLOCK_REPR):
     if mode==AUTOENCODER:
-        return setup_autoencoder_network(config, dhandler, device, 
-                                         repr)
+        return setup_autoencoder_network(config, dhandler, device, repr)
+    elif mode=='homomorphism':
+        return setup_multistep_autoencoder(config, dhandler, device, repr)
     else:
         raise NotImplementedError
 
-def setup_autoencoder_network(config, dhandler, device, repr):
-    """
-    Sets up an autoencoder with a geometric transformation of the latent units.
-    
-    The autoencoder consists of a contracting path, 
-    a geometric transformation of the latent space and
-    an expanding path back into the input space.
-
-    Args:
-        config (Namespace): configuration of the experiment, obtained from cli.
-        dhandler (dataset): Handler for dataset.
-        device (str): indicates device where parameters are stored.
-        repr (str): Indicates which group representation to use for the 
-                    observed actions.
-                    if 'block_repr': group representation is block diagonal 
-                    2D rotation matrices.
-    """
+def setup_encoder_decoder(config, dhandler, device, repr_units):
     in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
     conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
     
@@ -77,9 +64,6 @@ def setup_autoencoder_network(config, dhandler, device, repr):
     else:
         trans_kernel = kernel_sizes
     
-    n_free_units = config.n_free_units
-    transformed_units = dhandler.action_shape[0] * 2
-    repr_units =  transformed_units + n_free_units
     lin_channels = misc.str_to_ints(config.lin_channels)
     if config.net_act=='relu':
         act_fn = torch.relu
@@ -94,16 +78,6 @@ def setup_autoencoder_network(config, dhandler, device, repr):
     if variational and config.beta is None:
         config.beta = 1.
 
-    if not hasattr(config,'specified_grp_step'):
-        specified_step = 0
-    else:
-        specified_step = misc.str_to_floats(config.specified_grp_step)
-        if len(specified_step) == 0 and not config.learn_geometry:
-            raise ValueError
-        if len(specified_step) == 1:
-            specified_step = specified_step[0]
-
-
     # if variational, encoder outputs mean and logvar
     encoder_outputs = (1 + variational ) * repr_units 
     encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes, 
@@ -116,19 +90,95 @@ def setup_autoencoder_network(config, dhandler, device, repr):
         linear_channels=[repr_units]+lin_channels[::-1],
         use_bias=True, activation_fn=act_fn).to(device)
     
-    if repr == BLOCK_REPR:
+    return encoder, decoder
+
+
+def setup_grp_morphism(config, transformed_units,device, repr):
+    """
+    Sets up the group morphism module which converts input actions to 
+    """
+    if not hasattr(config,'specified_grp_step'):
+        specified_step = 0
+    else:
+        specified_step = misc.str_to_floats(config.specified_grp_step)
+        if len(specified_step) == 0 and not config.learn_geometry:
+            raise ValueError
+        if len(specified_step) == 1:
+            specified_step = specified_step[0]
+    
+    if repr == BLOCK_REPR: # TODO rename! repr is a python built-in. 
         orthogonal_matrix = orth.OrthogonalMatrix(
             transformation=orth.OrthogonalMatrix.BLOCKS, 
             n_units=transformed_units, device=device, 
-            learn_params=config.learn_geometry).to(device)
-        
-        autoencoder = AutoEncoder(
-            encoder=encoder,decoder=decoder, grp_morphism=orthogonal_matrix,
-            variational=variational,specified_step=specified_step, 
-            n_repr_units=repr_units, intervene=config.intervene, 
-            spherical=config.spherical)
-        
+            learn_params=config.learn_geometry, 
+            specified_step=specified_step).to(device)
+        return orthogonal_matrix
     else:
         raise NotImplementedError
+
+def setup_autoencoder_network(config, dhandler, device, repr):
+    """
+    Sets up an autoencoder with a geometric transformation of the latent
+    units.
+    
+    The autoencoder consists of a contracting path, 
+    a geometric transformation of the latent space and
+    an expanding path back into the input space.
+
+    Args:
+        config (Namespace): configuration of the experiment, obtained 
+                            from cli.
+        dhandler (dataset): Handler for dataset.
+        device (str): indicates device where parameters are stored.
+        repr (str): Indicates which group representation to use for the 
+                    observed actions.
+                    if 'block_repr': group representation is block 
+                    diagonal 2D rotation matrices.
+    """
+
+    n_free_units = config.n_free_units
+    # a 2D representation space for each action unit 
+    # TODO should be specified by user
+    transformed_units = dhandler.action_shape[0] * 2
+    repr_units =  transformed_units + n_free_units
+
+    encoder, decoder = setup_encoder_decoder(config, dhandler, device, 
+                                             repr_units)
+    
+    grp_morphism = setup_grp_morphism(config, transformed_units, 
+                                      device=device, 
+                                      repr=repr)
+
+    autoencoder = AutoEncoder(
+        encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
+        variational=config.variational, n_repr_units=repr_units, 
+        intervene=config.intervene, spherical=config.spherical)
+
+    return autoencoder
+
+
+
+def setup_multistep_autoencoder(config, dhandler, device, repr):
+    n_free_units = config.n_free_units
+    # a 2D representation space for each action unit 
+    # TODO should be specified by user
+    transformed_units = dhandler.action_shape[0] * 2
+    repr_units =  transformed_units + n_free_units
+
+
+
+    encoder, decoder = setup_encoder_decoder(config, dhandler, device, 
+                                             repr_units)
+
+    grp_morphism = setup_grp_morphism(config, transformed_units, 
+                                      device=device, 
+                                      repr=repr)
+                                      
+    autoencoder = MultistepAutoencoder(
+        encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
+        variational=config.variational, 
+        n_repr_units=repr_units, n_transform_units = transformed_units, 
+        spherical=config.spherical)
+    
 
     return autoencoder
