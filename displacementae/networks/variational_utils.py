@@ -37,10 +37,8 @@ def kl_loss(mu, logvar):
     return 0.5 * torch.sum(loss)/mu.shape[0]
 
 def bce_loss(x_hat, x, reduction = 'sum'):
-    if reduction == 'None':
-        return nn.BCELoss(reduction=reduction)(x_hat, x)
+    loss = nn.BCELoss(reduction=reduction)(x_hat, x)
     if reduction == 'sum':
-        return nn.BCELoss(reduction=reduction)(x_hat, x)/x.shape[0]
-
-
+        loss /= x.shape[0]
+    return loss
         
