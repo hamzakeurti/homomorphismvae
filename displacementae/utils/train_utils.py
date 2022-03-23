@@ -36,7 +36,7 @@ def run(mode='autoencoder',repr='blockrepr'):
             'blockrepr': actions are represented by block diagonal matrices of 
             2D rotation matrices. 
     """
-    # parse commands
+    # Mode dependent imports
     if mode == 'autoencoder':
         import autoencoder.train_args as train_args
         import autoencoder.train_utils as tutils
@@ -44,12 +44,13 @@ def run(mode='autoencoder',repr='blockrepr'):
         import homomorphism.train_args as train_args
         import homomorphism.train_utils as tutils
 
+    # parse commands
     config = train_args.parse_cmd_arguments()
     # setup environment
     device, logger = sim_utils.setup_environment(config)
     sim_utils.backup_cli_command(config)
     # setup dataset
-    dhandler, dloader = data_utils.setup_data(config)
+    dhandler, dloader = data_utils.setup_data(config, mode)
     # setup models
     nets = net_utils.setup_network(config, dhandler, device, mode=mode,
         repr=repr)

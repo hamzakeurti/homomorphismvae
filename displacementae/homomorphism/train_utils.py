@@ -58,8 +58,10 @@ def evaluate(dhandler:trns_data.TransitionDataset,
 
         with torch.no_grad():
             batch = dhandler.get_val_batch()
-            imgs, latents, dj = [elem.to(device) for elem in batch]
-            # imgs is of shape [batch_size, n_steps+1, channels, height, width]
+            imgs, latents, dj = [torch.from_numpy(elem).to(device) 
+                                 for elem in batch]
+            # imgs is of shape 
+            # [batch_size, n_steps+1, channels, height, width]
             # dj is of shape [batch_size, n_steps, n_actions]
 
             imgs = imgs.float()
@@ -68,17 +70,17 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             x1 = imgs[:,0] # initial observed image
             xi = imgs[:,1:] # All other images to predict
             ### Forward ###
-            h, mu, logvar = nets(x1, dj[:, :, dhandler.intervened_on])
+            h, mu, logvar = nets(x1, dj[:, :, dhandler.varied_in_action])
             xi_hat = torch.sigmoid(h)
             ### Losses
             # Reconstruction
-            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'None')
+            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
             bce_loss_per_image =\
                 bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
             bce_loss = bce_loss_per_image.sum()/config.n_steps
             total_loss = bce_loss
+            # KL
             if nets.variational:
-                # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
 
@@ -86,19 +88,15 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
             log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
             log_text += f'=\tBCE {bce_loss.item():.2f} '
-
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'
             logger.info(log_text)
-            if nets.variational:
-                log_text += f'+\tKL {kl_loss.item():.5f}'
-            logger.info(log_text)
-            # Losses
-            shared.bce_loss.append(bce_loss_per_image.item())
+            # Save Losses
+            shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
-            if nets.grp_transform.learn_params:
-                alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
+            if nets.grp_morphism.learn_params:
+                alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
                 logger.info(f'learned alpha {alpha}')
                 if not hasattr(shared,"learned_alpha"):
                     shared.learned_alpha = []
@@ -113,8 +111,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if save_fig:
                 figname = os.path.join(fig_dir, f'{epoch}_')
                 shared.figname=figname
-            plt_utils.plot_reconstruction(dhandler, nets, config, device,
-                                        logger, figname)
+            plt_utils.plot_n_step_reconstruction(dhandler, nets, config, 
+                                                 device, logger, figname)
             vary_latents = misc.str_to_ints(config.plot_vary_latents)
             plot_latent = misc.str_to_ints(config.plot_manifold_latent)
             if len(plot_latent) > 0:
@@ -159,11 +157,11 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, de
             x1 = imgs[:,0] # initial observed image
             xi = imgs[:,1:] # All other images to predict
             ### Forward ###
-            h, mu, logvar = nets(x1, dj[:, :, dhandler.intervened_on])
+            h, mu, logvar = nets(x1, dj[:, :, dhandler.varied_in_action])
             xi_hat = torch.sigmoid(h)
             ### Losses
             # Reconstruction
-            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'None')
+            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
             bce_loss_per_image =\
                 bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
             bce_loss = bce_loss_per_image.sum()/config.n_steps
