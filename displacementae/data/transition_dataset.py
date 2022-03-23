@@ -43,7 +43,7 @@ class TransitionDataset(Dataset):
         self.num_val = 0
 
         # Latents Config
-        self.transitions_on = True
+        self.transitions_on = transitions_on
         self.n_latents = 0
         self.latents = np.array([])
 

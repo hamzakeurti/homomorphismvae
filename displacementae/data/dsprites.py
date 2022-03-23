@@ -53,9 +53,9 @@ LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 class DspritesDataset(trns_dataset.TransitionDataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
                 fixed_values=[], fixed_in_action=[], transitions_on=True,
-                n_transitions = None, action_range=[-1,1], num_train = 200, num_val=30,
-                cyclic_trans=False):
-        super().__init__(rseed)
+                n_transitions = None, action_range=[-1,1], num_train = 200, 
+                num_val=30,cyclic_trans=False):
+        super().__init__(rseed, transitions_on, n_transitions)
 
         # Number of samples
         self.num_train = num_train
