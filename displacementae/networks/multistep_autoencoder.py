@@ -64,7 +64,7 @@ class MultistepAutoencoder(ae.AutoEncoder):
         h, mu, logvar = self.encode(h)
 
         h_out = torch.empty(
-            size=[x.shape[0] + [n_steps, self.n_repr_units]])
+            size=[x.shape[0]] + [n_steps, self.n_repr_units])
 
         if self.n_repr_units > self.n_transform_units:
             # The part of the transformation that is not transformed 
@@ -74,9 +74,13 @@ class MultistepAutoencoder(ae.AutoEncoder):
                                         .unsqueeze(1).repeat(1,n_steps,1)
         # Through geometry
         for i in range(n_steps):
-            h_out[:,:,:self.n_transform_units] = \
-                self.grp_morphism.transform( h[:,:self.n_transform_units], 
-                                        dz[:,:i+1])
+            if i == 0:
+                h_out[:,i,:self.n_transform_units] = \
+                    self.grp_morphism.transform( h[:,:self.n_transform_units], 
+                                            dz[:,i])   
+            h_out[:,i,:self.n_transform_units] = \
+                self.grp_morphism.transform(h_out[:,i-1,:self.n_transform_units].clone(), 
+                                        dz[:,i])
                 
         # Through decoder
         h_out = h_out.view(-1, self.n_repr_units)
