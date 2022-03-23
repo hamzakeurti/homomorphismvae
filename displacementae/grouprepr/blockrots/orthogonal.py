@@ -70,12 +70,14 @@ class OrthogonalMatrix(nn.Module):
     BLOCKS = 'blocks'
 
     def __init__(self, transformation=CAYLEY, n_units=6,device = 'cpu', 
-                learn_params=False):
+                learn_params=False, specified_step=0):
         nn.Module.__init__(self)
         self.device = device
         self.transformation = transformation
         self.n_units = n_units        
         self.matrix_size = n_units
+        self.specified_step = specified_step
+
         if transformation == OrthogonalMatrix.CAYLEY:
             self.n_parameters = self.n_units*(self.n_units-1)/2
         elif transformation == OrthogonalMatrix.BLOCKS:
@@ -115,6 +117,8 @@ class OrthogonalMatrix(nn.Module):
             angles: parameters of the rotation matrix
         """
         if self.learn_params:
-            angles = self.alpha*angles
+            angles = self.alpha * angles
+        else:
+            angles = self.specified_step * angles
         O = self.forward(angles)
         return torch.matmul(O, h.unsqueeze(-1)).squeeze(dim=-1)

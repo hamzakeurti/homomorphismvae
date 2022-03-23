@@ -55,13 +55,11 @@ class AutoEncoder(nn.Module):
     """
 
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
-                 specified_step=0, variational=True, intervene=True, 
-                 spherical = False):
+                 variational=True, intervene=True, spherical = False):
         nn.Module.__init__(self)
         self.encoder = encoder
         self.decoder = decoder
         self.grp_morphism = grp_morphism
-        self.specified_step = specified_step
         self.variational = variational
         self.intervene = intervene
         self.spherical = spherical
@@ -92,8 +90,6 @@ class AutoEncoder(nn.Module):
 
         if self.intervene:
             # Through geom
-            if not self.grp_morphism.learn_params:
-                dz = dz * self.specified_step
             transformed_h = \
                 self.grp_morphism.transform(h[:,:self.n_transform_units], dz)
             h = torch.hstack([transformed_h,h[:,self.n_transform_units:]])
