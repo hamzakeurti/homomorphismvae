@@ -37,5 +37,6 @@ def parse_cmd_arguments(description=''):
     args.net_args(parser)
     args.misc_args(parser,dout_dir)
     config = parser.parse_args()
+    config.intervene = True
     return config
 

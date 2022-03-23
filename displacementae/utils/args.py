@@ -34,8 +34,6 @@ def data_args(parser, mode='autoencoder'):
                         help='Values of fixed joints')
     dgroup.add_argument('--fixed_in_intervention', type=str, default='', 
                         help='Indices of fixed joints in intervention')
-    dgroup.add_argument('--intervene', action='store_true',
-                        help='Whether to vary joint positions.')
     dgroup.add_argument('--shuffle', type=bool, default=True,
                         help='Shuffle the dataset.')
     dgroup.add_argument('--displacement_range', type=str,
@@ -51,6 +49,9 @@ def data_args(parser, mode='autoencoder'):
                         help='Number of evaluation samples')
     dgroup.add_argument('--cyclic_trans', action='store_true',
                         help='considers position as a cyclic latent.')
+    if mode == 'autoencoder':
+        dgroup.add_argument('--intervene', action='store_true',
+                        help='Whether to vary joint positions.')
     if mode == 'homomorphism':
         dgroup.add_argument('--n_steps', type=int, default=2,
                         help='Number of observed transitions per example.')
