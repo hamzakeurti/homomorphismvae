@@ -45,6 +45,7 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
                         figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
+    
         
     imgs, latents, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(imgs[:,0]).to(device)
@@ -54,9 +55,9 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
         X2 = X1.clone()
     dj = torch.FloatTensor(dj).to(device).squeeze()
     if config.intervene:
-        h, mu, logvar = nets(X2, dj[:, dhandler.varied_in_action])
+        h, mu, logvar = nets(X1, dj[..., dhandler.varied_in_action])
     else:
-        h, mu, logvar = nets(X2, None)
+        h, mu, logvar = nets(X1, None)
     X2_hat = torch.sigmoid(h)
     nrows = 7
     ncols = 3
@@ -82,6 +83,52 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
         logger.info(f'Figure saved {figname}')
     plt.close(fig)
     
+
+def plot_n_step_reconstruction(dhandler, nets, config, device, logger, 
+                        figname):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+
+    n_steps = config.n_steps
+
+    imgs, latents, dj = dhandler.get_val_batch()
+    X1 = torch.FloatTensor(imgs[:,0]).to(device)
+    Xi = torch.FloatTensor(imgs[:,1:]).to(device)
+    dj = torch.FloatTensor(dj).to(device)
+
+
+    h, mu, logvar = nets(X1, dj[..., dhandler.varied_in_action])
+    Xi_hat = torch.sigmoid(h)    
+    
+    nrows = 7
+    ncols = 1 + 2*n_steps
+
+    unit_length = 1.5
+
+    fig, axes = plt.subplots(nrows,ncols,
+                             figsize=(ncols*unit_length,
+                                      nrows * unit_length))
+    kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
+    for row in range(nrows):
+        axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
+        for i in range(n_steps):
+            axes[row,1+2*i].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)
+            axes[row,2+2*i].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
+        if config.plot_on_black:
+            for j in range(ncols):
+                axes[row,j].axes.xaxis.set_visible(False)
+                axes[row,j].axes.yaxis.set_visible(False)
+        else:
+            for j in range(ncols):
+                axes[row,j].axis('off')
+    plt.subplots_adjust(wspace=0, hspace=0.1)
+
+
+    if figname is not None:
+        figname += 'reconstructions.pdf'
+        plt.savefig(figname,bbox_inches='tight')
+        logger.info(f'Figure saved {figname}')
+    plt.close(fig)
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
                 epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
