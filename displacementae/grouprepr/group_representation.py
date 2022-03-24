@@ -20,39 +20,45 @@
 # @version        :1.0
 # @python_version :3.7.4
 
-
-
-
-
+import torch
 import torch.nn as nn
 
 class GroupRepresentation(nn.Module):
     """
     An interface for group representation classes.
 
-    Group representations map input transitions/actions to matrices.
+    Group representations are maps from the abstract action group to 
+    invertible matrices through the :method:`forward` method. 
+    Group representations also define a linear 
+    action of the abstract group on the representation space of 
+    observations, as such the group representation transforms input 
+    representation vectors through the matrix product with the 
+    representation of a given action, through the :method:`act` method. 
     """
-    def __init__(self, n_input, n_repr_units) -> None:
+    def __init__(self, n_action_units:int, n_repr_units:int) -> None:
         super().__init__()
-        self.n_input = n_input
+        self.n_action_units = n_action_units
         self.n_repr_units = n_repr_units
 
-    def get_matrix(self,a):
+    def forward(self,a:torch.Tensor) -> torch.Tensor:
         """
-        Maps input transitions to matrices.
+        Gets the representation matrix of input transition :arg:`a`.
         """
         pass
 
-    def compose(self,a):
+    def act(self, a:torch.Tensor, z:torch.Tensor) -> torch.Tensor:
         """
-        Maps a succession of transitions to a matrix by calculating the matrix 
-        product of the matrix images of the input actions.
+        Acts on an input representation vector :arg:`z` through matrix 
+        product with the representation matrix of input transition 
+        :arg:`a`.
 
         Args:
-            a, torch.Tensor: Batch of succesion of transitions. 
-                        shape: `[batch_size,n_steps,n_input]` 
+            a, torch.Tensor: Batch of transitions. 
+                        shape: `[batch_size,n_action]`
+            z, torch.Tensor: Batch of representation vectors.
+                        shape: `[batch_size,n_repr]`
         Returns:
-            torch.Tensor: Batch of matrices.
-                        shape: `[batch_size,n_repr_units,n_repr_units]`
+            torch.Tensor: Transformed representation vectors.
+                        shape: `[batch_size,n_repr_units]`
         """
-        return
+        return torch.einsum("...jk,...k->...j",self.forward(a),z)
