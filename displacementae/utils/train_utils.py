@@ -26,13 +26,13 @@ import utils.sim_utils as sim_utils
 import data.data_utils as data_utils
 import networks.network_utils as net_utils 
 
-def run(mode='autoencoder',repr='blockrepr'):
+def run(mode='autoencoder',representation='blockrepr'):
     """Script for setting up and launching the training of the models.
 
     Args:
         mode (str): architecture type, supports 'autoencoder', defaults to 
             'autoencoder'
-        repr (str): group representation, defaults to 'blockrepr'.
+        representation (str): group representation, defaults to 'blockrepr'.
             'blockrepr': actions are represented by block diagonal matrices of 
             2D rotation matrices. 
     """
@@ -53,7 +53,7 @@ def run(mode='autoencoder',repr='blockrepr'):
     dhandler, dloader = data_utils.setup_data(config, mode)
     # setup models
     nets = net_utils.setup_network(config, dhandler, device, mode=mode,
-        repr=repr)
+        representation=representation)
     # setup shared
     shared = Namespace()
 

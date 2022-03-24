@@ -35,11 +35,13 @@ AUTOENCODER = 'autoencoder'
 
 
 def setup_network(config, dhandler, device, mode=AUTOENCODER, 
-                  repr=BLOCK_REPR):
+                  representation=BLOCK_REPR):
     if mode==AUTOENCODER:
-        return setup_autoencoder_network(config, dhandler, device, repr)
+        return setup_autoencoder_network(config, dhandler, device, 
+                                         representation)
     elif mode=='homomorphism':
-        return setup_multistep_autoencoder(config, dhandler, device, repr)
+        return setup_multistep_autoencoder(config, dhandler, device, 
+                                           representation)
     else:
         raise NotImplementedError
 
@@ -93,7 +95,7 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
     return encoder, decoder
 
 
-def setup_grp_morphism(config, transformed_units,device, repr):
+def setup_grp_morphism(config, transformed_units,device, representation):
     """
     Sets up the group morphism module which converts input actions to 
     """
@@ -106,7 +108,7 @@ def setup_grp_morphism(config, transformed_units,device, repr):
         if len(specified_step) == 1:
             specified_step = specified_step[0]
     
-    if repr == BLOCK_REPR: # TODO rename! repr is a python built-in. 
+    if representation == BLOCK_REPR: 
         orthogonal_matrix = orth.OrthogonalMatrix(
             transformation=orth.OrthogonalMatrix.BLOCKS, 
             n_units=transformed_units, device=device, 
@@ -116,7 +118,7 @@ def setup_grp_morphism(config, transformed_units,device, repr):
     else:
         raise NotImplementedError
 
-def setup_autoencoder_network(config, dhandler, device, repr):
+def setup_autoencoder_network(config, dhandler, device, representation):
     """
     Sets up an autoencoder with a geometric transformation of the latent
     units.
@@ -130,7 +132,7 @@ def setup_autoencoder_network(config, dhandler, device, repr):
                             from cli.
         dhandler (dataset): Handler for dataset.
         device (str): indicates device where parameters are stored.
-        repr (str): Indicates which group representation to use for the 
+        representation (str): Indicates which group representation to use for the 
                     observed actions.
                     if 'block_repr': group representation is block 
                     diagonal 2D rotation matrices.
@@ -147,7 +149,7 @@ def setup_autoencoder_network(config, dhandler, device, repr):
     
     grp_morphism = setup_grp_morphism(config, transformed_units, 
                                       device=device, 
-                                      repr=repr)
+                                      representation=representation)
 
     autoencoder = AutoEncoder(
         encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
@@ -158,7 +160,7 @@ def setup_autoencoder_network(config, dhandler, device, repr):
 
 
 
-def setup_multistep_autoencoder(config, dhandler, device, repr):
+def setup_multistep_autoencoder(config, dhandler, device, representation):
     n_free_units = config.n_free_units
     # a 2D representation space for each action unit 
     # TODO should be specified by user
@@ -172,7 +174,7 @@ def setup_multistep_autoencoder(config, dhandler, device, repr):
 
     grp_morphism = setup_grp_morphism(config, transformed_units, 
                                       device=device, 
-                                      repr=repr)
+                                      representation=representation)
                                       
     autoencoder = MultistepAutoencoder(
         encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,

@@ -25,4 +25,4 @@ import __init__
 import utils.train_utils as ututils
 
 if __name__=='__main__':
-    ututils.run(mode='homomorphism',repr='blockrepr')
+    ututils.run(mode='homomorphism',representation='blockrepr')
