@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_blockrepr.py
+# @title          :displacementae/autoencoder/train_block_mlp_repr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :10/11/2021
