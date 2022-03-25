@@ -27,6 +27,7 @@ import torch.nn as nn
 
 import autoencoder.train_args as train_args
 import data.data_utils as data_utils
+from networks.autoencoder import AutoEncoder
 import networks.network_utils as net_utils
 import networks.variational_utils as var_utils
 import utils.plotting_utils as plt_utils
@@ -45,7 +46,7 @@ def setup_optimizer(params, config):
     return optimizer
 
 
-def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
+def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False):
     nets.eval()
     if epoch == 0:
@@ -85,12 +86,12 @@ def evaluate(dhandler, nets, device, config, shared, logger, mode, epoch,
                 log_text += f'+\tKL {kl_loss.item():.5f}'
                 shared.kl_loss.append(kl_loss.item())
             logger.info(log_text)
-            if nets.grp_transform.learn_params:
-                alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
-                logger.info(f'learned alpha {alpha}')
-                if not hasattr(shared,"learned_alpha"):
-                    shared.learned_alpha = []
-                shared.learned_alpha.append(list(alpha))
+            example_R = nets.grp_morphism.get_example_repr()
+            # alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
+            # logger.info(f'learned alpha {alpha}')
+            # if not hasattr(shared,"learned_alpha"):
+            #     shared.learned_alpha = []
+            # shared.learned_alpha.append(list(alpha))
             if epoch % 20*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
 

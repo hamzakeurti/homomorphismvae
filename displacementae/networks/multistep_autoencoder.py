@@ -22,9 +22,9 @@
 
 import torch
 
-import networks.autoencoder as ae
+from networks.autoencoder import AutoEncoder
 
-class MultistepAutoencoder(ae.AutoEncoder):
+class MultistepAutoencoder(AutoEncoder):
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
                  n_transform_units, variational=True, spherical=False):        
         """
@@ -76,18 +76,21 @@ class MultistepAutoencoder(ae.AutoEncoder):
         for i in range(n_steps):
             if i == 0:
                 h_out[:,i,:self.n_transform_units] = \
-                    self.grp_morphism.transform( h[:,:self.n_transform_units], 
-                                            dz[:,i])   
-            h_out[:,i,:self.n_transform_units] = \
-                self.grp_morphism.transform(h_out[:,i-1,:self.n_transform_units].clone(), 
-                                        dz[:,i])
-                
+                    self.grp_morphism.act(dz[:,i], 
+                                          h[:,:self.n_transform_units])   
+            else:
+                h_out[:,i,:self.n_transform_units] = \
+                        self.grp_morphism.act(
+                                dz[:,i], 
+                                h_out[:,i-1,:self.n_transform_units].clone())
+        
         # Through decoder
         h_out = h_out.view(-1, self.n_repr_units)
-        h_out = self.decoder(h_out[:,:])
+        h_out = self.decoder(h_out)
         h_out = h_out.view(x.shape[0],n_steps,*x.shape[1:])
         if self.variational:
             return h_out, mu, logvar
         else:
             return h_out, None, None
 
+    # def grp_transform(self)

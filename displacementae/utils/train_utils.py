@@ -26,14 +26,14 @@ import utils.sim_utils as sim_utils
 import data.data_utils as data_utils
 import networks.network_utils as net_utils 
 
-def run(mode='autoencoder',representation='blockrepr'):
+def run(mode='autoencoder',representation='block_rots_repr'):
     """Script for setting up and launching the training of the models.
 
     Args:
         mode (str): architecture type, supports 'autoencoder', defaults to 
             'autoencoder'
-        representation (str): group representation, defaults to 'blockrepr'.
-            'blockrepr': actions are represented by block diagonal matrices of 
+        representation (str): group representation, defaults to 'block_rots_repr'.
+            'block_rots_repr': actions are represented by block diagonal matrices of 
             2D rotation matrices. 
     """
     # Mode dependent imports
@@ -45,7 +45,7 @@ def run(mode='autoencoder',representation='blockrepr'):
         import homomorphism.train_utils as tutils
 
     # parse commands
-    config = train_args.parse_cmd_arguments()
+    config = train_args.parse_cmd_arguments(representation)
     # setup environment
     device, logger = sim_utils.setup_environment(config)
     sim_utils.backup_cli_command(config)

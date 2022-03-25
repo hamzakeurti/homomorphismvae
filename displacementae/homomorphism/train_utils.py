@@ -95,12 +95,12 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
-            if nets.grp_morphism.learn_params:
-                alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
-                logger.info(f'learned alpha {alpha}')
-                if not hasattr(shared,"learned_alpha"):
-                    shared.learned_alpha = []
-                shared.learned_alpha.append(list(alpha))
+            example_R = nets.grp_morphism.get_example_repr()
+            # alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
+            # logger.info(f'learned alpha {alpha}')
+            # if not hasattr(shared,"learned_alpha"):
+            #     shared.learned_alpha = []
+            # shared.learned_alpha.append(list(alpha))
             if epoch % 20*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
 

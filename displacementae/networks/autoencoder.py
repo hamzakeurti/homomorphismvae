@@ -23,6 +23,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
+from grouprepr.group_representation import GroupRepresentation
 
 import networks.variational_utils as var_utils
 
@@ -59,12 +60,12 @@ class AutoEncoder(nn.Module):
         nn.Module.__init__(self)
         self.encoder = encoder
         self.decoder = decoder
-        self.grp_morphism = grp_morphism
+        self.grp_morphism:GroupRepresentation = grp_morphism
         self.variational = variational
         self.intervene = intervene
         self.spherical = spherical
         if grp_morphism is not None:
-            self.n_transform_units = self.grp_morphism.n_units
+            self.n_transform_units = self.grp_morphism.dim_representation
         else:
             self.n_transform_units = 0
         self.n_repr_units = n_repr_units
@@ -91,7 +92,7 @@ class AutoEncoder(nn.Module):
         if self.intervene:
             # Through geom
             transformed_h = \
-                self.grp_morphism.transform(h[:,:self.n_transform_units], dz)
+                self.grp_morphism.act(dz,h[:,:self.n_transform_units])
             h = torch.hstack([transformed_h,h[:,self.n_transform_units:]])
         # Through decoder
         h = self.decoder(h)

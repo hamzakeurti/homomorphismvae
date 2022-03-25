@@ -23,6 +23,8 @@
 import torch
 import torch.nn as nn
 
+import numpy as np
+
 class GroupRepresentation(nn.Module):
     """
     An interface for group representation classes.
@@ -35,10 +37,10 @@ class GroupRepresentation(nn.Module):
     representation vectors through the matrix product with the 
     representation of a given action, through the :method:`act` method. 
     """
-    def __init__(self, n_action_units:int, n_repr_units:int) -> None:
+    def __init__(self, n_action_units:int, dim_representation:int) -> None:
         super().__init__()
         self.n_action_units = n_action_units
-        self.n_repr_units = n_repr_units
+        self.dim_representation = dim_representation
 
     def forward(self,a:torch.Tensor) -> torch.Tensor:
         """
@@ -62,3 +64,16 @@ class GroupRepresentation(nn.Module):
                         shape: `[batch_size,n_repr_units]`
         """
         return torch.einsum("...jk,...k->...j",self.forward(a),z)
+
+    def get_example_repr(self,a:torch.Tensor=None) -> np.ndarray:
+        with torch.no_grad():
+            if a is None:
+                a = torch.zeros(self.n_action_units*2+1,self.n_action_units)
+                for i in range(self.n_action_units):
+                    a[1+2*i:3+2*i,i] = torch.tensor([1,-1])
+
+            R = self.forward(a)
+            
+            if R.device.type == 'cuda':
+                R = R.cpu()
+            return R.numpy()

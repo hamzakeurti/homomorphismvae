@@ -22,6 +22,8 @@
 
 from datetime import datetime
 
+from networks.network_utils import BLOCK_MLP_REPR,BLOCK_ROTS_REPR,MLP_REPR
+
 def data_args(parser, mode='autoencoder'):
     dgroup = parser.add_argument_group('Data options')
     dgroup.add_argument('--dataset', type=str, default='armeye', 
@@ -114,12 +116,6 @@ def net_args(parser):
                         help='kernel sizes of convolution layers.')
     ngroup.add_argument('--strides', type=str, default='1',
                         help='strides of convlution layers.')
-    ngroup.add_argument('--learn_geometry',action='store_true', 
-                        help='Whether to learn the grp action parameters. '+
-                        'If not, these should be provided in arg '+
-                        '--specified_grp_step')
-    ngroup.add_argument('--specified_grp_step', type=str, default='0', 
-                        help='specified grp action parameters')
     ngroup.add_argument('--variational',action='store_true', 
                         help='Whether the network outputs ' + 
                         'should be considered as mean and var of a gaussian.')
@@ -162,3 +158,27 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--plot_pca', action='store_true', 
                         help='Plots scatter of representations projected '+
                              'along 2 main pca components')
+
+def group_repr_args(parser, representation):
+    ggroup = parser.add_argument_group('Group Representation options')
+    if representation == BLOCK_MLP_REPR:
+        ggroup.add_argument('--dims', type=str, default='',
+                            help='List of dimensions of the subreps. '+
+                                 'The resulting representation is of dim '+
+                                 'the sum of provided dims and it maps to '+
+                                 'block diagonal matrices.')
+        ggroup.add_argument('--group_hidden_units', type=str, default='',
+                            help='Hidden units list for all subreps\' MLP')
+    elif representation == MLP_REPR:
+        ggroup.add_argument('--dim', type=int, default=2,
+                            help='Dimension of the representation space '+
+                                 'acted on.')
+        ggroup.add_argument('--group_hidden_units', type=str, default='',
+                            help='Hidden units list of the rep\'s MLP')
+    elif representation == BLOCK_ROTS_REPR:
+        ggroup.add_argument('--learn_geometry',action='store_true', 
+                        help='Whether to learn the grp action parameters. '+
+                        'If not, these should be provided in arg '+
+                        '--specified_grp_step')
+        ggroup.add_argument('--specified_grp_step', type=str, default='0', 
+                        help='specified grp action parameters')

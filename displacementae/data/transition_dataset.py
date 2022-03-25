@@ -103,3 +103,11 @@ class TransitionDataset(Dataset):
     
     def get_val_batch(self):
         pass
+
+    @property
+    def action_shape(self) -> list:
+        pass
+
+    @property
+    def in_shape(self) -> list:
+        pass

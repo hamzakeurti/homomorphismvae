@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_block_mlp_repr.py
+# @title          :displacementae/homomorphism/train_blockrepr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :10/11/2021
+# @created        :10/03/2023
 # @version        :1.0
 # @python_version :3.7.4
 
@@ -25,4 +25,4 @@ import __init__
 import utils.train_utils as ututils
 
 if __name__=='__main__':
-    ututils.run(mode='autoencoder',representation='blockrepr')
+    ututils.run(mode='homomorphism',representation='block_mlp_repr')

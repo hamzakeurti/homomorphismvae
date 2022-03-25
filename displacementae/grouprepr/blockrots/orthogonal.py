@@ -20,12 +20,16 @@
 # @version        :1.0
 # @python_version :3.7.4
 
+import numpy as np
 import torch
 import torch.nn as nn
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from models import nets
+
+from grouprepr.group_representation import GroupRepresentation
+
 
 def _block_diag(m):
     """
@@ -59,66 +63,72 @@ def _attach_dim(v, n_dim_to_prepend=0, n_dim_to_append=0):
         + v.shape
         + torch.Size([1] * n_dim_to_append))
 
-class OrthogonalMatrix(nn.Module):
+class OrthogonalMatrix(GroupRepresentation):
     """
     A torch module that parametrizes a O(n) subgroup, to allow for matrix optimization within the orthogonal group.
 
     Torch module that parametrizes a group of orthogonal matrices. 
     The module does not have any weights, it just takes a vector of parameters and turns them into an orthogonal matrix.
     """
-    CAYLEY = 'cayley'
-    BLOCKS = 'blocks'
 
-    def __init__(self, transformation=CAYLEY, n_units=6,device = 'cpu', 
-                learn_params=False, specified_step=0):
-        nn.Module.__init__(self)
+    def __init__(self, dim_representation: int,
+                 device:str = 'cpu', learn_params:bool=False, 
+                 specified_step=0) -> None:
+        super().__init__(dim_representation//2, dim_representation)
+
+        if self.dim_representation % 2 == 1:
+            raise ValueError(
+                'Latent space should have an even dimension for the matrix to be expressed in blocks of 2.')
+
         self.device = device
-        self.transformation = transformation
-        self.n_units = n_units        
-        self.matrix_size = n_units
         self.specified_step = specified_step
 
-        if transformation == OrthogonalMatrix.CAYLEY:
-            self.n_parameters = self.n_units*(self.n_units-1)/2
-        elif transformation == OrthogonalMatrix.BLOCKS:
-            if self.n_units % 2 == 1:
-                raise ValueError(
-                    'Latent space should have an even dimension for the matrix to be expressed in blocks of 2.')
-            self.n_parameters = self.n_units//2  # Number of blocks
-            self.rot_basis = torch.FloatTensor([
-                [[1., 0.],
-                 [0., 1.]],
-                [[0., -1.],
-                 [1., 0.]]]).to(device)
+        self.rot_basis = torch.FloatTensor([
+                    [[1., 0.],
+                    [0., 1.]],
+                    [[0., -1.],
+                    [1., 0.]]]).to(device)
+
         self.learn_params = learn_params
         if learn_params:
             self.alpha = nn.parameter.Parameter(
-                torch.rand([self.n_parameters])/10)
+                torch.rand([self.n_action_units])/10)
 
-    def forward(self, parameters):
-        if parameters.shape[-1] != self.n_parameters:
+    def forward(self, a):
+        if a.shape[-1] != self.n_action_units:
             raise ValueError(
-                f'Expected input last dimension to be {self.n_parameters}, received {parameters.shape[-1]}')
-        if self.transformation == OrthogonalMatrix.BLOCKS:
-            # parameters shape: [b,n_parameters]
-            return _block_diag(self.rotation_matrices(parameters))
+                f'Expected input last dimension to be {self.n_action_units}, received {a.shape[-1]}')
+
+        return _block_diag(self.rotation_matrices(a))
 
     def rotation_matrices(self, angle):
         u = torch.stack([torch.cos(angle), torch.sin(angle)], dim=-1)
         return torch.tensordot(u, self.rot_basis, dims=[[-1], [0]])
     
-    def transform(self, h, angles):
+    def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
         Function that populates an orthogonal matrix, 
         then rotates the input vector h through the obtained matrix.
         
         Args:
-            h: vector to transform
-            angles: parameters of the rotation matrix
+            a: parameters of the rotation matrix
+            z: vector to transform
         """
         if self.learn_params:
-            angles = self.alpha * angles
+            a = self.alpha * a
         else:
-            angles = self.specified_step * angles
-        O = self.forward(angles)
-        return torch.matmul(O, h.unsqueeze(-1)).squeeze(dim=-1)
+            a = self.specified_step * a
+        O = self.forward(a)
+        return torch.matmul(O, z.unsqueeze(-1)).squeeze(dim=-1)
+
+    def get_example_repr(self, a: torch.Tensor = None) -> np.ndarray:
+        with torch.no_grad():            
+            if a is None:
+                alpha = self.alpha.clone()
+                if alpha.device.type == 'cuda':
+                    alpha = alpha.cpu()
+                alpha = alpha.numpy()
+                return alpha 
+            else:
+                return super().get_example_repr(a)
+        

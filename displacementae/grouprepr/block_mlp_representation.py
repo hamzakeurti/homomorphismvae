@@ -35,10 +35,10 @@ class BlockMLPRepresentation(GroupRepresentation):
     matrices.
 
     """
-    def __init__(self, n_action_units:int, n_repr_units:int, 
+    def __init__(self, n_action_units:int, dim_representation:int, 
                  dims:list, hidden_units:list=[],
                  activation:Callable=torch.relu, device:str='cpu') -> None:
-        super().__init__(n_action_units, n_repr_units)
+        super().__init__(n_action_units, dim_representation)
         self.dims = dims
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
@@ -47,10 +47,10 @@ class BlockMLPRepresentation(GroupRepresentation):
             self.subreps.append(
                     MLPRepresentation(n_action_units,dim,
                                       hidden_units=hidden_units,
-                                      activation=activation))
+                                      activation=activation, device=device))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
-        R = torch.zeros(*a.shape[:-1],self.n_repr_units,self.n_repr_units)
+        R = torch.zeros(*a.shape[:-1],self.dim_representation,self.dim_representation)
         for i in range(self.n_subreps):
             R[...,self.cumdims[i]:self.cumdims[i+1], 
               self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a)

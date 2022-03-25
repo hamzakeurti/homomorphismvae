@@ -31,11 +31,11 @@ class MLPRepresentation(GroupRepresentation):
     An MLP mapping from transitions to invertible matrices.
 
     """
-    def __init__(self, n_action_units: int, n_repr_units: int, hidden_units=[],
+    def __init__(self, n_action_units: int, dim_representation: int, hidden_units=[],
                  activation=torch.relu, device='cpu') -> None:
-        super().__init__(n_action_units, n_repr_units)
+        super().__init__(n_action_units, dim_representation)
         self.device = device
-        self.net = MLP(n_action_units,n_repr_units**2,hidden_units,
+        self.net = MLP(n_action_units,dim_representation**2,hidden_units,
                        activation).to(device)
     
     def forward(self, a: torch.Tensor) -> torch.Tensor:
@@ -44,7 +44,7 @@ class MLPRepresentation(GroupRepresentation):
         the outputs to form matrices. 
         """
         R = self.net(a)
-        R = R.view(-1, self.n_repr_units,self.n_repr_units)
+        R = R.view(-1, self.dim_representation,self.dim_representation)
         return R
 
 if __name__ == '__main__':

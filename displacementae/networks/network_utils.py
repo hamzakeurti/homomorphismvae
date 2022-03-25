@@ -20,8 +20,11 @@
 # @version        :1.0
 # @python_version :3.7.4
 
+from argparse import Namespace
 from os import error
 import torch
+from data.transition_dataset import TransitionDataset
+from grouprepr.mlp_representation import MLPRepresentation
 
 from networks.cnn import CNN
 from networks.transposedcnn import TransposedCNN 
@@ -29,13 +32,18 @@ import grouprepr.blockrots.orthogonal as orth
 import utils.misc as misc
 from networks.autoencoder import AutoEncoder
 from networks.multistep_autoencoder import MultistepAutoencoder
+from grouprepr.block_mlp_representation import BlockMLPRepresentation
+from grouprepr.group_representation import GroupRepresentation
 
-BLOCK_REPR = 'blockrepr'
+BLOCK_MLP_REPR = 'block_mlp_repr'
+MLP_REPR = 'mlp_repr'
+BLOCK_ROTS_REPR = 'block_rots_repr'
+
 AUTOENCODER = 'autoencoder'
 
 
 def setup_network(config, dhandler, device, mode=AUTOENCODER, 
-                  representation=BLOCK_REPR):
+                  representation=BLOCK_ROTS_REPR):
     if mode==AUTOENCODER:
         return setup_autoencoder_network(config, dhandler, device, 
                                          representation)
@@ -95,28 +103,46 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
     return encoder, decoder
 
 
-def setup_grp_morphism(config, transformed_units,device, representation):
+def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset, 
+                       device:str, 
+                       representation) -> GroupRepresentation:
     """
     Sets up the group morphism module which converts input actions to 
     """
-    if not hasattr(config,'specified_grp_step'):
-        specified_step = 0
-    else:
-        specified_step = misc.str_to_floats(config.specified_grp_step)
-        if len(specified_step) == 0 and not config.learn_geometry:
-            raise ValueError
-        if len(specified_step) == 1:
-            specified_step = specified_step[0]
     
-    if representation == BLOCK_REPR: 
-        orthogonal_matrix = orth.OrthogonalMatrix(
-            transformation=orth.OrthogonalMatrix.BLOCKS, 
-            n_units=transformed_units, device=device, 
+    if representation == BLOCK_ROTS_REPR: 
+        if not hasattr(config,'specified_grp_step'):
+            specified_step = 0
+        else:
+            specified_step = misc.str_to_floats(config.specified_grp_step)
+            if len(specified_step) == 0 and not config.learn_geometry:
+                raise ValueError
+            if len(specified_step) == 1:
+                specified_step = specified_step[0]
+
+        grp_morphism = orth.OrthogonalMatrix(
+            dim_representation=dhandler.action_shape[0] * 2,device=device, 
             learn_params=config.learn_geometry, 
             specified_step=specified_step).to(device)
-        return orthogonal_matrix
+    elif representation == BLOCK_MLP_REPR:
+        dims = misc.str_to_ints(config.dims)
+        hidden_units = misc.str_to_ints(config.group_hidden_units)
+        grp_morphism = BlockMLPRepresentation(
+                n_action_units=dhandler.action_shape[0],
+                dim_representation=sum(dims),
+                dims=dims,
+                hidden_units=hidden_units)
+    elif representation == MLP_REPR:
+        hidden_units = misc.str_to_ints(config.group_hidden_units)
+        grp_morphism = MLPRepresentation(
+                n_action_units=dhandler.action_shape[0],
+                dim_representation=config.dim,
+                hidden_units=hidden_units)
     else:
-        raise NotImplementedError
+        raise NotImplementedError(
+                f'Representation {representation} is not implemented.')
+    return grp_morphism
+        
 
 def setup_autoencoder_network(config, dhandler, device, representation):
     """
@@ -138,18 +164,18 @@ def setup_autoencoder_network(config, dhandler, device, representation):
                     diagonal 2D rotation matrices.
     """
 
-    n_free_units = config.n_free_units
     # a 2D representation space for each action unit 
     # TODO should be specified by user
-    transformed_units = dhandler.action_shape[0] * 2
-    repr_units =  transformed_units + n_free_units
 
+    grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
+                                      representation=representation)
+    
+    dim_representation = grp_morphism.dim_representation
+    n_free_units = config.n_free_units
+    repr_units =  dim_representation + n_free_units
+    
     encoder, decoder = setup_encoder_decoder(config, dhandler, device, 
                                              repr_units)
-    
-    grp_morphism = setup_grp_morphism(config, transformed_units, 
-                                      device=device, 
-                                      representation=representation)
 
     autoencoder = AutoEncoder(
         encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
@@ -161,25 +187,20 @@ def setup_autoencoder_network(config, dhandler, device, representation):
 
 
 def setup_multistep_autoencoder(config, dhandler, device, representation):
+    grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
+                                      representation=representation)
+    
+    dim_representation = grp_morphism.dim_representation
     n_free_units = config.n_free_units
-    # a 2D representation space for each action unit 
-    # TODO should be specified by user
-    transformed_units = dhandler.action_shape[0] * 2
-    repr_units =  transformed_units + n_free_units
-
-
-
+    repr_units =  dim_representation + n_free_units
+    
     encoder, decoder = setup_encoder_decoder(config, dhandler, device, 
                                              repr_units)
-
-    grp_morphism = setup_grp_morphism(config, transformed_units, 
-                                      device=device, 
-                                      representation=representation)
                                       
     autoencoder = MultistepAutoencoder(
         encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
         variational=config.variational, 
-        n_repr_units=repr_units, n_transform_units = transformed_units, 
+        n_repr_units=repr_units, n_transform_units = dim_representation, 
         spherical=config.spherical)
     
 

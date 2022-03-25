@@ -13,30 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_args.py
+# @title          :displacementae/homomorphism/train_blockrepr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :10/11/2021
+# @created        :10/03/2023
 # @version        :1.0
 # @python_version :3.7.4
 
-import argparse
-from datetime import datetime
+import __init__
 
-import utils.args as args
+import utils.train_utils as ututils
 
-def parse_cmd_arguments(representation='block_rots_repr' ,description=''):
-    curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    if not description:
-        description = 'Geometric Autoencoder'
-    dout_dir = './out/run_'+curr_date
-    parser = argparse.ArgumentParser(description=description)
-    args.data_args(parser)
-    args.train_args(parser)
-    args.net_args(parser)
-    args.misc_args(parser,dout_dir)
-    args.group_repr_args(parser, representation)
-
-    config = parser.parse_args()
-    return config
-
+if __name__=='__main__':
+    ututils.run(mode='homomorphism',representation='block_rots_repr')

@@ -20,7 +20,10 @@
 # @version        :1.0
 # @python_version :3.7.4
 
-def str_to_ints(str_arg):
+from typing import List, Union
+
+
+def str_to_ints(str_arg:str) -> List:
     """
     Parse a string argument into a list of ints.
     """
@@ -40,7 +43,7 @@ def str_to_ints(str_arg):
         ret = ret[0]
     return ret
 
-def ints_to_str(args):
+def ints_to_str(args:Union[List[int],int]) -> str:
     assert isinstance(args,list) or isinstance(args, int)
     if isinstance(args, int):
         return str(args)
@@ -48,7 +51,7 @@ def ints_to_str(args):
     str_ret += ','.join([str(arg) for arg in args])
     return str_ret
 
-def str_to_floats(str_arg):
+def str_to_floats(str_arg:str) -> List:
     """
     Parse a string argument into a list of ints.
     """
