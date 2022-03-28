@@ -15,8 +15,8 @@ class TestBlockMLPRepresentation(unittest.TestCase):
                                       hidden_units)
         self.assertEqual(repr.cumdims,[0,5,8,10])
         self.assertEqual(len(repr.subreps),3)
-        n_subrepr_units = [subrepr.n_repr_units for subrepr in repr.subreps]
-        self.assertEqual(n_subrepr_units,dims)
+        subrepr_dim = [subrepr.dim_representation for subrepr in repr.subreps]
+        self.assertEqual(subrepr_dim,dims)
         
     def test_forward(self):
         n_action_units = 5
