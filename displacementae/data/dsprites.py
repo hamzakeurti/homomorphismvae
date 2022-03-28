@@ -54,8 +54,11 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
                 fixed_values=[], fixed_in_action=[], transitions_on=True,
                 n_transitions = None, action_range=[-1,1], num_train = 200, 
-                num_val=30,cyclic_trans=False):
+                num_val=30,cyclic_trans=False, dist = ''):
         super().__init__(rseed, transitions_on, n_transitions)
+
+        # Distribution
+        self.dist = dist
 
         # Number of samples
         self.num_train = num_train
@@ -93,6 +96,12 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         # Number of values for each latent
         self.num_latents = self._classes[-1] + 1 
         self.setup_latents_bases()
+
+        #number of unit actions
+        if len(self.fixed_in_action)>0:
+            self.action_dim = self.n_joints - len(self.fixed_in_action)
+        else:
+            self.action_dim  = self.n_joints
 
         data = {}
         data["in_shape"] = [1,64,64]
@@ -152,6 +161,15 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         dj = self.train_dj[idx]
         return images, latents, dj
 
+    @property
+    def n_actions(self):
+        if self.dist == 'uniform':
+            return  (self.transition_range[1] - self.transition_range[0]+1)\
+                    ** self.action_dim
+        if self.dist == 'disentangled':
+            return (self.transition_range[1] - self.transition_range[0]+1)\
+                    * self.action_dim
+    
     def get_latent_name(self,id):
         """
         Returns the name of the latent corresponding to the input id.
@@ -177,19 +195,37 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         """"""
         joints = self.latents[index]
         #sample displacement
-        if self.fixed_in_action:
-            len_dj = self.n_latents - len(self.fixed_in_action)
-        else:
-            len_dj = self.n_latents
         dj = np.zeros((joints.shape[0],self.n_latents)).squeeze()
-        dj[...,self.varied_in_action] = self._rand.randint(
-            low=self.transition_range[0],high=self.transition_range[1]+1,
-            size = (joints.shape[0],len_dj))
+        dj[...,self.varied_in_action] = self._sample_displacement(
+            self.transition_range, self.action_dim, joints.shape[0],
+            dist = self.dist)
         new_joints,dj = self._transition_linear(joints,dj)
         new_joints,dj = self._transition_circular(new_joints,dj)
         indices2 = self.latents_2_index(new_joints)
         return indices2,dj
 
+    def _sample_displacement(self,range,dim,n_samples,dist='uniform'):
+        """Sample displacements around initial latent vector.
+
+        Args:
+            range, list: Lower and upper bound of displacement values.
+            n_samples, int: Number of samples.
+            dim, int: Dimensionality of the displacement vector.
+            dist, str: Distribution choice to sample from, defaults to 'uniform'
+        
+        Returns:
+            ndarray: displacement vector.
+        """
+        if dist == 'uniform':
+            d = self._rand.randint(low=range[0], high=range[1]+1, 
+                                   size=(n_samples,dim))
+        elif dist == 'disentangled':
+            eye = np.eye(dim)
+            # Random one hot vectors
+            mask = eye[self._rand.randint(dim,size=n_samples)] 
+            d = mask * self._rand.randint(low=range[0], high=range[1]+1, 
+                                   size=(n_samples,1))
+        return d
 
     def _transition_linear(self,joints,dj):
         new_joints = joints.copy()

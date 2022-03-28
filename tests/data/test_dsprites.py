@@ -42,6 +42,26 @@ class TestDsprites(unittest.TestCase):
         print(ret2)
         self.assertTrue((ret2==expected2).all())
 
+    def test_sample_displacement(self):
+        dhandler = dsprt.DspritesDataset(
+            root = root,fixed_in_sampling=[0,1,2],fixed_values=[0,0,5])
+        d = dhandler._sample_displacement(
+            range=[-3,3],n_samples=50,dim=3,dist='uniform')
+        self.assertEqual(d.shape , (50,3))
+        self.assertTrue(d.max() <= 3)
+        self.assertTrue(d.min() >= -3 )
+        
+        dim = 3
+        n_samples = 50
+        low,high=-3,3
+        d = dhandler._sample_displacement(
+            range=[low,high],n_samples=n_samples,dim=dim,dist='disentangled')
+        self.assertEqual(d.shape , (50,3))
+        self.assertTrue(d.max() <= high )
+        self.assertTrue(d.min() >= low )
+        # A disentangled d, at most one non zero
+        self.assertTrue(((d==0).sum(axis = 1) >= dim -1).all())
+
 
 if __name__ == '__main__':
     unittest.main()
