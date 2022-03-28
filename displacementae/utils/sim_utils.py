@@ -70,10 +70,10 @@ def setup_environment(config):
 
     # Save user configs to ensure reproducibility of this experiment.
     with open(os.path.join(config.out_dir, 'config.pickle'), 'wb') as f:
-        pickle.dump(config, f)
+        pickle.dump(config, f, indent=4,sort_keys=True)
     # A JSON file is easier to read for a human.
     with open(os.path.join(config.out_dir, 'config.json'), 'w') as f:
-        json.dump(vars(config), f)
+        json.dump(vars(config), f,indent=4,sort_keys=True)
     
     ### Logger
     logger_name = 'logger'
