@@ -39,7 +39,6 @@ class TestDsprites(unittest.TestCase):
             for j2 in range(dhandler.num_latents[5]):
                 joint2[5] = j2
                 expected2.append(dhandler.latents_2_index(joint2))
-        print(ret2)
         self.assertTrue((ret2==expected2).all())
 
 
