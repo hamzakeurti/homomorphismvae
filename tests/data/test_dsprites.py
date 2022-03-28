@@ -41,6 +41,21 @@ class TestDsprites(unittest.TestCase):
                 expected2.append(dhandler.latents_2_index(joint2))
         self.assertTrue((ret2==expected2).all())
 
+    def test_multistep(self):
+        dhandler = DspritesDataset(
+            root = root,fixed_in_sampling=[0,1,2],fixed_values=[0,0,5],
+            fixed_in_action=[0,1,2],transitions_on=True,n_transitions=2,
+            num_train=200,num_val=30, cyclic_trans=True)
+        self.assertEqual(dhandler.n_transitions,2)
+        self.assertEqual(dhandler.train_idx.shape,(dhandler.num_train,
+                                                   dhandler.n_transitions+1))
+        self.assertEqual(dhandler.train_dj.shape,(dhandler.num_train,
+                                                  dhandler.n_transitions,
+                                                  dhandler.n_latents))
+        imgs,_,_ = dhandler[0:50]
+        self.assertEqual(imgs.shape,(50,dhandler.n_transitions+1,
+                                     *dhandler.in_shape))
+
 
 if __name__ == '__main__':
     unittest.main()
