@@ -70,7 +70,7 @@ def setup_environment(config):
 
     # Save user configs to ensure reproducibility of this experiment.
     with open(os.path.join(config.out_dir, 'config.pickle'), 'wb') as f:
-        pickle.dump(config, f, indent=4,sort_keys=True)
+        pickle.dump(config, f)
     # A JSON file is easier to read for a human.
     with open(os.path.join(config.out_dir, 'config.json'), 'w') as f:
         json.dump(vars(config), f,indent=4,sort_keys=True)
@@ -89,7 +89,7 @@ def setup_environment(config):
 
     ### Torch Device
     use_cuda = config.use_cuda
-    if config.cuda_number is not None:
+    if use_cuda and config.cuda_number is not None:
         cuda_number = config.cuda_number
         device = torch.device(f"cuda:{cuda_number}")
         logger.info(f'Using cuda : {use_cuda} -- Device Number {cuda_number}')

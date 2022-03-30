@@ -37,10 +37,13 @@ class GroupRepresentation(nn.Module):
     representation vectors through the matrix product with the 
     representation of a given action, through the :method:`act` method. 
     """
-    def __init__(self, n_action_units:int, dim_representation:int) -> None:
+    def __init__(self, n_action_units:int, dim_representation:int, 
+                 repr_loss_on = False, repr_loss_weight = 0.) -> None:
         super().__init__()
         self.n_action_units = n_action_units
         self.dim_representation = dim_representation
+        self.repr_loss_on = repr_loss_on
+        self.repr_loss_weight = repr_loss_weight
 
     def forward(self,a:torch.Tensor) -> torch.Tensor:
         """
@@ -77,3 +80,9 @@ class GroupRepresentation(nn.Module):
             if R.device.type == 'cuda':
                 R = R.cpu()
             return R.numpy()
+    
+    def representation_loss(self, *args):
+        pass
+
+    def end_iteration(self):
+        pass

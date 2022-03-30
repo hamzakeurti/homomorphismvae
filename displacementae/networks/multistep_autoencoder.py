@@ -92,5 +92,3 @@ class MultistepAutoencoder(AutoEncoder):
             return h_out, mu, logvar
         else:
             return h_out, None, None
-
-    # def grp_transform(self)

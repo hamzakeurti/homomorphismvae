@@ -13,20 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_block_rots_repr.py
+# @title          :displacementae/grouprepr/representation_utils.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :10/03/2022
+# @created        :24/03/2022
 # @version        :1.0
 # @python_version :3.7.4
 
-import __init__
+from enum import Enum
 
-
-import utils.train_utils as ututils
-
-from grouprepr.representation_utils import Representation
-
-if __name__=='__main__':
-    ututils.run(mode='homomorphism',
-                representation=Representation.BLOCK_ROTS)
+class Representation(Enum):
+    BLOCK_ROTS = 1
+    MLP = 2
+    BLOCK_MLP = 3
+    PROD_ROTS_LOOKUP = 4

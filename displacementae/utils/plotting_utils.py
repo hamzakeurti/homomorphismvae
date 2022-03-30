@@ -24,10 +24,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from argparse import Namespace
+import networks.autoencoder_prodrep as aeprod
 
 import utils.misc as misc
+import utils.data_utils as udutils
 from sklearn.random_projection import GaussianRandomProjection
-
 
 _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
 
@@ -55,7 +56,7 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
         X2 = X1.clone()
     dj = torch.FloatTensor(dj).to(device).squeeze()
     if config.intervene:
-        h, mu, logvar = nets(X1, dj[..., dhandler.varied_in_action])
+        h, mu, logvar = nets(X1, dj)
     else:
         h, mu, logvar = nets(X1, None)
     X2_hat = torch.sigmoid(h)
@@ -97,7 +98,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
     dj = torch.FloatTensor(dj).to(device)
 
 
-    h, mu, logvar = nets(X1, dj[..., dhandler.varied_in_action])
+    h, mu, logvar = nets(X1, dj)
     Xi_hat = torch.sigmoid(h)    
     
     nrows = 7
@@ -188,7 +189,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             if config.spherical:
                 ax.set_xlim(_TWO_D_MISC.x_range_medium)
                 ax.set_ylim(_TWO_D_MISC.y_range_medium)
-            if dx <= 0.3:
+            elif dx <= 0.3:
                 ax.set_xlim(_TWO_D_MISC.x_range_narrow)
                 ax.set_ylim(_TWO_D_MISC.y_range_narrow)
             else:
@@ -292,3 +293,76 @@ def plot_curves(shared,config,logger,figname=None,val_name=None):
                 figname1 = figname + 'curve_' + key + '.pdf'
                 plt.savefig(figname1)
             plt.close()
+
+def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
+                figname=None):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+
+    reps = nets.grp_morphism.action_reps
+    dim = nets.grp_morphism.dim_representation
+    x = np.arange(len(reps[0].thetas))
+    xticks = []
+    for i in range(1,dim+1):
+        for j in range(i+1,dim+1):
+            xticks.append(f'{i}{j}')
+    width=0.5
+
+    nrows = dhandler.action_dim + 1 
+    ncols = 2
+    fig, axes = plt.subplots(nrows,ncols,figsize=(2*2,nrows*2))
+    # kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
+    for n in range(dhandler.action_dim):
+        for sign in range(2):
+                
+            a = torch.zeros(dhandler.action_dim,dtype=int)
+            a[n] = 1 - 2 * sign
+            id = dhandler.transition_to_index(a)
+            
+            thetas = reps[id].thetas.to('cpu').data.numpy()
+            # kwargs = {}
+            axes[n,sign].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
+            axes[n,sign].set_ylim(-.5,.5)
+            axes[n,sign].axhline(0)
+            axes[n,sign].set_xticks(x-0.25)
+            axes[n,sign].set_xticklabels(xticks)
+            axes[n,sign].set_xlabel('$ij$')
+            axes[n,sign].set_ylabel(r"$\theta / 2\pi$")
+            axes[n,sign].set_title(f"${a.numpy()}$")
+
+
+    a = torch.zeros(dhandler.action_dim,dtype=int)
+    id = udutils.action_to_id(a)
+    thetas = reps[id].thetas.to('cpu').data.numpy()
+    axes[-1,0].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
+    axes[-1,0].set_ylim(-.5,.5)
+    axes[-1,0].axhline(0)     
+    axes[-1,0].set_xticks(x-0.25)
+    axes[-1,0].set_xticklabels(xticks)
+    axes[-1,0].set_xlabel('$ij$')
+    axes[-1,0].set_ylabel(r"$\theta / 2\pi$")
+    axes[-1,0].set_title(f"${a.numpy()}$")
+    
+    axes[-1,-1].axis('off')
+
+    plt.subplots_adjust(wspace=0.5, hspace=0.5)
+
+    if figname is not None:
+        figname1 = figname + 'thetas.pdf' 
+        plt.savefig(figname1)
+        logger.info(f'Figure saved {figname1}')
+    plt.close(fig)
+
+    # TODO
+    pass
+    # for rep in nets.grp_morphism.actions_reps:
+        
+    #     fig, ax = plt.subplots(figsize=(8,7))
+        
+    #         ax.plot(epochs,vars(shared)[key])
+    #         ax.set_xlabel('epochs')
+    #         ax.set_ylabel(key)
+    #         if figname is not None:
+    #             figname1 = figname + 'curve_' + key + '.pdf'
+    #             plt.savefig(figname1)
+    #         plt.close()

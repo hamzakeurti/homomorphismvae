@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_block_rots_repr.py
+# @title          :displacementae/autoencoder/train_prod_rots_repr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :10/03/2022
+# @created        :30/03/2022
 # @version        :1.0
 # @python_version :3.7.4
 
@@ -29,4 +29,4 @@ from grouprepr.representation_utils import Representation
 
 if __name__=='__main__':
     ututils.run(mode='homomorphism',
-                representation=Representation.BLOCK_ROTS)
+                representation=Representation.PROD_ROTS_LOOKUP)

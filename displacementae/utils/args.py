@@ -22,7 +22,8 @@
 
 from datetime import datetime
 
-from networks.network_utils import BLOCK_MLP_REPR,BLOCK_ROTS_REPR,MLP_REPR
+from grouprepr.representation_utils import Representation
+
 
 def data_args(parser, mode='autoencoder'):
     dgroup = parser.add_argument_group('Data options')
@@ -51,12 +52,20 @@ def data_args(parser, mode='autoencoder'):
                         help='Number of evaluation samples')
     dgroup.add_argument('--cyclic_trans', action='store_true',
                         help='considers position as a cyclic latent.')
+    dgroup.add_argument('--distrib', type=str, default='uniform',
+                        choices=['uniform','disentangled'],
+                        help='Selects distribution from which to '+
+                             'sample transitions')
+    dgroup.add_argument('--integer_actions',action='store_true',
+                        help='Indexes the action vector, ' +
+                                'losing structure in the input actions.')
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
                         help='Whether to vary joint positions.')
     if mode == 'homomorphism':
         dgroup.add_argument('--n_steps', type=int, default=2,
                         help='Number of observed transitions per example.')
+
 
 def train_args(parser):
     """
@@ -159,9 +168,11 @@ def misc_args(parser,dout_dir=None):
                         help='Plots scatter of representations projected '+
                              'along 2 main pca components')
 
+
+
 def group_repr_args(parser, representation):
     ggroup = parser.add_argument_group('Group Representation options')
-    if representation == BLOCK_MLP_REPR:
+    if representation == Representation.BLOCK_MLP:
         ggroup.add_argument('--dims', type=str, default='',
                             help='List of dimensions of the subreps. '+
                                  'The resulting representation is of dim '+
@@ -169,16 +180,26 @@ def group_repr_args(parser, representation):
                                  'block diagonal matrices.')
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list for all subreps\' MLP')
-    elif representation == MLP_REPR:
+    elif representation == Representation.MLP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
                                  'acted on.')
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list of the rep\'s MLP')
-    elif representation == BLOCK_ROTS_REPR:
+    elif representation == Representation.BLOCK_ROTS:
         ggroup.add_argument('--learn_geometry',action='store_true', 
                         help='Whether to learn the grp action parameters. '+
                         'If not, these should be provided in arg '+
                         '--specified_grp_step')
         ggroup.add_argument('--specified_grp_step', type=str, default='0', 
                         help='specified grp action parameters')
+    elif representation == Representation.PROD_ROTS_LOOKUP:
+        ggroup.add_argument('--dim', type=int, default=2,
+                            help='Dimension of the representation space '+
+                                 'acted on.')
+        ggroup.add_argument('--grp_loss_on',action='store_true',
+                            help='whether to add group representation loss.')
+        ggroup.add_argument('--grp_loss_weight',type=float, default = 1e-2,
+                            help='Factor of the grp loss in the total loss.')
+        ggroup.add_argument('--plot_thetas', action='store_true', 
+                            help='Plots learned thetas')

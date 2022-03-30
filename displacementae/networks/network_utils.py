@@ -34,16 +34,16 @@ from networks.autoencoder import AutoEncoder
 from networks.multistep_autoencoder import MultistepAutoencoder
 from grouprepr.block_mlp_representation import BlockMLPRepresentation
 from grouprepr.group_representation import GroupRepresentation
+from grouprepr.prodrepr.action_lookup import ActionLookup
+from grouprepr.representation_utils import Representation
 
-BLOCK_MLP_REPR = 'block_mlp_repr'
-MLP_REPR = 'mlp_repr'
-BLOCK_ROTS_REPR = 'block_rots_repr'
 
 AUTOENCODER = 'autoencoder'
 
 
+
 def setup_network(config, dhandler, device, mode=AUTOENCODER, 
-                  representation=BLOCK_ROTS_REPR):
+                  representation=Representation.BLOCK_ROTS):
     if mode==AUTOENCODER:
         return setup_autoencoder_network(config, dhandler, device, 
                                          representation)
@@ -110,7 +110,7 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
     Sets up the group morphism module which converts input actions to 
     """
     
-    if representation == BLOCK_ROTS_REPR: 
+    if representation == Representation.BLOCK_ROTS: 
         if not hasattr(config,'specified_grp_step'):
             specified_step = 0
         else:
@@ -124,7 +124,7 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
             dim_representation=dhandler.action_shape[0] * 2,device=device, 
             learn_params=config.learn_geometry, 
             specified_step=specified_step).to(device)
-    elif representation == BLOCK_MLP_REPR:
+    elif representation == Representation.BLOCK_MLP:
         dims = misc.str_to_ints(config.dims)
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = BlockMLPRepresentation(
@@ -132,12 +132,19 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 dim_representation=sum(dims),
                 dims=dims,
                 hidden_units=hidden_units)
-    elif representation == MLP_REPR:
+    elif representation == Representation.MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = MLPRepresentation(
                 n_action_units=dhandler.action_shape[0],
                 dim_representation=config.dim,
                 hidden_units=hidden_units)
+    elif representation == Representation.PROD_ROTS_LOOKUP:
+        grp_morphism = ActionLookup(
+                n_action_units=dhandler.n_actions,
+                dim_representation=config.dim,
+                repr_loss_on=True,
+                repr_loss_weight=config.grp_loss_weight)
+
     else:
         raise NotImplementedError(
                 f'Representation {representation} is not implemented.')

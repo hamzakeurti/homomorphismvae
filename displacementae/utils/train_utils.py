@@ -26,14 +26,16 @@ import utils.sim_utils as sim_utils
 import data.data_utils as data_utils
 import networks.network_utils as net_utils 
 
-def run(mode='autoencoder',representation='block_rots_repr'):
+from grouprepr.representation_utils import Representation
+
+def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
     """Script for setting up and launching the training of the models.
 
     Args:
         mode (str): architecture type, supports 'autoencoder', defaults to 
             'autoencoder'
-        representation (str): group representation, defaults to 'block_rots_repr'.
-            'block_rots_repr': actions are represented by block diagonal matrices of 
+        representation (str): group representation, defaults to 'Representation.BLOCK_ROTS'.
+            'Representation.BLOCK_ROTS': actions are represented by block diagonal matrices of 
             2D rotation matrices. 
     """
     # Mode dependent imports

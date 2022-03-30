@@ -68,8 +68,8 @@ class TransposedCNN(nn.Module):
         self._fm_shapes = [list(shape_out)]
         for l in range(n_conv-1, -1, -1):
             h, w = self._fm_shapes[0]
-            new_h = int((h - self._kernel_sizes[l])//self._strides[l] + 1)
-            new_w = int((w - self._kernel_sizes[l])//self._strides[l] + 1)
+            new_h = (h - self._kernel_sizes[l])//self._strides[l] + 1
+            new_w = (w - self._kernel_sizes[l])//self._strides[l] + 1
             self._fm_shapes = [[new_h, new_w]] + self._fm_shapes
 
         n_lin = 0 if linear_channels is None else len(linear_channels)

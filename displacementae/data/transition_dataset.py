@@ -93,12 +93,13 @@ class TransitionDataset(Dataset):
 
     def observe_n_transitions(self,idx):
         indices = np.empty(shape=(idx.shape[-1],self.n_transitions+1), dtype=int)
-        transitions = np.empty(shape=(idx.shape[-1],self.n_transitions,self.n_latents))
+        transitions = []
         indices[:,0] = idx
         for i in range(self.n_transitions):
             idx2, dj = self.transition(indices[:,i])
             indices[:,i+1]= idx2
-            transitions[:,i] = dj
+            transitions.append(dj)
+        transitions = np.stack(transitions,axis=1)
         return indices,transitions
     
     def get_val_batch(self):

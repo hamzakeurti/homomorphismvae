@@ -70,7 +70,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             x1 = imgs[:,0] # initial observed image
             xi = imgs[:,1:] # All other images to predict
             ### Forward ###
-            h, mu, logvar = nets(x1, dj[:, :, dhandler.varied_in_action])
+            h, mu, logvar = nets(x1, dj)
             xi_hat = torch.sigmoid(h)
             ### Losses
             # Reconstruction
@@ -96,7 +96,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
             example_R = nets.grp_morphism.get_example_repr()
-            # alpha = nets.grp_transform.alpha.cpu().data.numpy().astype(float)
+            # alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
             # logger.info(f'learned alpha {alpha}')
             # if not hasattr(shared,"learned_alpha"):
             #     shared.learned_alpha = []
@@ -140,8 +140,9 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, de
     epochs = config.epochs
     interrupted_training = False
     for epoch in range(epochs):
-        evaluate(dhandler, nets, device, config, shared, logger, mode,
-                    epoch, save_fig=True, plot=not config.no_plots)
+        with torch.no_grad():
+            evaluate(dhandler, nets, device, config, shared, logger, mode,
+                     epoch, save_fig=True, plot=not config.no_plots)
         logger.info(f"Training epoch {epoch}.")
 
         for i, batch in enumerate(dloader):
@@ -157,7 +158,7 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, de
             x1 = imgs[:,0] # initial observed image
             xi = imgs[:,1:] # All other images to predict
             ### Forward ###
-            h, mu, logvar = nets(x1, dj[:, :, dhandler.varied_in_action])
+            h, mu, logvar = nets(x1, dj)
             xi_hat = torch.sigmoid(h)
             ### Losses
             # Reconstruction
@@ -172,6 +173,10 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, de
                 total_loss += config.beta * kl_loss
             total_loss.backward()
             optim.step()
+            # Clear the stored matrices so they are regenerated at next 
+            # iteration. 
+            nets.grp_morphism.end_iteration()
+
             ### Logging
             log_text = f'[{epoch}:{i}] loss\t{total_loss.item():.2f} '
             log_text += f'=\tBCE {bce_loss.item():.2f} '

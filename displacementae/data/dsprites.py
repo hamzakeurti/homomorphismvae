@@ -53,9 +53,17 @@ LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 class DspritesDataset(trns_dataset.TransitionDataset):
     def __init__(self,root,rseed=None, fixed_in_sampling=[], 
                 fixed_values=[], fixed_in_action=[], transitions_on=True,
-                n_transitions = None, action_range=[-1,1], num_train = 200, 
-                num_val=30,cyclic_trans=False):
+                n_transitions:int = None, action_range:list=[-1,1], 
+                num_train = 200, 
+                num_val:int=30,cyclic_trans:bool=False,
+                dist:str = 'uniform',
+                return_integer_actions:bool = False):
         super().__init__(rseed, transitions_on, n_transitions)
+
+        # Distribution
+        self.dist = dist
+
+        self.return_integer_actions = return_integer_actions
 
         # Number of samples
         self.num_train = num_train
@@ -77,7 +85,6 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             self.varied_in_action = np.array([])
             self.fixed_in_action = self.latents
         self.transition_range = action_range
-        
         # Types of latents
         if not cyclic_trans:
             self.lin_idx = [LatentIdx.SCALE,LatentIdx.POSX,LatentIdx.POSY]
@@ -94,9 +101,19 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         self.num_latents = self._classes[-1] + 1 
         self.setup_latents_bases()
 
+        #number of unit actions
+        if len(self.fixed_in_action)>0:
+            self.action_dim = self.n_latents - len(self.fixed_in_action)
+        else:
+            self.action_dim  = self.n_latents
+
         data = {}
         data["in_shape"] = [1,64,64]
-        data["action_shape"] = [len(self.varied_in_action)]
+        if self.return_integer_actions:
+            data["action_shape"] = [1]
+        else:
+            data["action_shape"] = [len(self.varied_in_action)]
+
         self._data = data
 
         # Get Dataset subset corresponding to fixed_in_sampling constraint.
@@ -145,13 +162,24 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         return self.num_train
 
     def __getitem__(self, idx):
-
         indices = self.train_idx[idx]
         images = self.images[indices]
         latents = self.latents[indices]  
         dj = self.train_dj[idx]
         return images, latents, dj
 
+    @property
+    def n_actions(self):
+        """
+        Number of all possible discrete actions.
+        """
+        if self.dist == 'uniform':
+            return  (self.transition_range[1] - self.transition_range[0]+1)\
+                    ** self.action_dim
+        if self.dist == 'disentangled':
+            return (self.transition_range[1] - self.transition_range[0]+1)\
+                    * self.action_dim
+    
     def get_latent_name(self,id):
         """
         Returns the name of the latent corresponding to the input id.
@@ -175,21 +203,42 @@ class DspritesDataset(trns_dataset.TransitionDataset):
 
     def transition(self,index):
         """"""
-        joints = self.latents[index]
+        latents = self.latents[index]
         #sample displacement
-        if self.fixed_in_action:
-            len_dj = self.n_latents - len(self.fixed_in_action)
-        else:
-            len_dj = self.n_latents
-        dj = np.zeros((joints.shape[0],self.n_latents)).squeeze()
-        dj[...,self.varied_in_action] = self._rand.randint(
-            low=self.transition_range[0],high=self.transition_range[1]+1,
-            size = (joints.shape[0],len_dj))
-        new_joints,dj = self._transition_linear(joints,dj)
-        new_joints,dj = self._transition_circular(new_joints,dj)
-        indices2 = self.latents_2_index(new_joints)
+        dj = np.zeros((latents.shape[0],self.n_latents)).squeeze()
+        dj[...,self.varied_in_action] = self._sample_displacement(
+            self.transition_range, self.action_dim, latents.shape[0],
+            dist = self.dist)
+        new_latents,dj = self._transition_linear(latents,dj)
+        new_latents,dj = self._transition_circular(new_latents,dj)
+        indices2 = self.latents_2_index(new_latents)
+        dj = dj[...,self.varied_in_action]
+        if self.return_integer_actions:
+            dj = self.transition_to_index(dj)
         return indices2,dj
 
+    def _sample_displacement(self,range,dim,n_samples,dist='uniform'):
+        """Sample displacements around initial latent vector.
+
+        Args:
+            range, list: Lower and upper bound of displacement values.
+            n_samples, int: Number of samples.
+            dim, int: Dimensionality of the displacement vector.
+            dist, str: Distribution choice to sample from, defaults to 'uniform'
+        
+        Returns:
+            ndarray: displacement vector.
+        """
+        if dist == 'uniform':
+            d = self._rand.randint(low=range[0], high=range[1]+1, 
+                                   size=(n_samples,dim))
+        elif dist == 'disentangled':
+            eye = np.eye(dim)
+            # Random one hot vectors
+            mask = eye[self._rand.randint(dim,size=n_samples)] 
+            d = mask * self._rand.randint(low=range[0], high=range[1]+1, 
+                                   size=(n_samples,1))
+        return d
 
     def _transition_linear(self,joints,dj):
         new_joints = joints.copy()
@@ -262,6 +311,23 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         indices = np.dot(all_latents,self.latent_bases_varied)
         return indices
 
+    def transition_to_index(self, a):
+        rng = self.transition_range
+        n = rng[1] - rng[0]
+        if self.dist == 'uniform':
+            bases = n**np.arange(self.action_dim)[::-1]
+            return (a - rng[0]) @ bases
+        elif self.dist == 'disentangled':
+            bases_p = np.arange(self.action_dim)[::-1]*rng[1]
+            bases_n = np.arange(self.action_dim)[::-1]*rng[0]+\
+                      self.action_dim * rng[1]
+            idx = ((a>0)*bases_p + np.maximum(a,0)).sum(axis=1)
+            idx += ((a<0)*bases_n + np.maximum(-a,0)).sum(axis=1)
+            return idx
+
+    def index_to_transition(self,idx):
+        pass
+
     @property
     def allowed_indices(self):
         if hasattr(self,'_allowed_indices'):
@@ -280,9 +346,15 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     
 
 if __name__ == '__main__':
-    dataset = DspritesDataset(root = '/home/hamza/datasets/dsprites')
-    print(dataset.train_idx)
-    from torch.utils.data import DataLoader
-    dloader = DataLoader(dataset=dataset, batch_size=50)
-    for batch in dloader:
-        print(len(batch))
+    pass
+    # dataset = DspritesDataset(root = '/home/hamza/datasets/dsprites')
+    # print(dataset.train_idx)
+    # from torch.utils.data import DataLoader
+    # dloader = DataLoader(dataset=dataset, batch_size=50)
+    # for batch in dloader:
+    #     print(len(batch))
+    # dhandler = DspritesDataset(
+    # root = '/home/hamza/datasets/dsprites',fixed_in_sampling=[0,1,2],fixed_values=[0,0,5],
+    # fixed_in_action=[0,1,2],transitions_on=True,n_transitions=2,
+    # num_train=200,num_val=30, cyclic_trans=True)
+    # print(dhandler.train_dj.shape)

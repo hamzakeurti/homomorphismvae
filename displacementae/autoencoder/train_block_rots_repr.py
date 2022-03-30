@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/autoencoder/train_block_rots_repr.py
+# @title          :displacementae/autoencoder/train_Representation.BLOCK_ROTS.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :10/11/2021
@@ -24,5 +24,7 @@ import __init__
 
 import utils.train_utils as ututils
 
+from grouprepr.representation_utils import Representation
+
 if __name__=='__main__':
-    ututils.run(mode='autoencoder',representation='block_rots_repr')
+    ututils.run(mode='autoencoder',representation=Representation.BLOCK_ROTS)

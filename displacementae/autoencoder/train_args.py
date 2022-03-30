@@ -25,7 +25,9 @@ from datetime import datetime
 
 import utils.args as args
 
-def parse_cmd_arguments(representation='block_rots_repr' ,description=''):
+from grouprepr.representation_utils import Representation
+
+def parse_cmd_arguments(representation=Representation.BLOCK_ROTS ,description=''):
     curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     if not description:
         description = 'Geometric Autoencoder'

@@ -38,3 +38,6 @@ class TestMLPRepresentation(unittest.TestCase):
         z = torch.rand((batch_size,n_repr_units))
         z_out = repr.act(a,z)
         self.assertEqual(z_out.shape,z.shape)
+
+if __name__ == '__main__':
+    unittest.main()
