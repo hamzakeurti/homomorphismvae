@@ -209,7 +209,7 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         if config.spherical:
             ax.set_xlim(_TWO_D_MISC.x_range_medium)
             ax.set_ylim(_TWO_D_MISC.y_range_medium)
-        if dx <= 0.3:
+        elif dx <= 0.3:
             ax.set_xlim(_TWO_D_MISC.x_range_narrow)
             ax.set_ylim(_TWO_D_MISC.y_range_narrow)
         else:
