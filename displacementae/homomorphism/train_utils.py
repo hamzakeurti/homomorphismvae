@@ -34,6 +34,7 @@ import utils.sim_utils as sim_utils
 import utils.misc as misc
 import utils.checkpoint as ckpt
 import networks.multistep_autoencoder as ms_ae
+from utils.scheduler import setup_scheduler
 
 def setup_optimizer(params, config):
     lr = config.lr
@@ -135,15 +136,25 @@ def evaluate(dhandler:trns_data.TransitionDataset,
 
 def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, device, logger, mode):
     params = nets.parameters()
-    
     optim = setup_optimizer(params, config)
     epochs = config.epochs
     interrupted_training = False
+    scheduler = setup_scheduler(
+                    config,
+                    group1=[nets.encoder,nets.grp_morphism,nets.decoder], 
+                    group2 = [nets.encoder,nets.decoder])
     for epoch in range(epochs):
         with torch.no_grad():
             evaluate(dhandler, nets, device, config, shared, logger, mode,
                      epoch, save_fig=True, plot=not config.no_plots)
+
         logger.info(f"Training epoch {epoch}.")
+        # scheduler.toggle_train(
+        #     [nets.encoder,nets.grp_morphism,nets.decoder], 
+        #     [nets.encoder,nets.decoder],
+        #     epoch)
+        scheduler.toggle_train()
+        
 
         for i, batch in enumerate(dloader):
             optim.zero_grad()

@@ -64,7 +64,7 @@ class MultistepAutoencoder(AutoEncoder):
         h, mu, logvar = self.encode(h)
 
         h_out = torch.empty(
-            size=[x.shape[0]] + [n_steps, self.n_repr_units])
+            size=[x.shape[0]] + [n_steps, self.n_repr_units],device=x.device)
 
         if self.n_repr_units > self.n_transform_units:
             # The part of the transformation that is not transformed 

@@ -167,7 +167,11 @@ def misc_args(parser,dout_dir=None):
     mgroup.add_argument('--plot_pca', action='store_true', 
                         help='Plots scatter of representations projected '+
                              'along 2 main pca components')
-
+    mgroup.add_argument('--toggle_training_every',type=str,default='2',
+                        help='2values e1, e2. '+
+                             'Train parameters group 1 for e1 epochs, '+
+                             'Train parameters group 1 for e2 epochs. '+
+                             'If only one value is provided, then e1=e2.')
 
 
 def group_repr_args(parser, representation):

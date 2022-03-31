@@ -131,19 +131,21 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 n_action_units=dhandler.action_shape[0],
                 dim_representation=sum(dims),
                 dims=dims,
-                hidden_units=hidden_units)
+                hidden_units=hidden_units,
+                device=device).to(device)
     elif representation == Representation.MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = MLPRepresentation(
                 n_action_units=dhandler.action_shape[0],
                 dim_representation=config.dim,
-                hidden_units=hidden_units)
+                hidden_units=hidden_units,device=device).to(device)
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
                 n_action_units=dhandler.n_actions,
                 dim_representation=config.dim,
                 repr_loss_on=True,
-                repr_loss_weight=config.grp_loss_weight)
+                repr_loss_weight=config.grp_loss_weight,
+                device=device).to(device)
 
     else:
         raise NotImplementedError(

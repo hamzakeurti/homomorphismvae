@@ -74,13 +74,13 @@ class OrthogonalMatrix(GroupRepresentation):
     def __init__(self, dim_representation: int,
                  device:str = 'cpu', learn_params:bool=False, 
                  specified_step=0) -> None:
-        super().__init__(dim_representation//2, dim_representation)
+        super().__init__(dim_representation//2, dim_representation,
+                         device=device)
 
         if self.dim_representation % 2 == 1:
             raise ValueError(
                 'Latent space should have an even dimension for the matrix to be expressed in blocks of 2.')
 
-        self.device = device
         self.specified_step = specified_step
 
         self.rot_basis = torch.FloatTensor([

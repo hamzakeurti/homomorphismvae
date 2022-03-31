@@ -26,7 +26,8 @@ import torch
 import torch.nn as nn
 
 import autoencoder.train_args as train_args
-import autoencoder.scheduler as schdl
+from utils.scheduler import Scheduler , setup_scheduler
+
 import data.data_utils as data_utils
 from networks.autoencoder import AutoEncoder
 import networks.network_utils as net_utils
@@ -140,9 +141,11 @@ def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, e
     nets.train()
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):
-    is_prodrepr = isinstance(nets,aeprod.AutoencoderProdrep)
-    
-    scheduler = schdl.Scheduler(2)
+
+    scheduler = setup_scheduler(
+                    config,
+                    group1=[nets.encoder,nets.grp_morphism,nets.decoder], 
+                    group2 = [nets.encoder,nets.decoder])
     params = nets.parameters()
     optim = setup_optimizer(params, config)
     epochs = config.epochs
@@ -154,10 +157,7 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                      epoch, save_fig=True, plot=not config.no_plots)
         
         logger.info(f"Training epoch {epoch}.")
-        scheduler.toggle_train(
-            [nets.encoder,nets.grp_morphism,nets.decoder], 
-            [nets.encoder,nets.decoder],
-            epoch)
+        scheduler.toggle_train()
         
         for i, batch in enumerate(dloader):
             optim.zero_grad()

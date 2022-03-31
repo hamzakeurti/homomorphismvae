@@ -38,7 +38,7 @@ class BlockMLPRepresentation(GroupRepresentation):
     def __init__(self, n_action_units:int, dim_representation:int, 
                  dims:list, hidden_units:list=[],
                  activation:Callable=torch.relu, device:str='cpu') -> None:
-        super().__init__(n_action_units, dim_representation)
+        super().__init__(n_action_units, dim_representation, device=device)
         self.dims = dims
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
@@ -50,14 +50,14 @@ class BlockMLPRepresentation(GroupRepresentation):
                                       activation=activation, device=device))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
-        R = torch.zeros(*a.shape[:-1],self.dim_representation,self.dim_representation)
+        R = torch.zeros(*a.shape[:-1],self.dim_representation,self.dim_representation,device=a.device)
         for i in range(self.n_subreps):
             R[...,self.cumdims[i]:self.cumdims[i+1], 
               self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a)
         return R
 
     def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
-        z_out = torch.empty_like(z)
+        z_out = torch.empty_like(z,device=a.device)
         for i in range(self.n_subreps):
             z_out[...,self.cumdims[i]:self.cumdims[i+1]] =\
                     self.subreps[i].act(

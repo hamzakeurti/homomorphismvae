@@ -38,8 +38,9 @@ from grouprepr.group_representation import GroupRepresentation
 class ActionLookup(GroupRepresentation):
     def __init__(self, n_action_units: int, dim_representation: int, 
                  repr_loss_on=False, repr_loss_weight=0, device='cpu') -> None:
-        super().__init__(n_action_units, dim_representation, 
-                         repr_loss_on, repr_loss_weight)
+        super().__init__(n_action_units, dim_representation, device=device, 
+                         repr_loss_on=repr_loss_on, 
+                         repr_loss_weight=repr_loss_weight)
         self.device = device
         self.action_reps = nn.ModuleList([
             ProductRepresentation(dim_representation,device) 

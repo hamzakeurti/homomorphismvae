@@ -36,10 +36,12 @@ _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
 _TWO_D_MISC = Namespace()
 _TWO_D_MISC.x_range = [-5, 5]
 _TWO_D_MISC.y_range = [-5, 5]
-_TWO_D_MISC.x_range_medium = [-1.2, 1.2]
-_TWO_D_MISC.y_range_medium = [-1.2, 1.2]
+_TWO_D_MISC.x_range_medium = [-2, 2]
+_TWO_D_MISC.y_range_medium = [-2, 2]
 _TWO_D_MISC.x_range_narrow = [-0.3, 0.3]
 _TWO_D_MISC.y_range_narrow = [-0.3, 0.3]
+MARKERS = np.array(
+        ["o","^", ">","v","<","1","2","3","4","8","s","p","*","+","x","d"])
 
 
 def plot_reconstruction(dhandler, nets, config, device, logger, 
@@ -166,11 +168,13 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             h, mu, logvar = nets.encode(X)
             results.append(h[:,plot_latent].cpu().numpy())
     results = np.vstack(results).squeeze()
-
+    
     if config.plot_on_black:
         kwargs={'cmap':'summer'}
     else:
         kwargs={}
+
+    kwargs['alpha']=0.5
 
     for i in range(len(vary_latents)):
         latent = vary_latents[i]
@@ -239,26 +243,38 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
     pca = GaussianRandomProjection(n_components=2)
     latent2d = pca.fit_transform(results)
 
+    # latent2d/= np.linalg.norm(latent2d,)
 
     if config.plot_on_black:
         kwargs={'cmap':'summer'}
     else:
         kwargs={}
 
+    kwargs['alpha'] = 0.5
+
     for i in range(len(vary_latents)):
+        if len(vary_latents) > 1:
+            kwargs['vmin'] = min(latents[:,i])
+            kwargs['vmax'] = max(latents[:,i])
+            
         latent = vary_latents[i]
         latent_name = dhandler.get_latent_name(latent)
         fig, ax = plt.subplots(figsize=(8,7))
 
-        f = ax.scatter(x=latent2d[:,0], y=latent2d[:,1], c=latents[:,i],
+        # f = ax.scatter(x=latent2d[:,0], y=latent2d[:,1], c=latents[:,i],
+                        # **kwargs)
+        for x,y,c,m in zip(
+                latent2d[:,0],latent2d[:,1],latents[:,i],latents[:,(i+1)%2]):
+            f = ax.scatter(x=x, y=y, c=c,marker=MARKERS[m%len(MARKERS)],
                         **kwargs)
+
         ax.set_xlabel(f'latent component 0', fontsize=ts)
         ax.set_ylabel(f'latent component 1', fontsize=ts)
         dx = np.abs(latent2d).max()
         if config.spherical:
             ax.set_xlim(_TWO_D_MISC.x_range_medium)
             ax.set_ylim(_TWO_D_MISC.y_range_medium)
-        if dx <= 0.3:
+        elif dx <= 0.3:
             ax.set_xlim(_TWO_D_MISC.x_range_narrow)
             ax.set_ylim(_TWO_D_MISC.y_range_narrow)
         else:
