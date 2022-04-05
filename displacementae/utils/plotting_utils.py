@@ -175,6 +175,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
         kwargs={}
 
     kwargs['alpha']=0.5
+    kwargs['edgecolors']='none'
 
     for i in range(len(vary_latents)):
         latent = vary_latents[i]
@@ -251,6 +252,8 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         kwargs={}
 
     kwargs['alpha'] = 0.5
+    kwargs['edgecolors']='none'
+
 
     for i in range(len(vary_latents)):
         if len(vary_latents) > 1:

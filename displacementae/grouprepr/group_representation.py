@@ -72,7 +72,8 @@ class GroupRepresentation(nn.Module):
     def get_example_repr(self,a:torch.Tensor=None) -> np.ndarray:
         with torch.no_grad():
             if a is None:
-                a = torch.zeros(self.n_action_units*2+1,self.n_action_units,device=self.device)
+                a = torch.zeros(self.n_action_units*2+1,self.n_action_units,
+                                device=self.device)
                 for i in range(self.n_action_units):
                     a[1+2*i:3+2*i,i] = torch.tensor([1,-1])
 

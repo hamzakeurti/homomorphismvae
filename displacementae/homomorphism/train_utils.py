@@ -100,7 +100,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 shared.kl_loss.append(kl_loss.item())
             a_in, a = dhandler.get_example_actions()
             example_R = nets.grp_morphism.get_example_repr(
-                            torch.from_numpy(a_in).to(device))
+                            torch.from_numpy(a_in).float().to(device))
             shared.learned_repr = example_R.tolist()
             shared.actions = a.tolist()
             # alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
