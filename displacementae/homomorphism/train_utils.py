@@ -98,8 +98,11 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
-            example_R = nets.grp_morphism.get_example_repr()
-            shared.learned_repr.append(example_R.tolist())
+            a_in, a = dhandler.get_example_actions()
+            example_R = nets.grp_morphism.get_example_repr(
+                            torch.from_numpy(a_in).to(device))
+            shared.learned_repr = example_R.tolist()
+            shared.actions = a.tolist()
             # alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
             # logger.info(f'learned alpha {alpha}')
             # if not hasattr(shared,"learned_alpha"):

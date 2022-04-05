@@ -328,6 +328,16 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     def index_to_transition(self,idx):
         pass
 
+    def get_example_actions(self):
+        a = np.zeros((self.action_dim*2+1,self.action_dim))
+        for i in range(self.action_dim):
+            a[1+2*i:3+2*i,i] = np.array([1,-1])
+        if self.return_integer_actions:
+            idx = self.transition_to_index(a)
+            return idx, a
+        else:
+            return a, a 
+
     @property
     def allowed_indices(self):
         if hasattr(self,'_allowed_indices'):
