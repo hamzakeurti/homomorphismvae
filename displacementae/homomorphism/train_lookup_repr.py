@@ -13,19 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/grouprepr/representation_utils.py
+# @title          :displacementae/autoencoder/train_lookup_repr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :24/03/2022
+# @created        :05/04/2022
 # @version        :1.0
 # @python_version :3.7.4
 
-from enum import Enum
+import __init__
 
-class Representation(Enum):
-    BLOCK_ROTS = 1
-    MLP = 2
-    BLOCK_MLP = 3
-    PROD_ROTS_LOOKUP = 4
-    LOOKUP=5
-    BLOCK_LOOKUP=6
+
+import utils.train_utils as ututils
+
+from grouprepr.representation_utils import Representation
+
+if __name__=='__main__':
+    ututils.run(mode='homomorphism',
+                representation=Representation.LOOKUP)

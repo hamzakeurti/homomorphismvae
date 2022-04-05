@@ -36,6 +36,8 @@ from grouprepr.block_mlp_representation import BlockMLPRepresentation
 from grouprepr.group_representation import GroupRepresentation
 from grouprepr.prodrepr.action_lookup import ActionLookup
 from grouprepr.representation_utils import Representation
+from grouprepr.lookup_representation import LookupRepresentation
+from grouprepr.block_lookup_representation import BlockLookupRepresentation
 
 
 AUTOENCODER = 'autoencoder'
@@ -146,6 +148,19 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 repr_loss_on=True,
                 repr_loss_weight=config.grp_loss_weight,
                 device=device).to(device)
+    elif representation == Representation.LOOKUP:
+        grp_morphism = LookupRepresentation(
+                n_actions=dhandler.n_actions,
+                dim_representation=config.dim,
+                device=device).to(device)
+    elif representation == Representation.BLOCK_LOOKUP:
+        dims = misc.str_to_ints(config.dims)
+        grp_morphism = BlockLookupRepresentation(
+                n_actions=dhandler.n_actions,
+                dims=dims,
+                dim_representation=sum(dims),
+                device=device).to(device)
+
 
     else:
         raise NotImplementedError(

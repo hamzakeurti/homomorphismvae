@@ -207,3 +207,13 @@ def group_repr_args(parser, representation):
                             help='Factor of the grp loss in the total loss.')
         ggroup.add_argument('--plot_thetas', action='store_true', 
                             help='Plots learned thetas')
+    elif representation == Representation.BLOCK_LOOKUP:
+        ggroup.add_argument('--dims', type=str, default='',
+                    help='List of dimensions of the subreps. '+
+                            'The resulting representation is of dim '+
+                            'the sum of provided dims and it maps to '+
+                            'block diagonal matrices.')
+    elif representation == Representation.LOOKUP:
+        ggroup.add_argument('--dim', type=int, default=2,
+                            help='Dimension of the representation space '+
+                                 'acted on.')
