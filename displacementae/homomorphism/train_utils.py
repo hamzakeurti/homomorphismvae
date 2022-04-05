@@ -53,8 +53,10 @@ def evaluate(dhandler:trns_data.TransitionDataset,
     nets.eval()
     if epoch == 0:
         shared.bce_loss = []
+        shared.learned_repr = []
         if config.variational:
             shared.kl_loss = []
+        
     if epoch % config.val_epoch == 0:
 
         with torch.no_grad():
@@ -97,6 +99,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
             example_R = nets.grp_morphism.get_example_repr()
+            shared.learned_repr.append(example_R.tolist())
             # alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
             # logger.info(f'learned alpha {alpha}')
             # if not hasattr(shared,"learned_alpha"):

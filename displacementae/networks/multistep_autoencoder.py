@@ -21,6 +21,7 @@
 # @python_version :3.7.4
 
 import torch
+import torch.nn.functional as F
 
 from networks.autoencoder import AutoEncoder
 
@@ -83,7 +84,11 @@ class MultistepAutoencoder(AutoEncoder):
                         self.grp_morphism.act(
                                 dz[:,i], 
                                 h_out[:,i-1,:self.n_transform_units].clone())
-        
+                # TODO: make it a CL option.
+                # if self.spherical:
+                #     h_out[:,i,:self.n_transform_units] = F.normalize(
+                #             h_out[:,i,:self.n_transform_units].clone(), dim=-1)
+                    
         # Through decoder
         h_out = h_out.view(-1, self.n_repr_units)
         h_out = self.decoder(h_out)
