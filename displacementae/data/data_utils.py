@@ -51,7 +51,9 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
         action_range=action_range,
         cyclic_trans=config.cyclic_trans,
         dist=config.distrib,
-        return_integer_actions=config.integer_actions)
+        return_integer_actions=config.integer_actions,
+        rotate_actions=config.rotate_actions,
+        )
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
         shuffle=config.shuffle)

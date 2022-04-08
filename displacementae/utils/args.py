@@ -59,6 +59,11 @@ def data_args(parser, mode='autoencoder'):
     dgroup.add_argument('--integer_actions',action='store_true',
                         help='Indexes the action vector, ' +
                                 'losing structure in the input actions.')
+    dgroup.add_argument('--rotate_actions', type=float, default=0,
+                        help='Rotation angle of the first two components '+
+                             'of action vectors')
+    
+    
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
                         help='Whether to vary joint positions.')

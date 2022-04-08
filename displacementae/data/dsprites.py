@@ -57,13 +57,14 @@ class DspritesDataset(trns_dataset.TransitionDataset):
                 num_train = 200, 
                 num_val:int=30,cyclic_trans:bool=False,
                 dist:str = 'uniform',
-                return_integer_actions:bool = False):
+                return_integer_actions:bool = False,
+                rotate_actions:float= 0):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Distribution
         self.dist = dist
-
         self.return_integer_actions = return_integer_actions
+
 
         # Number of samples
         self.num_train = num_train
@@ -121,14 +122,33 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         self.images = np.expand_dims(self._images[self.all_indices],1)
         self.latents = self._classes[self.all_indices]
 
+
         ### Training samples:
-        self.train_start_idx = self._rand.choice(self.dataset_size,size=num_train)
-        self.train_idx, self.train_dj = self.observe_n_transitions(self.train_start_idx)
+        self.train_start_idx = self._rand.choice(self.dataset_size,
+                                                 size=num_train)
+        self.train_idx, self.train_dj = self.observe_n_transitions(
+                                                self.train_start_idx)
         ### Evaluation samples
         self.val_start_idx = self._rand.choice(self.dataset_size, 
-                                    size=num_val,replace=False)
-        self.val_idx, self.val_dj = self.observe_n_transitions(self.val_start_idx)
+                                               size=num_val, replace=False)
+        self.val_idx, self.val_dj = self.observe_n_transitions(
+                                               self.val_start_idx)
         
+        if self.action_shape[0]>=2:
+            self.rotate_actions = rotate_actions
+        else:
+            self.rotate_actions = 0
+
+
+        if self.rotate_actions:
+            phi = np.radians(self.rotate_actions)
+            self._rot_mat = np.array([
+                                        [np.cos(phi), -np.sin(phi)],
+                                        [np.sin(phi), np.cos(phi)]])
+
+            self.train_dj[...,:2] = self.train_dj[...,:2] @ self._rot_mat
+            self.val_dj[...,:2] = self.val_dj[...,:2] @ self._rot_mat
+            
 
     def _process_hdf5(self):
         """
@@ -332,11 +352,16 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         a = np.zeros((self.action_dim*2+1,self.action_dim))
         for i in range(self.action_dim):
             a[1+2*i:3+2*i,i] = np.array([1,-1])
+        
         if self.return_integer_actions:
             idx = self.transition_to_index(a)
             return idx, a
+        elif self.rotate_actions:
+            rot_a = a.copy()
+            rot_a[...,:2] = rot_a[...,:2] @ self._rot_mat
+            return rot_a, a
         else:
-            return a, a 
+            return a, a
 
     @property
     def allowed_indices(self):
