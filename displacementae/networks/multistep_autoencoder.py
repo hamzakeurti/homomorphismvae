@@ -27,7 +27,8 @@ from networks.autoencoder import AutoEncoder
 
 class MultistepAutoencoder(AutoEncoder):
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
-                 n_transform_units, variational=True, spherical=False):        
+                 n_transform_units, variational=True, spherical=False,
+                 normalize_post_act=False):        
         """
         An Autoencoder with multiple future observation prediction through 
         group representation.
@@ -48,7 +49,7 @@ class MultistepAutoencoder(AutoEncoder):
                          grp_morphism=grp_morphism, n_repr_units=n_repr_units,
                          variational=variational, spherical=spherical)
         self.n_transform_units = n_transform_units
-
+        self.normalize_post_act = normalize_post_act
 
     def forward(self, x, dz):
         """
@@ -84,10 +85,10 @@ class MultistepAutoencoder(AutoEncoder):
                         self.grp_morphism.act(
                                 dz[:,i], 
                                 h_out[:,i-1,:self.n_transform_units].clone())
-                # TODO: make it a CL option.
-                # if self.spherical:
-                #     h_out[:,i,:self.n_transform_units] = F.normalize(
-                #             h_out[:,i,:self.n_transform_units].clone(), dim=-1)
+            
+            if self.spherical and self.normalize_post_act:
+                h_out[:,i,:self.n_transform_units] = F.normalize(
+                        h_out[:,i,:self.n_transform_units].clone(), dim=-1)
                     
         # Through decoder
         h_out = h_out.view(-1, self.n_repr_units)

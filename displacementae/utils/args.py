@@ -144,6 +144,10 @@ def net_args(parser):
                         help='If True, the representation vector is ' + 
                         'normalized prior to being forwarded to transform or ' +
                         'decoder')
+    ngroup.add_argument('--normalize_post_act',action='store_true', 
+                        help='If True, the representation vector is ' + 
+                        'normalized after each group action ')
+    
 
 def misc_args(parser,dout_dir=None):
     if dout_dir is None:

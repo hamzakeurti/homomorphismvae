@@ -222,10 +222,13 @@ def setup_multistep_autoencoder(config, dhandler, device, representation):
                                              repr_units)
                                       
     autoencoder = MultistepAutoencoder(
-        encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
-        variational=config.variational, 
-        n_repr_units=repr_units, n_transform_units = dim_representation, 
-        spherical=config.spherical)
-    
+                        encoder=encoder, decoder=decoder, 
+                        grp_morphism=grp_morphism,
+                        variational=config.variational, 
+                        n_repr_units=repr_units, 
+                        n_transform_units = dim_representation,
+                        spherical=config.spherical,
+                        normalize_post_act=config.normalize_post_act)
+
 
     return autoencoder
