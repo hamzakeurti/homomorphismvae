@@ -28,7 +28,8 @@ import utils.args as args
 from grouprepr.representation_utils import Representation
 
 
-def parse_cmd_arguments(representation=Representation.BLOCK_ROTS,description=''):
+def parse_cmd_arguments(representation=Representation.BLOCK_ROTS,
+                        description='', argv=None):
     mode='homomorphism'
     curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     if not description:
@@ -40,7 +41,9 @@ def parse_cmd_arguments(representation=Representation.BLOCK_ROTS,description='')
     args.net_args(parser)
     args.misc_args(parser,dout_dir)
     args.group_repr_args(parser,representation)
-    config = parser.parse_args()
+
+    config = parser.parse_args(args=argv)
+
     config.intervene = True
     return config
 

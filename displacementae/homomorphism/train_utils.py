@@ -36,6 +36,16 @@ import utils.checkpoint as ckpt
 import networks.multistep_autoencoder as ms_ae
 from utils.scheduler import setup_scheduler
 
+
+BCE_LOWEST = 'bce_lowest'
+KL_HIGHEST = 'kl_highest'
+LOSS_LOWEST = 'loss_lowest'
+LOSS_LOWEST_EPOCH = 'loss_lowest_epoch'
+BCE_FINAL = 'bce_final'
+KL_FINAL = 'kl_final'
+LOSS_FINAL = 'loss_final'
+
+
 def setup_optimizer(params, config):
     lr = config.lr
     weight_decay = config.weight_decay
@@ -83,7 +93,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             bce_loss = bce_loss_per_image.sum()/config.n_steps
             total_loss = bce_loss
             # KL
-            if nets.variational:
+            if config.variational:
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
 
@@ -103,13 +113,29 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                             torch.from_numpy(a_in).float().to(device))
             shared.learned_repr = example_R.tolist()
             shared.actions = a.tolist()
-            # alpha = nets.grp_morphism.alpha.cpu().data.numpy().astype(float)
-            # logger.info(f'learned alpha {alpha}')
-            # if not hasattr(shared,"learned_alpha"):
-            #     shared.learned_alpha = []
-            # shared.learned_alpha.append(list(alpha))
-            if epoch % 20*config.val_epoch == 0:
+
+            shared.summary[LOSS_FINAL] = total_loss.item()
+            if shared.summary[LOSS_LOWEST] == -1 or\
+                    total_loss < shared.summary[LOSS_LOWEST]:
+                shared.summary[LOSS_LOWEST] = total_loss.item()
+                shared.summary[LOSS_LOWEST_EPOCH] = epoch
+            
+            if config.variational:
+                shared.summary[KL_FINAL] = kl_loss.item()
+                if shared.summary[KL_HIGHEST] == -1 or\
+                        kl_loss > shared.summary[KL_HIGHEST]:
+                    shared.summary[KL_HIGHEST] = kl_loss.item()
+                    # shared.summary[LOSS_LOWEST_EPOCH] = epoch
+                shared.summary[BCE_FINAL] = bce_loss.item()
+                if shared.summary[BCE_LOWEST] == -1 or\
+                        bce_loss < shared.summary[BCE_LOWEST]:
+                    shared.summary[BCE_LOWEST] = bce_loss.item()
+
+            sim_utils.save_summary_dict(config, shared)
+
+            if epoch % 2*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
+            
 
     if plot and (epoch % config.plot_epoch == 0):
         with torch.no_grad():

@@ -37,7 +37,7 @@ class LookupRepresentation(GroupRepresentation):
                          dim_representation=dim_representation, device=device)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
-                    torch.randn(size=(dim_representation,dim_representation)))
+                 0.1*torch.randn(size=(dim_representation,dim_representation)))
             for _ in range(n_actions)
         ])
     

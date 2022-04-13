@@ -58,8 +58,12 @@ def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
         representation=representation)
     # setup shared
     shared = Namespace()
+    sim_utils.setup_summary_dict(config, shared, nets)
 
     logger.info('### Training ###')
     finished_training = tutils.train(dhandler, dloader, nets,
                               config, shared, device, logger, mode)
+    shared.summary['finished'] = 1 if finished_training else 0
+    sim_utils.save_summary_dict(config, shared)
+
     return

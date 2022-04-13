@@ -34,6 +34,38 @@ import json
 
 from utils import logger_config
 
+
+BCE_LOWEST = 'bce_lowest'
+KL_HIGHEST = 'kl_highest'
+LOSS_LOWEST = 'loss_lowest'
+LOSS_LOWEST_EPOCH = 'loss_lowest_epoch'
+BCE_FINAL = 'bce_final'
+KL_FINAL = 'kl_final'
+LOSS_FINAL = 'loss_final'
+FINISHED = 'finished'
+NUM_WEIGHTS = 'num_weights'
+
+_SUMMARY_KEYWORDS = [
+    # The weird prefix "aa_" makes sure keywords appear first in the result csv.
+    LOSS_FINAL,
+    LOSS_LOWEST,
+    LOSS_LOWEST_EPOCH,
+
+    BCE_FINAL,
+    BCE_LOWEST,
+    
+    # The following are only relevant for variational models.
+    KL_FINAL,
+    KL_HIGHEST,
+    
+    
+    NUM_WEIGHTS,
+
+    # Should be set in your program when the execution finished successfully.
+    FINISHED
+]
+
+
 def setup_environment(config):
     """
     Sets up output directory and logger.
@@ -98,6 +130,60 @@ def setup_environment(config):
         logger.info(f'Using cuda : {use_cuda}')
     
     return device, logger
+
+def setup_summary_dict(config, shared, nets):
+    """Setup the summary dictionary that is written to the performance
+    summary file (in the result folder).
+
+    This method adds the keyword "summary" to `shared`.
+
+    Args:
+        config: Command-line arguments.
+        shared: Miscellaneous data shared among training functions (summary dict
+            will be added to this :class:`argparse.Namespace`).
+    """
+    summary = dict()
+
+    num = sum([p.numel() for p in nets.parameters() if p.requires_grad])
+
+
+    # Note, we assume that all configs have the exact same keywords.
+    summary_keys = _SUMMARY_KEYWORDS
+
+    for k in summary_keys:
+        if k in [LOSS_FINAL,BCE_FINAL,KL_FINAL,LOSS_LOWEST,KL_HIGHEST,
+                 BCE_LOWEST,LOSS_LOWEST_EPOCH]:
+            summary[k] = -1
+        elif k == NUM_WEIGHTS:
+            summary[k] = num
+        elif k == 'finished':
+            summary[k] = 0
+        else:
+            # Implementation must have changed if this exception is
+            # raised.
+            raise ValueError('Summary argument %s unknown!' % k)
+
+    shared.summary = summary
+
+
+def save_summary_dict(config, shared):
+    """Write a text file in the result folder that gives a quick
+    overview over the results achieved so far.
+
+    Args:
+        (....): See docstring of function :func:`setup_summary_dict`.
+    """
+    # "setup_summary_dict" must be called first.
+    assert(hasattr(shared, 'summary'))
+
+    summary_fn = 'performance_overview.txt'
+
+    with open(os.path.join(config.out_dir, summary_fn), 'w') as f:
+        for k, v in shared.summary.items():
+            if isinstance(v, float):
+                f.write('%s %f\n' % (k, v))
+            else:
+                f.write('%s %d\n' % (k, v))
 
 def backup_cli_command(config):
     """Write the curret CLI call into a script.
