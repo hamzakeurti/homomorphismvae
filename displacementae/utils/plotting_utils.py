@@ -24,8 +24,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from argparse import Namespace
-import networks.autoencoder_prodrep as aeprod
+import wandb
 
+import networks.autoencoder_prodrep as aeprod
 import utils.misc as misc
 import utils.data_utils as udutils
 from sklearn.random_projection import GaussianRandomProjection
@@ -44,7 +45,7 @@ MARKERS = np.array(
         ["o","^", ">","v","<","1","2","3","4","8","s","p","*","+","x","d"])
 
 
-def plot_reconstruction(dhandler, nets, config, device, logger, 
+def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
                         figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
@@ -84,11 +85,12 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
         figname += 'reconstructions.pdf'
         plt.savefig(figname,bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
+    wandb.log({'plot/reconstruction':wandb.Image(fig)},epoch)
     plt.close(fig)
     
 
 def plot_n_step_reconstruction(dhandler, nets, config, device, logger, 
-                        figname):
+                        epoch,figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
 
@@ -131,7 +133,9 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
         figname += 'reconstructions.pdf'
         plt.savefig(figname,bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
+    wandb.log({'plot/reconstructions':wandb.Image(fig)},step=epoch)
     plt.close(fig)
+
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
                 epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
@@ -207,6 +211,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
+        wandb.log({f'plot/manifold_{i}':wandb.Image(fig)},step=epoch)
         plt.close(fig)
 
 def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
@@ -292,7 +297,9 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
             figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
+        wandb.log({f'plot/manifold_{i}':wandb.Image(fig)},step=epoch)
         plt.close(fig)
+
 
 
 
@@ -314,7 +321,7 @@ def plot_curves(shared,config,logger,figname=None,val_name=None):
             plt.close()
 
 def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
-                figname=None):
+                epoch, figname=None):
     if config.plot_on_black:
         plt.style.use('dark_background')
 
@@ -370,6 +377,7 @@ def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
         figname1 = figname + 'thetas.pdf' 
         plt.savefig(figname1)
         logger.info(f'Figure saved {figname1}')
+    wandb.log({'plot/grp_repr':wandb.Image(fig)},step=epoch)
     plt.close(fig)
 
     # TODO

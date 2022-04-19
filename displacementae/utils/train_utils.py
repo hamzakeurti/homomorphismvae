@@ -21,6 +21,7 @@
 # @python_version :3.7.4
 
 from argparse import Namespace
+import wandb
 
 import utils.sim_utils as sim_utils
 import data.data_utils as data_utils
@@ -60,10 +61,14 @@ def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
     shared = Namespace()
     sim_utils.setup_summary_dict(config, shared, nets)
 
-    logger.info('### Training ###')
-    finished_training = tutils.train(dhandler, dloader, nets,
-                              config, shared, device, logger, mode)
-    shared.summary['finished'] = 1 if finished_training else 0
-    sim_utils.save_summary_dict(config, shared)
+    with wandb.init(project='homomorphism-autoencoder',config=config):
+        config = wandb.config
+        wandb.watch(nets,criterion=None,log='all',log_freq=10)
+
+        logger.info('### Training ###')
+        finished_training = tutils.train(dhandler, dloader, nets,
+                                config, shared, device, logger, mode)
+        shared.summary['finished'] = 1 if finished_training else 0
+        sim_utils.save_summary_dict(config, shared)
 
     return

@@ -114,7 +114,7 @@ def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, e
                 figname = os.path.join(fig_dir, f'{epoch}_')
                 shared.figname=figname
             plt_utils.plot_reconstruction(dhandler, nets, config, device,
-                                        logger, figname)
+                                        logger, epoch, figname)
             vary_latents = misc.str_to_ints(config.plot_vary_latents)
             plot_latent = misc.str_to_ints(config.plot_manifold_latent)
             if len(plot_latent) > 0:
@@ -137,7 +137,7 @@ def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, e
                                     figname=figname)
             if config.plot_thetas:
                 plt_utils.plot_thetas(dhandler, nets, config, 
-                                      logger, figname=figname)
+                                      logger, epoch, figname=figname)
     nets.train()
 
 def train(dhandler, dloader, nets, config, shared, device, logger, mode):

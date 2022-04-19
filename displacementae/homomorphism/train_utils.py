@@ -24,6 +24,7 @@ from argparse import Namespace
 import os
 import torch
 import torch.nn as nn
+import wandb
 
 import data.data_utils as data_utils
 import data.transition_dataset as trns_data
@@ -102,8 +103,16 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             log_text = f'[{epoch}] loss\t{total_loss.item():.2f}'
             log_text += f'=\tBCE {bce_loss.item():.2f} '
             if nets.variational:
-                log_text += f'+\tKL {kl_loss.item():.5f}'
+                log_text += f'+\tKL {kl_loss.item():.5f} '
             logger.info(log_text)
+            
+            ### WandB Logging
+            log_dict = {'val/epoch':epoch,'val/total_loss':total_loss.item(),
+                        'val/bce_loss':bce_loss.item()}
+            if nets.variational:
+                log_dict['val/kl_loss'] = kl_loss.item()
+            wandb.log(log_dict,step=epoch)
+            
             # Save Losses
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
@@ -145,7 +154,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 figname = os.path.join(fig_dir, f'{epoch}_')
                 shared.figname=figname
             plt_utils.plot_n_step_reconstruction(dhandler, nets, config, 
-                                                 device, logger, figname)
+                                                 device, logger,epoch,figname)
             vary_latents = misc.str_to_ints(config.plot_vary_latents)
             plot_latent = misc.str_to_ints(config.plot_manifold_latent)
             if len(plot_latent) > 0:
@@ -166,7 +175,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                                         figname=figname)
     nets.train()
 
-def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, device, logger, mode):
+def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, 
+          device, logger, mode):
     params = nets.parameters()
     optim = setup_optimizer(params, config)
     epochs = config.epochs
@@ -175,6 +185,7 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, de
                     config,
                     group1=[nets.encoder,nets.grp_morphism,nets.decoder], 
                     group2 = [nets.encoder,nets.decoder])
+    batch_cnt = 0
     for epoch in range(epochs):
         with torch.no_grad():
             evaluate(dhandler, nets, device, config, shared, logger, mode,
@@ -227,6 +238,14 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, de
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'
             logger.info(log_text)
+            
+            ### WandB Logging
+            log_dict = {'train/epoch':epoch,'train/total_loss':total_loss.item(),
+                        'train/bce_loss':bce_loss.item()}
+            if nets.variational:
+                log_dict['train/kl_loss'] = kl_loss.item()
+            wandb.log(log_dict,step=batch_cnt)
+            batch_cnt += 1
     
     if config.checkpoint:
         checkpoint_dir = os.path.join(config.out_dir,"checkpoint")
