@@ -181,6 +181,11 @@ def misc_args(parser,dout_dir=None):
                              'Train parameters group 1 for e1 epochs, '+
                              'Train parameters group 1 for e2 epochs. '+
                              'If only one value is provided, then e1=e2.')
+    mgroup.add_argument('--log_wandb', action='store_true', 
+                        help='Whether to log this run on WandB')
+    mgroup.add_argument('--wandb_project_name', type=str, 
+                        default='homomorphism-autoencoder',
+                        help='Name of the WandB project to log this run.')
 
 
 def group_repr_args(parser, representation):

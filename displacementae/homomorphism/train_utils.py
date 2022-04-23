@@ -107,11 +107,12 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             logger.info(log_text)
             
             ### WandB Logging
-            log_dict = {'val/epoch':epoch,'val/total_loss':total_loss.item(),
-                        'val/bce_loss':bce_loss.item()}
-            if nets.variational:
-                log_dict['val/kl_loss'] = kl_loss.item()
-            wandb.log(log_dict,step=epoch)
+            if config.log_wandb:
+                log_dict = {'val/epoch':epoch,'val/total_loss':total_loss.item(),
+                            'val/bce_loss':bce_loss.item()}
+                if nets.variational:
+                    log_dict['val/kl_loss'] = kl_loss.item()
+                wandb.log(log_dict,step=epoch)
             
             # Save Losses
             shared.bce_loss.append(bce_loss_per_image.tolist())
@@ -240,12 +241,13 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             logger.info(log_text)
             
             ### WandB Logging
-            log_dict = {'train/epoch':epoch,'train/total_loss':total_loss.item(),
-                        'train/bce_loss':bce_loss.item()}
-            if nets.variational:
-                log_dict['train/kl_loss'] = kl_loss.item()
-            wandb.log(log_dict,step=batch_cnt)
-            batch_cnt += 1
+            if config.log_wandb:
+                log_dict = {'train/epoch':epoch,'train/total_loss':total_loss.item(),
+                            'train/bce_loss':bce_loss.item()}
+                if nets.variational:
+                    log_dict['train/kl_loss'] = kl_loss.item()
+                wandb.log(log_dict,step=batch_cnt)
+                batch_cnt += 1
     
     if config.checkpoint:
         checkpoint_dir = os.path.join(config.out_dir,"checkpoint")

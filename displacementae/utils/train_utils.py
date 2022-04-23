@@ -21,6 +21,7 @@
 # @python_version :3.7.4
 
 from argparse import Namespace
+from contextlib import ExitStack
 import wandb
 
 import utils.sim_utils as sim_utils
@@ -61,9 +62,14 @@ def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
     shared = Namespace()
     sim_utils.setup_summary_dict(config, shared, nets)
 
-    with wandb.init(project='homomorphism-autoencoder',config=config):
-        config = wandb.config
-        wandb.watch(nets,criterion=None,log='all',log_freq=10)
+    # The ExitStack is used to make a conditional with statement 
+    # for using WandB
+    with ExitStack() as stack:
+        if config.log_wandb:
+            stack.enter_context(
+                  wandb.init(project=config.wandb_project_name,config=config))
+            config = wandb.config
+            wandb.watch(nets,criterion=None,log='all',log_freq=10)
 
         logger.info('### Training ###')
         finished_training = tutils.train(dhandler, dloader, nets,

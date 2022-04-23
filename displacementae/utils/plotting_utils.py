@@ -85,7 +85,8 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
         figname += 'reconstructions.pdf'
         plt.savefig(figname,bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
-    wandb.log({'plot/reconstruction':wandb.Image(fig)},epoch)
+    if config.log_wandb:
+        wandb.log({'plot/reconstruction':wandb.Image(plt)})
     plt.close(fig)
     
 
@@ -133,7 +134,8 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
         figname += 'reconstructions.pdf'
         plt.savefig(figname,bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
-    wandb.log({'plot/reconstructions':wandb.Image(fig)},step=epoch)
+    if config.log_wandb:
+        wandb.log({'plot/reconstructions':wandb.Image(plt)})
     plt.close(fig)
 
 
@@ -211,7 +213,8 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
-        wandb.log({f'plot/manifold_{i}':wandb.Image(fig)},step=epoch)
+        if config.log_wandb:
+            wandb.log({f'plot/manifold_{i}':wandb.Image(plt)})
         plt.close(fig)
 
 def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
@@ -297,7 +300,8 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
             figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
-        wandb.log({f'plot/manifold_{i}':wandb.Image(fig)},step=epoch)
+        if config.log_wandb:
+            wandb.log({f'plot/manifold_{i}':wandb.Image(plt)})
         plt.close(fig)
 
 
@@ -377,7 +381,8 @@ def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
         figname1 = figname + 'thetas.pdf' 
         plt.savefig(figname1)
         logger.info(f'Figure saved {figname1}')
-    wandb.log({'plot/grp_repr':wandb.Image(fig)},step=epoch)
+    if config.log_wandb:
+        wandb.log({'plot/grp_repr':wandb.Image(plt)})
     plt.close(fig)
 
     # TODO
