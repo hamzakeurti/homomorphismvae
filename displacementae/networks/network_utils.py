@@ -127,6 +127,7 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
             dim_representation=dhandler.action_shape[0] * 2,device=device, 
             learn_params=config.learn_geometry, 
             specified_step=specified_step).to(device)
+    
     elif representation == Representation.BLOCK_MLP:
         dims = misc.str_to_ints(config.dims)
         hidden_units = misc.str_to_ints(config.group_hidden_units)
@@ -135,13 +136,17 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 dim_representation=sum(dims),
                 dims=dims,
                 hidden_units=hidden_units,
-                device=device).to(device)
+                device=device,
+                normalize_subrepresentations=config.normalize_subrepresentations).to(device)
+   
     elif representation == Representation.MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = MLPRepresentation(
                 n_action_units=dhandler.action_shape[0],
                 dim_representation=config.dim,
-                hidden_units=hidden_units,device=device).to(device)
+                hidden_units=hidden_units,device=device, 
+                normalize=config.normalize).to(device)
+    
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
                 n_action_units=dhandler.n_actions,
@@ -149,18 +154,23 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 repr_loss_on=True,
                 repr_loss_weight=config.grp_loss_weight,
                 device=device).to(device)
+  
     elif representation == Representation.LOOKUP:
         grp_morphism = LookupRepresentation(
                 n_actions=dhandler.n_actions,
                 dim_representation=config.dim,
-                device=device).to(device)
+                device=device,
+                normalize=config.normalize).to(device)
+   
     elif representation == Representation.BLOCK_LOOKUP:
         dims = misc.str_to_ints(config.dims)
         grp_morphism = BlockLookupRepresentation(
                 n_actions=dhandler.n_actions,
                 dims=dims,
                 dim_representation=sum(dims),
-                device=device).to(device)
+                device=device,
+                normalize_subrepresentations=config.normalize_subrepresentations).to(device)
+ 
     elif representation == Representation.TRIVIAL:
         grp_morphism = TrivialRepresentation(
                 dim_representation=config.dim,
@@ -231,8 +241,6 @@ def setup_multistep_autoencoder(config, dhandler, device, representation):
                         variational=config.variational, 
                         n_repr_units=repr_units, 
                         n_transform_units = dim_representation,
-                        spherical=config.spherical,
-                        normalize_post_act=config.normalize_post_act)
-
+                        spherical=config.spherical)
 
     return autoencoder
