@@ -142,11 +142,11 @@ def net_args(parser):
                         'not transformed by the action representations.')
     ngroup.add_argument('--spherical',action='store_true', 
                         help='If True, the representation vector is ' + 
-                        'normalized prior to being forwarded to transform or ' +
-                        'decoder')
-    ngroup.add_argument('--normalize_post_act',action='store_true', 
-                        help='If True, the representation vector is ' + 
-                        'normalized after each group action ')
+                        'normalized prior to being forwarded to ' +
+                        'group action or decoder')
+    # ngroup.add_argument('--normalize_post_act',action='store_true', 
+    #                     help='If True, the representation vector is ' + 
+    #                     'normalized after each group action ')
     
 
 def misc_args(parser,dout_dir=None):
@@ -198,12 +198,21 @@ def group_repr_args(parser, representation):
                                  'block diagonal matrices.')
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list for all subreps\' MLP')
+        ggroup.add_argument('--normalize_subrepresentations', 
+                            action='store_true',
+                            help='Whether the group action on each ' +
+                                 'subrepresentation normalizes the ' +
+                                 'representation post action')
     elif representation == Representation.MLP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
                                  'acted on.')
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list of the rep\'s MLP')
+        ggroup.add_argument('--normalize', 
+                            action='store_true',
+                            help='Whether the group action normalizes the ' +
+                                 'representation post action')
     elif representation == Representation.BLOCK_ROTS:
         ggroup.add_argument('--learn_geometry',action='store_true', 
                         help='Whether to learn the grp action parameters. '+
@@ -227,7 +236,20 @@ def group_repr_args(parser, representation):
                             'The resulting representation is of dim '+
                             'the sum of provided dims and it maps to '+
                             'block diagonal matrices.')
-    elif representation in [Representation.LOOKUP,Representation.TRIVIAL]:
+        ggroup.add_argument('--normalize_subrepresentations', 
+                            action='store_true',
+                            help='Whether the group action on each ' +
+                                 'subrepresentation normalizes the ' +
+                                 'representation post action')
+    elif representation == Representation.LOOKUP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
                                  'acted on.')
+        ggroup.add_argument('--normalize', action='store_true',
+                            help='Whether the group action normalizes the ' +
+                                    'representation post action')
+    elif representation == Representation.TRIVIAL:
+        ggroup.add_argument('--dim', type=int, default=2,
+                            help='Dimension of the representation space '+
+                                 'acted on.')
+

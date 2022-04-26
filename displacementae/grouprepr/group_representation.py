@@ -22,6 +22,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 import numpy as np
 
@@ -38,13 +39,15 @@ class GroupRepresentation(nn.Module):
     representation of a given action, through the :method:`act` method. 
     """
     def __init__(self, n_action_units:int, dim_representation:int, device='cpu',
-                 repr_loss_on = False, repr_loss_weight = 0.) -> None:
+                 repr_loss_on = False, repr_loss_weight = 0., 
+                 normalize= False) -> None:
         super().__init__()
         self.device=device
         self.n_action_units = n_action_units
         self.dim_representation = dim_representation
         self.repr_loss_on = repr_loss_on
         self.repr_loss_weight = repr_loss_weight
+        self.normalize = normalize
 
     def forward(self,a:torch.Tensor) -> torch.Tensor:
         """
@@ -67,7 +70,10 @@ class GroupRepresentation(nn.Module):
             torch.Tensor: Transformed representation vectors.
                         shape: `[batch_size,n_repr_units]`
         """
-        return torch.einsum("...jk,...k->...j",self.forward(a),z)
+        z_out =  torch.einsum("...jk,...k->...j",self.forward(a),z)
+        if self.normalize:
+            z_out = F.normalize(z_out,dim=-1)
+        return z_out
 
     def get_example_repr(self,a:torch.Tensor=None) -> np.ndarray:
         with torch.no_grad():

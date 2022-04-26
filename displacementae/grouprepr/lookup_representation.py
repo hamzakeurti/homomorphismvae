@@ -32,14 +32,16 @@ class LookupRepresentation(GroupRepresentation):
 
     """
     def __init__(self, n_actions: int, dim_representation: int,
-                 device='cpu') -> None:
+                 device='cpu', normalize:bool=False) -> None:
         super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device)
+                         dim_representation=dim_representation, device=device, 
+                         normalize=normalize)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
                  0.1*torch.randn(size=(dim_representation,dim_representation)))
             for _ in range(n_actions)
         ])
+    
     
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """

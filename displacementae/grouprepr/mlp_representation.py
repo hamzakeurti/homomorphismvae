@@ -22,6 +22,8 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 from grouprepr.group_representation import GroupRepresentation
 from networks.mlp import MLP
@@ -31,11 +33,14 @@ class MLPRepresentation(GroupRepresentation):
     An MLP mapping from transitions to invertible matrices.
 
     """
-    def __init__(self, n_action_units: int, dim_representation: int, hidden_units=[],
-                 activation=torch.relu, device='cpu') -> None:
-        super().__init__(n_action_units, dim_representation, device=device)
+    def __init__(self, n_action_units: int, dim_representation: int, 
+                 hidden_units=[], activation=torch.relu, normalize=False, 
+                 device='cpu') -> None:
+        super().__init__(n_action_units, dim_representation, device=device, 
+                         normalize=normalize)
         self.net = MLP(n_action_units,dim_representation**2,hidden_units,
                        activation).to(device)
+                       
     
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """

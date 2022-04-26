@@ -37,7 +37,8 @@ class BlockMLPRepresentation(GroupRepresentation):
     """
     def __init__(self, n_action_units:int, dim_representation:int, 
                  dims:list, hidden_units:list=[],
-                 activation:Callable=torch.relu, device:str='cpu') -> None:
+                 activation:Callable=torch.relu, device:str='cpu', 
+                 normalize_subrepresentations = False) -> None:
         super().__init__(n_action_units, dim_representation, device=device)
         self.dims = dims
         self.n_subreps = len(dims)
@@ -47,7 +48,8 @@ class BlockMLPRepresentation(GroupRepresentation):
             self.subreps.append(
                     MLPRepresentation(n_action_units,dim,
                                       hidden_units=hidden_units,
-                                      activation=activation, device=device))
+                                      activation=activation, device=device, 
+                                      normalize=normalize_subrepresentations))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         R = torch.zeros(*a.shape[:-1],self.dim_representation,self.dim_representation,device=a.device)
