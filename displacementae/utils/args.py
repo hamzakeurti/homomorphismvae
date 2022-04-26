@@ -227,7 +227,7 @@ def group_repr_args(parser, representation):
                             'The resulting representation is of dim '+
                             'the sum of provided dims and it maps to '+
                             'block diagonal matrices.')
-    elif representation == Representation.LOOKUP:
+    elif representation in [Representation.LOOKUP,Representation.TRIVIAL]:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
                                  'acted on.')

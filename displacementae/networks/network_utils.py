@@ -24,7 +24,6 @@ from argparse import Namespace
 from os import error
 import torch
 from data.transition_dataset import TransitionDataset
-from grouprepr.mlp_representation import MLPRepresentation
 
 from networks.cnn import CNN
 from networks.transposedcnn import TransposedCNN 
@@ -38,6 +37,8 @@ from grouprepr.prodrepr.action_lookup import ActionLookup
 from grouprepr.representation_utils import Representation
 from grouprepr.lookup_representation import LookupRepresentation
 from grouprepr.block_lookup_representation import BlockLookupRepresentation
+from grouprepr.trivial_representation import TrivialRepresentation
+from grouprepr.mlp_representation import MLPRepresentation
 
 
 AUTOENCODER = 'autoencoder'
@@ -160,6 +161,10 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 dims=dims,
                 dim_representation=sum(dims),
                 device=device).to(device)
+    elif representation == Representation.TRIVIAL:
+        grp_morphism = TrivialRepresentation(
+                dim_representation=config.dim,
+                device=device).to(device)
 
 
     else:
@@ -205,7 +210,6 @@ def setup_autoencoder_network(config, dhandler, device, representation):
         encoder=encoder,decoder=decoder, grp_morphism=grp_morphism,
         variational=config.variational, n_repr_units=repr_units, 
         intervene=config.intervene, spherical=config.spherical)
-
     return autoencoder
 
 
