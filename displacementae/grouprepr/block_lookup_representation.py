@@ -66,6 +66,13 @@ class BlockLookupRepresentation(GroupRepresentation):
                         a,z[...,self.cumdims[i]:self.cumdims[i+1]])
         return z_out
     
+    def normalize_vector(self, z: torch.Tensor):
+        z_out = z
+        for i in range(self.n_subreps):
+            z_out[...,self.cumdims[i]:self.cumdims[i+1]] =\
+                    self.subreps[i].normalize_vector(
+                        z[...,self.cumdims[i]:self.cumdims[i+1]].clone())   
+        return z_out
 
 if __name__ == '__main__':
     n_action_units = 5
