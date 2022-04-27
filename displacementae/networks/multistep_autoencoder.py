@@ -28,7 +28,7 @@ from networks.autoencoder import AutoEncoder
 class MultistepAutoencoder(AutoEncoder):
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
                  n_transform_units, variational=True, spherical=False,
-                 normalize_post_act=False):        
+                 normalize_vector_post_act=False):        
         """
         An Autoencoder with multiple future observation prediction through 
         group representation.
@@ -49,7 +49,6 @@ class MultistepAutoencoder(AutoEncoder):
                          grp_morphism=grp_morphism, n_repr_units=n_repr_units,
                          variational=variational, spherical=spherical)
         self.n_transform_units = n_transform_units
-        self.normalize_post_act = normalize_post_act
 
     def forward(self, x, dz):
         """
@@ -77,9 +76,15 @@ class MultistepAutoencoder(AutoEncoder):
         # Through geometry
         for i in range(n_steps):
             if i == 0:
+                # Normalize the encoder's output according to subspaces of 
+                # the group representation.
+                h[:,:self.n_transform_units] = \
+                    self.grp_morphism.normalize_vector(h[:,:self.n_transform_units])
+                
                 h_out[:,i,:self.n_transform_units] = \
                     self.grp_morphism.act(dz[:,i], 
                                           h[:,:self.n_transform_units])   
+            
             else:
                 h_out[:,i,:self.n_transform_units] = \
                         self.grp_morphism.act(

@@ -202,10 +202,6 @@ def setup_autoencoder_network(config, dhandler, device, representation):
                     if 'block_repr': group representation is block 
                     diagonal 2D rotation matrices.
     """
-
-    # a 2D representation space for each action unit 
-    # TODO should be specified by user
-
     grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
                                       representation=representation)
     
