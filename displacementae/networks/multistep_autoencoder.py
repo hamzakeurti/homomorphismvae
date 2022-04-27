@@ -99,3 +99,15 @@ class MultistepAutoencoder(AutoEncoder):
             return h_out, mu, logvar
         else:
             return h_out, None, None
+
+    def normalize_representation(self,z:torch.Tensor) -> torch.Tensor:
+        """
+        Normalize subrepresentation spaces according to the group action.
+
+        If the group representation is a direct sum of subrepresentations,
+        then each subrepresentation is normalized individually.
+        """
+        z_out = z
+        z_out[:,:self.n_transform_units] = \
+              self.grp_morphism.normalize_vector(z[:,:self.n_transform_units])
+        return z_out

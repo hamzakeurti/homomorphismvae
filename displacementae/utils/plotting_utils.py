@@ -173,6 +173,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
         X = torch.FloatTensor(images).to(device)
         with torch.no_grad():
             h, mu, logvar = nets.encode(X)
+            h = nets.normalize_representation(h)
             results.append(h[:,plot_latent].cpu().numpy())
     results = np.vstack(results).squeeze()
     
@@ -246,6 +247,7 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         X = torch.FloatTensor(images).to(device)
         with torch.no_grad():
             h, mu, logvar = nets.encode(X)
+            h = nets.normalize_representation(h)
             results.append(h[:,:].cpu().numpy())
     results = np.vstack(results).squeeze()
 
