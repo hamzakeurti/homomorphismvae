@@ -69,7 +69,7 @@ def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
             stack.enter_context(
                   wandb.init(project=config.wandb_project_name,config=config))
             config = wandb.config
-            wandb.watch(nets,criterion=None,log='all',log_freq=10)
+            wandb.watch(nets,criterion=None,log='all',log_freq=1000)
 
         logger.info('### Training ###')
         finished_training = tutils.train(dhandler, dloader, nets,
