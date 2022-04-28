@@ -21,6 +21,7 @@
 # @python_version :3.7.4
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import torch
 from argparse import Namespace
@@ -323,6 +324,45 @@ def plot_curves(shared,config,logger,figname=None,val_name=None):
                 figname1 = figname + 'curve_' + key + '.pdf'
                 plt.savefig(figname1)
             plt.close()
+
+
+def plot_matrix(example_R,a, config, logger, figname=None):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+    
+    
+    for i in range(a.shape[0]):
+        action = a[i]
+        R = np.around(example_R[i],decimals=2)
+            
+        fig, ax = plt.subplots(figsize=(4,4))
+        # kwargs={'vmin':-2,'vmax':2,'cmap':'gray'}
+        M = np.abs(R).max()
+        # norm = mcolors.TwoSlopeNorm(vcenter=0,vmin=-M,vmax=M)
+        # im = ax.imshow(R,cmap='bwr',norm=norm)
+        im = ax.imshow(R,cmap='bwr',vmin=-M,vmax=M)
+
+        
+        cbar = ax.figure.colorbar(im, ax=ax)
+        cbar.ax.set_ylabel('value', rotation=-90, va="bottom")
+
+        ax.axis('off')
+
+        for i in range(R.shape[0]):
+            for j in range(R.shape[1]):
+                im.axes.text(j, i, R[i,j])
+
+        if figname is not None:
+            figname1= figname + f'action:{action}.pdf'
+            plt.savefig(figname1,bbox_inches='tight')
+            logger.info(f'Figure saved {figname1}')
+        if config.log_wandb:
+            log_dict= {
+                f'val/learned_representation/action:{action}':wandb.Image(plt)}
+            wandb.log(log_dict)
+        plt.close(fig)
+    
+
 
 def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
                 epoch, figname=None):

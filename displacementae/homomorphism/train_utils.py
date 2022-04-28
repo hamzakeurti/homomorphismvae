@@ -25,6 +25,7 @@ import os
 import torch
 import torch.nn as nn
 import wandb
+import numpy as np
 
 import data.data_utils as data_utils
 import data.transition_dataset as trns_data
@@ -97,6 +98,11 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if config.variational:
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
+            
+            # Get representation matrices for typical actions
+            a_in, a = dhandler.get_example_actions()
+            example_R = nets.grp_morphism.get_example_repr(
+                            torch.from_numpy(a_in).float().to(device))
 
             ### Logging
             logger.info(f'EVALUATION prior to epoch [{epoch}]...') 
@@ -112,15 +118,18 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                             'val/bce_loss':bce_loss.item()}
                 if nets.variational:
                     log_dict['val/kl_loss'] = kl_loss.item()
-                wandb.log(log_dict,step=epoch)
-            
+                wandb.log(log_dict)
+            if (epoch % config.plot_epoch == 0):
+                # log_dict['val/learned_repr']=example_R.tolist()
+                fig_dir = os.path.join(config.out_dir, 'figures')
+                figname=os.path.join(fig_dir,'learned_repr_')
+                plt_utils.plot_matrix(example_R, a, config,
+                                      logger, figname=figname)
+        
             # Save Losses
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
-            a_in, a = dhandler.get_example_actions()
-            example_R = nets.grp_morphism.get_example_repr(
-                            torch.from_numpy(a_in).float().to(device))
             shared.learned_repr = example_R.tolist()
             shared.actions = a.tolist()
 
@@ -146,7 +155,6 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if epoch % 2*config.val_epoch == 0:
                 sim_utils.save_dictionary(shared,config)
             
-
     if plot and (epoch % config.plot_epoch == 0):
         with torch.no_grad():
             fig_dir = os.path.join(config.out_dir, 'figures')
@@ -174,6 +182,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                                         vary_latents=vary_latents[i],
                                         plot_latent=plot_latent[i], 
                                         figname=figname)
+
+
     nets.train()
 
 def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, 
@@ -246,7 +256,7 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                             'train/bce_loss':bce_loss.item()}
                 if nets.variational:
                     log_dict['train/kl_loss'] = kl_loss.item()
-                wandb.log(log_dict,step=batch_cnt)
+                wandb.log(log_dict,step=batch_cnt,commit=False)
                 batch_cnt += 1
     
     if config.checkpoint:
