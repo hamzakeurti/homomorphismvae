@@ -70,7 +70,7 @@ grid = {
     ### Training options ###
     'num_train': [15000],
     'batch_size': [500],
-    'epochs' : [2001],
+    'epochs' : [1001],
     'lr' : [1e-4, 1e-3],
     'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
@@ -95,21 +95,20 @@ grid = {
     'spherical':[True],
 
     ### Group ###
-    'dims' : ['"2,2"'],
+    'dim' : [4],
     'group_hidden_units': ['"20,20"','"10,10"','"10,10,10"','"20,20,20"',],
     'normalize_post_act':[False,True],
-    'reconstruct_first':[False,True],
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
     'log_wandb' : [True],
-    'wandb_project_name' : ['morphism_block_mlp_predfirst'],
+    'wandb_project_name' : ['morphism_mlp'],
 
 
     ### Plot options ###
     'no_plots': [False],
-    'plot_epoch': [100],
+    'plot_epoch': [50],
     'plot_manifold_latent': ['"[0,1]"'],
     'plot_on_black': [True],
     'plot_pca': [True],
@@ -183,7 +182,7 @@ conditions = conditions
 # Name of the script that should be executed by the hyperparameter search.
 # Note, the working directory is set seperately by the hyperparameter search
 # script, so don't include paths.
-_SCRIPT_NAME = 'train_block_mlp_repr.py'
+_SCRIPT_NAME = 'train_mlp_repr.py'
 
 # This file is expected to reside in the output folder of the simulation.
 _SUMMARY_FILENAME = 'performance_overview.txt'
@@ -258,11 +257,12 @@ _PERFORMANCE_SORT_ASC = False
 # ...                                             argv=argv)
 # >>> _ARGPARSE_HANDLE = f
 # import __init__
-from grouprepr.representation_utils import Representation
 import homomorphism.train_args as targs
+from grouprepr.representation_utils import Representation
+
 
 _ARGPARSE_HANDLE = lambda argv : targs.parse_cmd_arguments( \
-    representation=Representation.BLOCK_MLP, argv=argv)
+    representation=Representation.MLP, argv=argv)
 
 if __name__ == '__main__':
     pass
