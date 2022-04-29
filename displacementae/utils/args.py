@@ -142,8 +142,12 @@ def net_args(parser):
                         'not transformed by the action representations.')
     ngroup.add_argument('--spherical',action='store_true', 
                         help='If True, the representation vector is ' + 
-                        'normalized prior to being forwarded to ' +
-                        'group action or decoder')
+                             'normalized prior to being forwarded to ' +
+                             'group action or decoder')
+    ngroup.add_argument('--reconstruct_first',action='store_true',
+                        help='Reconstructs the input prior to any action, '+
+                             'this pathway is equivalent to a classic '+
+                             'AutoEncoder.')
     # ngroup.add_argument('--normalize_post_act',action='store_true', 
     #                     help='If True, the representation vector is ' + 
     #                     'normalized after each group action ')

@@ -28,7 +28,7 @@ from networks.autoencoder import AutoEncoder
 class MultistepAutoencoder(AutoEncoder):
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
                  n_transform_units, variational=True, spherical=False,
-                 normalize_vector_post_act=False):        
+                 reconstruct_first=False):        
         """
         An Autoencoder with multiple future observation prediction through 
         group representation.
@@ -49,6 +49,7 @@ class MultistepAutoencoder(AutoEncoder):
                          grp_morphism=grp_morphism, n_repr_units=n_repr_units,
                          variational=variational, spherical=spherical)
         self.n_transform_units = n_transform_units
+        self.reconstruct_first = reconstruct_first
 
     def forward(self, x, dz):
         """
@@ -59,42 +60,52 @@ class MultistepAutoencoder(AutoEncoder):
         `grp_morphism`, matrices are applied to the obtained representation.
         """
         h = x
-        n_steps = dz.shape[1]
+        if dz is None:
+            n_steps = 0
+        else:
+            n_steps = dz.shape[1]
+
+        n_images = n_steps
+        if self.reconstruct_first:
+            n_images += 1
     
         # Through encoder
         h, mu, logvar = self.encode(h)
 
         h_out = torch.empty(
-            size=[x.shape[0]] + [n_steps, self.n_repr_units],device=x.device)
+            size=[x.shape[0]] + [n_images, self.n_repr_units],device=x.device)
 
         if self.n_repr_units > self.n_transform_units:
             # The part of the transformation that is not transformed 
             # is repeated for all transition steps.
             h_out[:,:,self.n_transform_units:] = \
                                     h[:,self.n_transform_units:]\
-                                        .unsqueeze(1).repeat(1,n_steps,1)
+                                        .unsqueeze(1).repeat(1,n_images,1)
+
+
+        # Normalize the encoder's output according to subspaces of 
+        # the group representation.
+        h[:,:self.n_transform_units] = \
+            self.grp_morphism.normalize_vector(h[:,:self.n_transform_units])
+
+        if self.reconstruct_first:
+            h_out[:,0,...] = h.clone()
+        else:
+            h_out[:,0,:self.n_transform_units] = self.grp_morphism.act(
+                                      dz[:,0], 
+                                      h[:,:self.n_transform_units])   
+
         # Through geometry
-        for i in range(n_steps):
-            if i == 0:
-                # Normalize the encoder's output according to subspaces of 
-                # the group representation.
-                h[:,:self.n_transform_units] = \
-                    self.grp_morphism.normalize_vector(h[:,:self.n_transform_units])
-                
-                h_out[:,i,:self.n_transform_units] = \
-                    self.grp_morphism.act(dz[:,i], 
-                                          h[:,:self.n_transform_units])   
-            
-            else:
-                h_out[:,i,:self.n_transform_units] = \
-                        self.grp_morphism.act(
-                                dz[:,i], 
-                                h_out[:,i-1,:self.n_transform_units].clone())
-                                
+        for i in range(1,n_steps):
+            h_out[:,i,:self.n_transform_units] = \
+                    self.grp_morphism.act(
+                            dz[:,i], 
+                            h_out[:,i-1,:self.n_transform_units].clone())
+
         # Through decoder
         h_out = h_out.view(-1, self.n_repr_units)
         h_out = self.decoder(h_out)
-        h_out = h_out.view(x.shape[0],n_steps,*x.shape[1:])
+        h_out = h_out.view(x.shape[0],n_images,*x.shape[1:])
         if self.variational:
             return h_out, mu, logvar
         else:

@@ -237,6 +237,8 @@ def setup_multistep_autoencoder(config, dhandler, device, representation):
                         variational=config.variational, 
                         n_repr_units=repr_units, 
                         n_transform_units = dim_representation,
-                        spherical=config.spherical)
+                        spherical=config.spherical,
+                        reconstruct_first=config.reconstruct_first)
+
 
     return autoencoder
