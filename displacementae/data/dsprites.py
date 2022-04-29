@@ -224,7 +224,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     def transition(self,index):
         """"""
         latents = self.latents[index]
-        if not self.varied_in_action:
+        if len(self.varied_in_action)==0:
             return index,None
         #sample displacement
         dj = np.zeros((latents.shape[0],self.n_latents)).squeeze()

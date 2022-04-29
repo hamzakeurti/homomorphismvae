@@ -147,6 +147,10 @@ def net_args(parser):
     ngroup.add_argument('--normalize_post_act',action='store_true', 
                         help='If True, the representation vector is ' + 
                         'normalized after each group action ')
+    ngroup.add_argument('--reconstruct_first',action='store_true',
+                        help='Reconstructs the input prior to any action, '+
+                             'this pathway is equivalent to a classic '+
+                             'AutoEncoder.')
     
 
 def misc_args(parser,dout_dir=None):

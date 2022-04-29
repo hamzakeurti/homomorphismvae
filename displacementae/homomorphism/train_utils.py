@@ -83,7 +83,11 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             dj = dj.float()
 
             x1 = imgs[:,0] # initial observed image
-            xi = imgs[:,1:] # All other images to predict
+            # All other images to predict
+            if config.reconstruct_first:
+                xi = imgs
+            else:
+                xi = imgs[:,1:]
             ### Forward ###
             h, mu, logvar = nets(x1, dj)
             xi_hat = torch.sigmoid(h)
@@ -221,7 +225,11 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             dj = dj.float()
 
             x1 = imgs[:,0] # initial observed image
-            xi = imgs[:,1:] # All other images to predict
+            # All other images to predict
+            if config.reconstruct_first:
+                xi = imgs
+            else:
+                xi = imgs[:,1:]
             ### Forward ###
             h, mu, logvar = nets(x1, dj)
             xi_hat = torch.sigmoid(h)
