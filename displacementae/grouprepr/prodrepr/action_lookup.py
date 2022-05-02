@@ -35,21 +35,22 @@ import numpy as np
 from grouprepr.prodrepr.product_representation import ProductRepresentation
 from grouprepr.group_representation import GroupRepresentation
 
+
 class ActionLookup(GroupRepresentation):
-    def __init__(self, n_action_units: int, dim_representation: int, 
+    def __init__(self, n_action_units: int, dim_representation: int,
                  repr_loss_on=False, repr_loss_weight=0, device='cpu') -> None:
-        super().__init__(n_action_units, dim_representation, device=device, 
-                         repr_loss_on=repr_loss_on, 
+        super().__init__(n_action_units, dim_representation, device=device,
+                         repr_loss_on=repr_loss_on,
                          repr_loss_weight=repr_loss_weight)
         self.device = device
         self.action_reps = nn.ModuleList([
-            ProductRepresentation(dim_representation,device) 
+            ProductRepresentation(dim_representation, device)
             for _ in range(n_action_units)])
-        
+
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         a = a.int()
         R = [self.action_reps[a[i]].get_matrix() for i in range(a.shape[0])]
-        R = torch.stack(R,dim=0)
+        R = torch.stack(R, dim=0)
         return R
 
     def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
@@ -60,9 +61,9 @@ class ActionLookup(GroupRepresentation):
         for rep in self.action_reps:
             params.append(rep.thetas)
         return params
-    
+
     def end_iteration(self):
-        self.clear_representations() 
+        self.clear_representations()
 
     def representation_loss(self, *args):
         return self.entanglement_loss()
@@ -70,13 +71,13 @@ class ActionLookup(GroupRepresentation):
     def clear_representations(self):
         for rep in self.action_reps:
             rep.clear_matrix()
-    
+
     def save_representations(self, path):
         if os.path.splitext(path)[-1] != '.pth':
             path += '.pth'
         rep_thetas = [rep.thetas for rep in self.action_reps]
         return torch.save(rep_thetas, path)
-    
+
     def load_reprentations(self, path):
         rep_thetas = torch.load(path)
         for rep in self.action_reps:
@@ -91,5 +92,5 @@ class ActionLookup(GroupRepresentation):
     def get_example_repr(self, a: torch.Tensor = None) -> np.ndarray:
         with torch.no_grad():
             if a is None:
-                a = torch.IntTensor([0,1])
+                a = torch.IntTensor([0, 1])
             return super().get_example_repr(a)
