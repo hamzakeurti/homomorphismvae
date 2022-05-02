@@ -58,83 +58,80 @@ def plot_reconstruction(dhandler, nets, config, device, logger,
         X2 = X1.clone()
     dj = torch.FloatTensor(dj).to(device).squeeze()
     if config.intervene:
-        h, mu, logvar = nets(X1, dj)
+        h, _, _, mu, logvar = nets(X1, dj)
     else:
-        h, mu, logvar = nets(X1, None)
+        h, _, _, mu, logvar = nets(X1, None)
     X2_hat = torch.sigmoid(h)
     nrows = 7
     ncols = 3
-    fig, axes = plt.subplots(nrows,ncols,figsize=(5,8))
-    kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5, 8))
+    kwargs = {'vmin': 0, 'vmax': 1, 'cmap': 'gray'}
     for row in range(nrows):
-        axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
-        axes[row,1].imshow(X2[row,0].cpu().numpy(),**kwargs)
-        axes[row,2].imshow(X2_hat[row,0].cpu().numpy(),**kwargs)
+        axes[row, 0].imshow(X1[row, 0].cpu().numpy(), **kwargs)
+        axes[row, 1].imshow(X2[row, 0].cpu().numpy(), **kwargs)
+        axes[row, 2].imshow(X2_hat[row, 0].cpu().numpy(), **kwargs)
         if config.plot_on_black:
             for i in range(3):
-                axes[row,i].axes.xaxis.set_visible(False)
-                axes[row,i].axes.yaxis.set_visible(False)
+                axes[row, i].axes.xaxis.set_visible(False)
+                axes[row, i].axes.yaxis.set_visible(False)
         else:
             for i in range(3):
-                axes[row,i].axis('off')
+                axes[row, i].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
-
 
     if figname is not None:
         figname += 'reconstructions.pdf'
         plt.savefig(figname,bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
     plt.close(fig)
-    
 
-def plot_n_step_reconstruction(dhandler, nets, config, device, logger, 
-                        figname):
+
+def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
 
     n_steps = config.n_steps
 
     imgs, latents, dj = dhandler.get_val_batch()
-    X1 = torch.FloatTensor(imgs[:,0]).to(device)
-    Xi = torch.FloatTensor(imgs[:,1:]).to(device)
+    X1 = torch.FloatTensor(imgs[:, 0]).to(device)
+    Xi = torch.FloatTensor(imgs[:, 1:]).to(device)
     dj = torch.FloatTensor(dj).to(device)
 
+    h, _, _, mu, logvar = nets(X1, dj)
+    Xi_hat = torch.sigmoid(h)
 
-    h, mu, logvar = nets(X1, dj)
-    Xi_hat = torch.sigmoid(h)    
-    
     nrows = 7
     ncols = 1 + 2*n_steps
 
     unit_length = 1.5
 
-    fig, axes = plt.subplots(nrows,ncols,
-                             figsize=(ncols*unit_length,
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=(ncols * unit_length,
                                       nrows * unit_length))
-    kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
+    kwargs = {'vmin': 0, 'vmax': 1, 'cmap': 'gray'}
     for row in range(nrows):
-        axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
+        axes[row, 0].imshow(X1[row, 0].cpu().numpy(), **kwargs)
         for i in range(n_steps):
-            axes[row,1+2*i].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)
-            axes[row,2+2*i].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
+            axes[row, 1 + 2 * i].imshow(Xi[row, i, 0].cpu().numpy(), **kwargs)
+            axes[row, 2 + 2 * i].imshow(Xi_hat[row, i, 0].cpu().numpy(), **kwargs)
         if config.plot_on_black:
             for j in range(ncols):
-                axes[row,j].axes.xaxis.set_visible(False)
-                axes[row,j].axes.yaxis.set_visible(False)
+                axes[row, j].axes.xaxis.set_visible(False)
+                axes[row, j].axes.yaxis.set_visible(False)
         else:
             for j in range(ncols):
-                axes[row,j].axis('off')
+                axes[row, j].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
-
 
     if figname is not None:
         figname += 'reconstructions.pdf'
-        plt.savefig(figname,bbox_inches='tight')
+        plt.savefig(figname, bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
     plt.close(fig)
 
+
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
-                epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
+                  epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
     """
     Produces colored scatter plot of the latent representation of 
     the different positions in the joint space.
@@ -295,9 +292,7 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         plt.close(fig)
 
 
-
-
-T_SERIES = ["bce_loss","kl_loss","learned_alpha"]
+T_SERIES = ["bce_loss", "kl_loss", "learned_alpha"]
 def plot_curves(shared,config,logger,figname=None,val_name=None):
     if config.plot_on_black:
         plt.style.use('dark_background')
@@ -312,6 +307,22 @@ def plot_curves(shared,config,logger,figname=None,val_name=None):
                 figname1 = figname + 'curve_' + key + '.pdf'
                 plt.savefig(figname1)
             plt.close()
+
+def plot_step_recon_loss(step_losses, config, figname=None):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+
+    fig, ax = plt.subplots(figsize=(8, 7))
+    mean, std = np.mean(step_losses, axis=0), np.std(step_losses, axis=0)
+    ax.plot(np.arange(mean.shape[0]), mean, color='C0')
+    ax.fill_between(np.arange(mean.shape[0]), mean - std, mean + std, color='C0', alpha=0.3)
+    ax.set_xlabel('Step')
+    ax.set_ylabel('Reconstruction Loss')
+    if figname is not None:
+        figname1 = figname + 'step_recon.pdf'
+        plt.savefig(figname1)
+    plt.close()
+
 
 def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
                 figname=None):
