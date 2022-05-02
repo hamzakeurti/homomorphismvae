@@ -51,14 +51,14 @@ class LatentIdx:
 LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 
 class DspritesDataset(trns_dataset.TransitionDataset):
-    def __init__(self,root,rseed=None, fixed_in_sampling=[], 
-                fixed_values=[], fixed_in_action=[], transitions_on=True,
-                n_transitions:int = None, action_range:list=[-1,1], 
-                num_train = 200, 
-                num_val:int=30,cyclic_trans:bool=False,
-                dist:str = 'uniform',
-                return_integer_actions:bool = False,
-                rotate_actions:float= 0):
+    def __init__(self, root, rseed=None, fixed_in_sampling=[],
+                 fixed_values=[], fixed_in_action=[], transitions_on=True,
+                 n_transitions: int = None, action_range: list = [-1, 1],
+                 num_train=200,
+                 num_val: int = 30, cyclic_trans: bool = False,
+                 dist: str = 'uniform',
+                 return_integer_actions:bool = False,
+                 rotate_actions:float= 0):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Distribution
@@ -221,23 +221,23 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         dj = self.val_dj
         return images, latents, dj
 
-    def transition(self,index):
+    def transition(self, index):
         """"""
         latents = self.latents[index]
         #sample displacement
-        dj = np.zeros((latents.shape[0],self.n_latents)).squeeze()
-        dj[...,self.varied_in_action] = self._sample_displacement(
+        dj = np.zeros((latents.shape[0], self.n_latents)).squeeze()
+        dj[..., self.varied_in_action] = self._sample_displacement(
             self.transition_range, self.action_dim, latents.shape[0],
-            dist = self.dist)
-        new_latents,dj = self._transition_linear(latents,dj)
-        new_latents,dj = self._transition_circular(new_latents,dj)
+            dist=self.dist)
+        new_latents, dj = self._transition_linear(latents, dj)
+        new_latents, dj = self._transition_circular(new_latents, dj)
         indices2 = self.latents_2_index(new_latents)
-        dj = dj[...,self.varied_in_action]
+        dj = dj[..., self.varied_in_action]
         if self.return_integer_actions:
             dj = self.transition_to_index(dj)
-        return indices2,dj
+        return indices2, dj
 
-    def _sample_displacement(self,range,dim,n_samples,dist='uniform'):
+    def _sample_displacement(self, range, dim, n_samples, dist='uniform'):
         """Sample displacements around initial latent vector.
 
         Args:
@@ -245,22 +245,22 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             n_samples, int: Number of samples.
             dim, int: Dimensionality of the displacement vector.
             dist, str: Distribution choice to sample from, defaults to 'uniform'
-        
+
         Returns:
             ndarray: displacement vector.
         """
         if dist == 'uniform':
-            d = self._rand.randint(low=range[0], high=range[1]+1, 
-                                   size=(n_samples,dim))
+            d = self._rand.randint(low=range[0], high=range[1]+1,
+                                   size=(n_samples, dim))
         elif dist == 'disentangled':
             eye = np.eye(dim)
             # Random one hot vectors
-            mask = eye[self._rand.randint(dim,size=n_samples)] 
-            d = mask * self._rand.randint(low=range[0], high=range[1]+1, 
-                                   size=(n_samples,1))
+            mask = eye[self._rand.randint(dim, size=n_samples)]
+            d = mask * self._rand.randint(low=range[0], high=range[1]+1,
+                                          size=(n_samples, 1))
         return d
 
-    def _transition_linear(self,joints,dj):
+    def _transition_linear(self, joints, dj):
         new_joints = joints.copy()
         lin_idx = self.lin_idx
         new_joints[...,lin_idx] = np.clip(
@@ -276,12 +276,12 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         """
         rot_idx = self.rot_idx
         num_latents = self.num_latents[rot_idx]
-        # Last coincides with first 
+        # Last coincides with first
         num_latents[0] = num_latents[0] - 1
         new_joints = joints.copy()
-        new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
+        new_joints[..., rot_idx] = (joints[..., rot_idx] + dj[..., rot_idx])\
              % num_latents
-        return new_joints,dj
+        return new_joints, dj
 
     def joints_to_index(self,joints):
         index = 0
@@ -365,7 +365,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
 
     @property
     def allowed_indices(self):
-        if hasattr(self,'_allowed_indices'):
+        if hasattr(self, '_allowed_indices'):
             pass
         else:
             self._allowed_indices = [self.get_index(i) for i in range(self.n_samples)]
@@ -378,7 +378,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     @property
     def action_shape(self):
         return self._data["action_shape"]
-    
+
 
 if __name__ == '__main__':
     pass
