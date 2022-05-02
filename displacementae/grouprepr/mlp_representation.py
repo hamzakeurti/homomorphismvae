@@ -26,26 +26,32 @@ import torch.nn as nn
 from grouprepr.group_representation import GroupRepresentation
 from networks.mlp import MLP
 
+
 class MLPRepresentation(GroupRepresentation):
     """
     An MLP mapping from transitions to invertible matrices.
 
     """
     def __init__(self, n_action_units: int, dim_representation: int, hidden_units=[],
-                 activation=torch.relu, device='cpu') -> None:
+                 activation=nn.ReLU, layer_norm=True, device='cpu') -> None:
         super().__init__(n_action_units, dim_representation, device=device)
-        self.net = MLP(n_action_units,dim_representation**2,hidden_units,
-                       activation).to(device)
-    
+        self.net = MLP(in_features=n_action_units,
+                       out_features=dim_representation ** 2,
+                       hidden_units=hidden_units,
+                       activation=activation,
+                       dropout_rate=0,
+                       bias=True,
+                       layer_norm=layer_norm).to(device)
+
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """
-        Forwards input transitions through an MLP network and reshapes 
-        the outputs to form matrices. 
+        Forwards input transitions through an MLP network and reshapes
+        the outputs to form matrices.
         """
         R = self.net(a)
-        R = R.view(-1, self.dim_representation,self.dim_representation)
+        R = R.view(-1, self.dim_representation, self.dim_representation)
         return R
+
 
 if __name__ == '__main__':
     pass
-    
