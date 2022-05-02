@@ -27,24 +27,24 @@ from grouprepr.representation_utils import Representation
 
 def data_args(parser, mode='autoencoder'):
     dgroup = parser.add_argument_group('Data options')
-    dgroup.add_argument('--dataset', type=str, default='armeye', 
-                        help='Name of dataset',choices=['armeye','dsprites'])
+    dgroup.add_argument('--dataset', type=str, default='armeye',
+                        help='Name of dataset', choices=['armeye', 'dsprites', 'teapot'])
     dgroup.add_argument('--n_joints', type=int, default=3,
                         help='Number of joints in the robot')
     dgroup.add_argument('--fixed_in_sampling', type=str, default='',
                         help='indices of fixed joints in sampling')
-    dgroup.add_argument('--fixed_values', type=str, default='', 
+    dgroup.add_argument('--fixed_values', type=str, default='',
                         help='Values of fixed joints')
-    dgroup.add_argument('--fixed_in_intervention', type=str, default='', 
+    dgroup.add_argument('--fixed_in_intervention', type=str, default='',
                         help='Indices of fixed joints in intervention')
     dgroup.add_argument('--shuffle', type=bool, default=True,
                         help='Shuffle the dataset.')
     dgroup.add_argument('--displacement_range', type=str,
-                        default="-3,3", help='Range of uniform distribution '+
+                        default="-3,3", help='Range of uniform distribution ' +
                         'from which to sample future joint position')
-    dgroup.add_argument('--data_root', type=str, 
+    dgroup.add_argument('--data_root', type=str,
                         help='Root directory of the dataset directory.')
-    dgroup.add_argument('--data_random_seed', default=42,type=int,
+    dgroup.add_argument('--data_random_seed', default=42, type=int,
                         help='Specify data random seed for reproducibility.')
     dgroup.add_argument('--num_train', type=int, default=100,
                         help='Number of training samples')
@@ -53,23 +53,26 @@ def data_args(parser, mode='autoencoder'):
     dgroup.add_argument('--cyclic_trans', action='store_true',
                         help='considers position as a cyclic latent.')
     dgroup.add_argument('--distrib', type=str, default='uniform',
-                        choices=['uniform','disentangled'],
-                        help='Selects distribution from which to '+
+                        choices=['uniform', 'disentangled'],
+                        help='Selects distribution from which to ' +
                              'sample transitions')
-    dgroup.add_argument('--integer_actions',action='store_true',
+    dgroup.add_argument('--integer_actions', action='store_true',
                         help='Indexes the action vector, ' +
-                                'losing structure in the input actions.')
+                             'losing structure in the input actions.')
     dgroup.add_argument('--rotate_actions', type=float, default=0,
-                        help='Rotation angle of the first two components '+
+                        help='Rotation angle of the first two components ' +
                              'of action vectors')
-    
-    
+    dgroup.add_argument('--train_trajs', type=str, default=None,
+                        help='Training trajectories')
+    dgroup.add_argument('--valid_trajs', type=str, default=None,
+                        help='Validation trajectories')
+
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
-                        help='Whether to vary joint positions.')
+                            help='Whether to vary joint positions.')
     if mode == 'homomorphism':
         dgroup.add_argument('--n_steps', type=int, default=2,
-                        help='Number of observed transitions per example.')
+                            help='Number of observed transitions per example.')
 
 
 def train_args(parser):
@@ -118,8 +121,8 @@ def net_args(parser):
             - `n_free_latents`
     """
     ngroup = parser.add_argument_group('network options')
-    ngroup.add_argument('--net_act',type=str,default='relu',
-                        choices=['sigmoid','relu','tanh','none'], 
+    ngroup.add_argument('--net_act', type=str, default='relu',
+                        choices=['sigmoid', 'relu', 'tanh', 'none'],
                         help='Training batch size')
     ngroup.add_argument('--conv_channels', type=str, default='',
                         help='Channels per layer. '+
@@ -130,26 +133,26 @@ def net_args(parser):
                         help='kernel sizes of convolution layers.')
     ngroup.add_argument('--strides', type=str, default='1',
                         help='strides of convlution layers.')
-    ngroup.add_argument('--variational',action='store_true', 
-                        help='Whether the network outputs ' + 
+    ngroup.add_argument('--variational', action='store_true',
+                        help='Whether the network outputs ' +
                         'should be considered as mean and var of a gaussian.')
-    ngroup.add_argument('--beta',type=float, 
+    ngroup.add_argument('--beta', type=float,
                         help='Beta factor of the beta-VAE ' +
-                        'balances contribution of prior matching loss. ' + 
+                        'balances contribution of prior matching loss. ' +
                         'Defaults to 1.')
-    ngroup.add_argument('--n_free_units',type=int, default=0, 
+    ngroup.add_argument('--n_free_units', type=int, default=0,
                         help='number of representation units ' +
                         'not transformed by the action representations.')
-    ngroup.add_argument('--spherical',action='store_true', 
-                        help='If True, the representation vector is ' + 
+    ngroup.add_argument('--spherical', action='store_true',
+                        help='If True, the representation vector is ' +
                         'normalized prior to being forwarded to transform or ' +
                         'decoder')
-    ngroup.add_argument('--normalize_post_act',action='store_true', 
-                        help='If True, the representation vector is ' + 
+    ngroup.add_argument('--normalize_post_act', action='store_true',
+                        help='If True, the representation vector is ' +
                         'normalized after each group action ')
-    
 
-def misc_args(parser,dout_dir=None):
+
+def misc_args(parser, dout_dir=None):
     if dout_dir is None:
         dout_dir = './out/run_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mgroup = parser.add_argument_group('Miscellaneous options')
@@ -161,22 +164,22 @@ def misc_args(parser,dout_dir=None):
                         help='if use_cuda, GPU device number.')
     mgroup.add_argument('--random_seed', type=int, default=42,
                         help='Specify random seed for reproducibility')
-    mgroup.add_argument('--plot_on_black', action='store_true', 
+    mgroup.add_argument('--plot_on_black', action='store_true',
                         help='Whether to plot using dark background style')
-    mgroup.add_argument('--no_plots', action='store_true', 
+    mgroup.add_argument('--no_plots', action='store_true',
                         help='Whether to plot figures')
     mgroup.add_argument('--plot_manifold_latent', type=str, default='',
                         help='Which latent units to visualize the manifold of.')
     mgroup.add_argument('--plot_vary_latents', type=str, default='',
-                        help='Which joints to move' + 
+                        help='Which joints to move' +
                         'to produce a manifold of latents.')
-    mgroup.add_argument('--checkpoint', action='store_true', 
-                        help='Saves a checkpoint of the model and optimizer '+
+    mgroup.add_argument('--checkpoint', action='store_true',
+                        help='Saves a checkpoint of the model and optimizer ' +
                         'at the end of training')
-    mgroup.add_argument('--plot_pca', action='store_true', 
-                        help='Plots scatter of representations projected '+
+    mgroup.add_argument('--plot_pca', action='store_true',
+                        help='Plots scatter of representations projected ' +
                              'along 2 main pca components')
-    mgroup.add_argument('--toggle_training_every',type=str,default='2',
+    mgroup.add_argument('--toggle_training_every', type=str, default='2',
                         help='2values e1, e2. '+
                              'Train parameters group 1 for e1 epochs, '+
                              'Train parameters group 1 for e2 epochs. '+
@@ -200,21 +203,21 @@ def group_repr_args(parser, representation):
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list of the rep\'s MLP')
     elif representation == Representation.BLOCK_ROTS:
-        ggroup.add_argument('--learn_geometry',action='store_true', 
-                        help='Whether to learn the grp action parameters. '+
-                        'If not, these should be provided in arg '+
-                        '--specified_grp_step')
-        ggroup.add_argument('--specified_grp_step', type=str, default='0', 
-                        help='specified grp action parameters')
+        ggroup.add_argument('--learn_geometry', action='store_true',
+                            help='Whether to learn the grp action parameters. ' +
+                            'If not, these should be provided in arg ' +
+                            '--specified_grp_step')
+        ggroup.add_argument('--specified_grp_step', type=str, default='0',
+                            help='specified grp action parameters')
     elif representation == Representation.PROD_ROTS_LOOKUP:
         ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space '+
+                            help='Dimension of the representation space ' +
                                  'acted on.')
-        ggroup.add_argument('--grp_loss_on',action='store_true',
+        ggroup.add_argument('--grp_loss_on', action='store_true',
                             help='whether to add group representation loss.')
-        ggroup.add_argument('--grp_loss_weight',type=float, default = 1e-2,
+        ggroup.add_argument('--grp_loss_weight', type=float, default=1e-2,
                             help='Factor of the grp loss in the total loss.')
-        ggroup.add_argument('--plot_thetas', action='store_true', 
+        ggroup.add_argument('--plot_thetas', action='store_true',
                             help='Plots learned thetas')
     elif representation == Representation.BLOCK_LOOKUP:
         ggroup.add_argument('--dims', type=str, default='',
