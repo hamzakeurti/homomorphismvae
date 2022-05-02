@@ -32,35 +32,35 @@ class MLP(nn.Module):
     Network made of stacked linear layers, optionally activated.
     """
 
-    def __init__(self, in_features, out_features, hidden_units, 
-                activation=torch.relu, dropout_rate=0, bias=True):
+    def __init__(self, in_features, out_features, hidden_units,
+                 activation=nn.ReLU, dropout_rate=0, bias=True, layer_norm=False):
         super().__init__()
-        self._layers = nn.ModuleList()
+        layers = []
 
-        units = [in_features] + hidden_units + [out_features]
+        units = [in_features] + hidden_units
         for l in range(len(units)-1):
             n_in = units[l]
             n_out = units[l + 1]
-            self._layers.append(
+            layers.append(
                 nn.Linear(in_features=n_in, out_features=n_out, bias=bias))
+            if dropout_rate > 0:
+                layers.append(nn.Dropout(p=dropout_rate))
+            if layer_norm:
+                layers.append(nn.LayerNorm(n_out))
+            layers.append(activation())
 
-        self._activation = activation
-        self._dropout = nn.Dropout(p=dropout_rate)
+        layers.append(nn.Linear(n_out, out_features))
+
+        self.seq = nn.Sequential(*layers)
 
     def forward(self, x):
         """Computes the output of this network.
 
         Args:
-            x (tensor): 
+            x (tensor):
 
         Returns:
             tensor: output tensor, not activated.
         """
-        h = x
-        for l in range(len(self._layers)):
-            h = self._layers[l](h)
-            if l != len(self._layers) - 1:
-                h = self._dropout(h)
-                if self._activation is not None:
-                    h = self._activation(h)
-        return h
+
+        return self.seq(x)
