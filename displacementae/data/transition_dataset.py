@@ -91,10 +91,10 @@ class TransitionDataset(Dataset):
     def transition(self, idx):
         pass
 
-    def observe_n_transitions(self,idx):
-        indices = np.empty(shape=(idx.shape[-1],self.n_transitions+1), dtype=int)
+    def observe_n_transitions(self, idx):
+        indices = np.empty(shape=(idx.shape[-1], self.n_transitions+1), dtype=int)
         transitions = []
-        indices[:,0] = idx
+        indices[:, 0] = idx
         for i in range(self.n_transitions):
             idx2, dj = self.transition(indices[:,i])
             indices[:,i+1]= idx2
