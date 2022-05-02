@@ -43,30 +43,33 @@ from grouprepr.block_lookup_representation import BlockLookupRepresentation
 AUTOENCODER = 'autoencoder'
 
 
-
-def setup_network(config, dhandler, device, mode=AUTOENCODER, 
+def setup_network(config, dhandler, device, mode=AUTOENCODER,
                   representation=Representation.BLOCK_ROTS):
-    if mode==AUTOENCODER:
-        return setup_autoencoder_network(config, dhandler, device, 
+    if mode == AUTOENCODER:
+        return setup_autoencoder_network(config, dhandler, device,
                                          representation)
-    elif mode=='homomorphism':
-        return setup_multistep_autoencoder(config, dhandler, device, 
+    elif mode == 'homomorphism':
+        return setup_multistep_autoencoder(config, dhandler, device,
+                                           representation)
+    elif mode == 'trajectory':
+        return setup_multistep_autoencoder(config, dhandler[0], device,
                                            representation)
     else:
         raise NotImplementedError
 
+
 def setup_encoder_decoder(config, dhandler, device, repr_units):
     in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
     conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
-    
+
     kernel_sizes = misc.str_to_ints(config.kernel_sizes)
     strides = misc.str_to_ints(config.strides)
     if len(kernel_sizes) == 1:
         kernel_sizes = kernel_sizes[0]
     if len(strides) == 1:
         strides = strides[0]
-    
-    if isinstance(strides,list):
+
+    if isinstance(strides, list):
         trans_strides = strides[::-1]
     else:
         trans_strides = strides
@@ -75,13 +78,13 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
         trans_kernel = kernel_sizes[::-1]
     else:
         trans_kernel = kernel_sizes
-    
+
     lin_channels = misc.str_to_ints(config.lin_channels)
-    if config.net_act=='relu':
+    if config.net_act == 'relu':
         act_fn = torch.relu
-    elif config.net_act=='sigmoid':
+    elif config.net_act == 'sigmoid':
         act_fn = torch.sigmoid
-    elif config.net_act=='tanh':
+    elif config.net_act == 'tanh':
         act_fn = torch.tanh
     else:
         act_fn = None
@@ -91,29 +94,29 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
         config.beta = 1.
 
     # if variational, encoder outputs mean and logvar
-    encoder_outputs = (1 + variational ) * repr_units 
-    encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes, 
+    encoder_outputs = (1 + variational) * repr_units
+    encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes,
         strides=strides, conv_channels=conv_channels,
         linear_channels=lin_channels+[encoder_outputs],
         use_bias=True, activation_fn=act_fn).to(device)
-    
+
     decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,
         strides=trans_strides, conv_channels=conv_channels[::-1],
         linear_channels=[repr_units]+lin_channels[::-1],
         use_bias=True, activation_fn=act_fn).to(device)
-    
+
     return encoder, decoder
 
 
-def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset, 
-                       device:str, 
+def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
+                       device: str,
                        representation) -> GroupRepresentation:
     """
-    Sets up the group morphism module which converts input actions to 
+    Sets up the group morphism module which converts input actions to
     """
-    
-    if representation == Representation.BLOCK_ROTS: 
-        if not hasattr(config,'specified_grp_step'):
+
+    if representation == Representation.BLOCK_ROTS:
+        if not hasattr(config, 'specified_grp_step'):
             specified_step = 0
         else:
             specified_step = misc.str_to_floats(config.specified_grp_step)
@@ -123,8 +126,8 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 specified_step = specified_step[0]
 
         grp_morphism = orth.OrthogonalMatrix(
-            dim_representation=dhandler.action_shape[0] * 2,device=device, 
-            learn_params=config.learn_geometry, 
+            dim_representation=dhandler.action_shape[0] * 2, device=device,
+            learn_params=config.learn_geometry,
             specified_step=specified_step).to(device)
     elif representation == Representation.BLOCK_MLP:
         dims = misc.str_to_ints(config.dims)
@@ -140,7 +143,7 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
         grp_morphism = MLPRepresentation(
                 n_action_units=dhandler.action_shape[0],
                 dim_representation=config.dim,
-                hidden_units=hidden_units,device=device).to(device)
+                hidden_units=hidden_units, device=device).to(device)
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
                 n_action_units=dhandler.n_actions,
@@ -209,26 +212,24 @@ def setup_autoencoder_network(config, dhandler, device, representation):
     return autoencoder
 
 
-
 def setup_multistep_autoencoder(config, dhandler, device, representation):
     grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
                                       representation=representation)
-    
+
     dim_representation = grp_morphism.dim_representation
     n_free_units = config.n_free_units
-    repr_units =  dim_representation + n_free_units
-    
-    encoder, decoder = setup_encoder_decoder(config, dhandler, device, 
+    repr_units = dim_representation + n_free_units
+
+    encoder, decoder = setup_encoder_decoder(config, dhandler, device,
                                              repr_units)
-                                      
+
     autoencoder = MultistepAutoencoder(
-                        encoder=encoder, decoder=decoder, 
+                        encoder=encoder, decoder=decoder,
                         grp_morphism=grp_morphism,
-                        variational=config.variational, 
-                        n_repr_units=repr_units, 
-                        n_transform_units = dim_representation,
+                        variational=config.variational,
+                        n_repr_units=repr_units,
+                        n_transform_units=dim_representation,
                         spherical=config.spherical,
                         normalize_post_act=config.normalize_post_act)
-
 
     return autoencoder

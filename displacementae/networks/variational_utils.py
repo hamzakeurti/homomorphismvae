@@ -23,22 +23,24 @@
 import torch
 import torch.nn as nn
 
+
 def reparametrize(mu, logvar):
     """
-    Reparametrization trick for sampling from a gaussian of 
+    Reparametrization trick for sampling from a gaussian of
     which parameters are outputted by a model.
     """
     eps = torch.randn_like(mu)
     std = torch.exp(0.5*logvar)
     return mu + std*eps
 
+
 def kl_loss(mu, logvar):
     loss = torch.exp(logvar) + mu**2 - 1. - logvar
     return 0.5 * torch.sum(loss)/mu.shape[0]
 
-def bce_loss(x_hat, x, reduction = 'sum'):
+
+def bce_loss(x_hat, x, reduction='sum'):
     loss = nn.BCELoss(reduction=reduction)(x_hat, x)
     if reduction == 'sum':
         loss /= x.shape[0]
     return loss
-        

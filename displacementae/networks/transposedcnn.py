@@ -26,6 +26,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+
 class TransposedCNN(nn.Module):
     def __init__(self, shape_out, kernel_sizes=5, strides=1, conv_channels=[64, 64, 32, 1], linear_channels=None, use_bias=True, activation_fn=torch.relu):
         """
@@ -61,9 +62,8 @@ class TransposedCNN(nn.Module):
                 in_channels=self._conv_channels[l],
                 out_channels=self._conv_channels[l+1],
                 kernel_size=self._kernel_sizes[l],
-                stride= self._strides[l],
+                stride=self._strides[l],
                 bias=self._use_bias))
-
 
         self._fm_shapes = [list(shape_out)]
         for l in range(n_conv-1, -1, -1):
@@ -74,7 +74,7 @@ class TransposedCNN(nn.Module):
 
         n_lin = 0 if linear_channels is None else len(linear_channels)
         self._lin_layers = nn.ModuleList()
-        self._n_conv_in = np.prod(self._fm_shapes[0],dtype=int)*self._conv_channels[0]
+        self._n_conv_in = np.prod(self._fm_shapes[0], dtype=int)*self._conv_channels[0]
         if linear_channels is not None:
             self._lin_channels = linear_channels + [self._n_conv_in]
             for l in range(n_lin):

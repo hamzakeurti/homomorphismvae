@@ -85,7 +85,7 @@ class AutoEncoder(nn.Module):
 
     def forward(self, x, dz):
         h = x
-        
+
         # Through encoder
         h, mu, logvar = self.encode(h)
 
