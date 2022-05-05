@@ -231,3 +231,9 @@ def group_repr_args(parser, representation):
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
                                  'acted on.')
+    if representation in [Representation.MLP, Representation.BLOCK_MLP, 
+                          Representation.LOOKUP, Representation.BLOCK_LOOKUP]:
+        ggroup.add_argument('--grp_loss_on',action='store_true',
+                            help='whether to add group representation loss.')
+        ggroup.add_argument('--grp_loss_weight',type=float, default = 1e-2,
+                            help='Factor of the grp loss in the total loss.')
