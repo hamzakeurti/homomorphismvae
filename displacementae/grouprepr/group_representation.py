@@ -84,7 +84,21 @@ class GroupRepresentation(nn.Module):
             return R.numpy()
     
     def representation_loss(self, *args):
-        pass
+        """
+        Estimates the discrepancy between representation matrices 
+        and the unitary matrices.
+        """
+        if self.repr_loss_on:
+            a = args[0]
+            a = a.view(np.prod(a.shape[:-1]),-1)
+            R = self.forward(a)
+            # R[a].T @ R[a] for each matrix 
+            loss = torch.einsum('...ij,...ik->...jk', R,R) \
+                - torch.eye(R.shape[-1])
+            loss = loss.square().sum()/ np.prod(R.shape[:-2])
+            return self.repr_loss_weight * loss
+        else:
+            return 0
 
     def end_iteration(self):
         pass

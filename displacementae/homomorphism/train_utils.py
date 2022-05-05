@@ -68,6 +68,9 @@ def evaluate(dhandler:trns_data.TransitionDataset,
         shared.learned_repr = []
         if config.variational:
             shared.kl_loss = []
+        if config.grp_loss_on:
+            shared.grp_loss = []
+
         
     if epoch % config.val_epoch == 0:
 
@@ -98,7 +101,10 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if config.variational:
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
-            
+            if config.grp_loss_on:
+                grp_loss = nets.grp_morphism.representation_loss(dj)
+                total_loss += grp_loss
+                shared.grp_loss.append(grp_loss.item())
             # Get representation matrices for typical actions
             a_in, a = dhandler.get_example_actions()
             example_R = nets.grp_morphism.get_example_repr(
@@ -110,8 +116,11 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             log_text += f'=\tBCE {bce_loss.item():.2f} '
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f} '
+            if config.grp_loss_on:
+                log_text += f'=\tGRP {grp_loss.item():.2f}'
             logger.info(log_text)
-            
+
+
             ### WandB Logging
             if config.log_wandb:
                 log_dict = {'val/epoch':epoch,'val/total_loss':total_loss.item(),
@@ -130,6 +139,9 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
+            if config.grp_loss_on:
+                shared.grp_loss.append(grp_loss.item())
+
             shared.learned_repr = example_R.tolist()
             shared.actions = a.tolist()
 
@@ -236,10 +248,13 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
+            if config.grp_loss_on:
+                grp_loss = nets.grp_morphism.representation_loss(dj)
+                total_loss += grp_loss
             total_loss.backward()
             optim.step()
             # Clear the stored matrices so they are regenerated at next 
-            # iteration. 
+            # iteration. Only does something if representation is PROD_ROTS.
             nets.grp_morphism.end_iteration()
 
             ### Logging
@@ -248,6 +263,8 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
 
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'
+            if config.grp_loss_on:
+                log_text += f'=\tGRP {grp_loss.item():.2f}'
             logger.info(log_text)
             
             ### WandB Logging
@@ -256,6 +273,8 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                             'train/bce_loss':bce_loss.item()}
                 if nets.variational:
                     log_dict['train/kl_loss'] = kl_loss.item()
+                if config.grp_loss_on:
+                    log_dict['train/grp_loss'] = grp_loss.item()
                 wandb.log(log_dict,step=batch_cnt,commit=False)
                 batch_cnt += 1
     

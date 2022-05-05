@@ -31,10 +31,12 @@ class LookupRepresentation(GroupRepresentation):
     A Lookup table of learned matrices.
 
     """
-    def __init__(self, n_actions: int, dim_representation: int,
-                 device='cpu') -> None:
+    def __init__(self, n_actions: int, dim_representation: int, device='cpu', 
+                 repr_loss_on:bool=False, repr_loss_weight:float=0.) -> None:
         super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device)
+                         dim_representation=dim_representation, device=device,
+                         repr_loss_on=repr_loss_on, 
+                         repr_loss_weight=repr_loss_weight)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
                  0.1*torch.randn(size=(dim_representation,dim_representation)))
