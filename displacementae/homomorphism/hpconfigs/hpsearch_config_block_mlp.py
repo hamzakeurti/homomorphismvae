@@ -70,7 +70,7 @@ grid = {
     ### Training options ###
     'num_train': [15000],
     'batch_size': [500],
-    'epochs' : [2001],
+    'epochs' : [1001],
     'lr' : [1e-4, 1e-3],
     'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
@@ -83,7 +83,9 @@ grid = {
     ### network options ###
     'conv_channels': ['"32,32"','"32,32,32"','"32,32,32,32"'],
     'kernel_sizes': ['"6,4"','"6,4,4"','"6,4,4,4"'],
-    'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
+    'strides': ['"2,2,1,1"','"2,2,1"','"2,2"'],
+    # 'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
+
     # 'conv_channels': ['"32,32"'],
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
@@ -97,21 +99,23 @@ grid = {
     ### Group ###
     'dims' : ['"2,2"'],
     'group_hidden_units': ['"20,20"','"10,10"','"10,10,10"','"20,20,20"',],
-    'normalize_post_act':[False,True],
-    'reconstruct_first':[False,True],
+    'normalize_post_act':[False],
+    'reconstruct_first':[False],
+    'grp_loss_on':[True],
+    'grp_loss_weight':[1,1e-1,1e-2,1e-3],
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
     'log_wandb' : [True],
-    'wandb_project_name' : ['morphism_block_mlp_predfirst'],
+    'wandb_project_name' : ['morphism_block_mlp_grploss'],
 
 
     ### Plot options ###
     'no_plots': [False],
     'plot_epoch': [100],
     'plot_manifold_latent': ['"[0,1]"'],
-    'plot_on_black': [True],
+    'plot_on_black': [False],
     'plot_pca': [True],
     'plot_vary_latents': ['"[4,5]"'],
 }
