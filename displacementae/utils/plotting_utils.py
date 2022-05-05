@@ -196,7 +196,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     else:
         kwargs={}
 
-    kwargs['alpha']=0.5
+    kwargs['alpha']=0.8
     kwargs['edgecolors']='none'
 
     for i in range(len(vary_latents)):
@@ -225,12 +225,15 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             plt.colorbar(f)
         ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
-            figname1 = figname + 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
-            figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
+            figname1 = figname + 'repr_units=' + misc.ints_to_str(plot_latent) 
+            figname1 += '_varied='+ misc.ints_to_str(vary_latents)
+            figname1 += '_clr='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
         if config.log_wandb:
-            wandb.log({f'plot/manifold_{i}':wandb.Image(plt)})
+            wandb.log({f'plot/manifold_repr{misc.ints_to_str(plot_latent)}'+
+                       f'_varied{misc.ints_to_str(vary_latents)}_col{i}':\
+                                                        wandb.Image(plt)})
         plt.close(fig)
 
 def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
@@ -314,11 +317,14 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
             figname1 = figname + 'repr_manifold_pca' 
+            figname1 += '_varied='+ misc.ints_to_str(vary_latents)
             figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
         if config.log_wandb:
-            wandb.log({f'plot/manifold_{i}':wandb.Image(plt)})
+            wandb.log({f'plot/manifold_repr'+
+                       f'_varied{misc.ints_to_str(vary_latents)}_col{i}':\
+                                                        wandb.Image(plt)})
         plt.close(fig)
 
 
