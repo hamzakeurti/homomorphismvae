@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp.py
+# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp_multiobjects.py
 # author         :Hamza Keurti
 # contact        :hkeurti@ethz.ch
 # created        :11/04/2022
@@ -57,8 +57,8 @@ grid = {
     'data_root': ['/home/hamza/datasets/dsprites/'],
     'cyclic_trans' : [True],
     'fixed_in_intervention': ['"0,1,2,3"'],
-    'fixed_in_sampling': ['"0,1,2,3"'],
-    'fixed_values': ['"0,1,5,14"'],
+    'fixed_in_sampling': ['"0,2,3"'],
+    'fixed_values': ['"0,5,14"'],
     'distrib': ['uniform'],
     'displacement_range': ['"-2,2"','"-5,5"','"-10,10"'],
     'integer_actions' : [False],
@@ -70,7 +70,7 @@ grid = {
     ### Training options ###
     'num_train': [15000],
     'batch_size': [500],
-    'epochs' : [2001],
+    'epochs' : [1001],
     'lr' : [1e-4, 1e-3],
     'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
@@ -83,7 +83,8 @@ grid = {
     ### network options ###
     'conv_channels': ['"32,32"','"32,32,32"','"32,32,32,32"'],
     'kernel_sizes': ['"6,4"','"6,4,4"','"6,4,4,4"'],
-    'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
+    'strides': ['"2,2,1,1"','"2,2,1"','"2,2"'],
+    # 'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
     # 'conv_channels': ['"32,32"'],
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
@@ -103,14 +104,14 @@ grid = {
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp'],
+    'wandb_project_name' : ['morphism_block_mlp_multiobjects'],
     'log_wandb':[True],
 
     ### Plot options ###
     'no_plots': [False],
-    'plot_epoch': [100],
+    'plot_epoch': [50],
     'plot_manifold_latent': ['"[0,1]"'],
-    'plot_on_black': [True, False],
+    'plot_on_black': [False],
     'plot_pca': [True],
     'plot_vary_latents': ['"[4,5]"'],
 }
