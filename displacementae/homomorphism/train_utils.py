@@ -103,7 +103,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 total_loss += config.beta * kl_loss
             if config.grp_loss_on:
                 grp_loss = nets.grp_morphism.representation_loss(dj)
-                total_loss += grp_loss
+                total_loss += grp_loss * config.grp_loss_weight
                 shared.grp_loss.append(grp_loss.item())
             # Get representation matrices for typical actions
             a_in, a = dhandler.get_example_actions()
@@ -250,7 +250,7 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                 total_loss += config.beta * kl_loss
             if config.grp_loss_on:
                 grp_loss = nets.grp_morphism.representation_loss(dj)
-                total_loss += grp_loss
+                total_loss += grp_loss * config.grp_loss_weight
             total_loss.backward()
             optim.step()
             # Clear the stored matrices so they are regenerated at next 
