@@ -96,7 +96,7 @@ class GroupRepresentation(nn.Module):
             loss = torch.einsum('...ij,...ik->...jk', R,R) \
                 - torch.eye(R.shape[-1]).to(R.device)
             loss = loss.square().sum()/ np.prod(R.shape[:-2])
-            return self.repr_loss_weight * loss
+            return loss
         else:
             return 0
 
