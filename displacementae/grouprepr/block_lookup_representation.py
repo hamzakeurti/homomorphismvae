@@ -37,18 +37,22 @@ class BlockLookupRepresentation(GroupRepresentation):
     """
     def __init__(self, n_actions:int, dim_representation:int, 
                  dims:list, device:str='cpu', 
-                 normalize_subrepresentations:bool=False) -> None:
+                 normalize_subrepresentations:bool=False, 
+                 normalize_post_action:bool=False) -> None:
         super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device)
+                         dim_representation=dim_representation, device=device, 
+                         normalize_post_action=normalize_post_action)
         self.dims = dims
         self.n_actions = n_actions
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
-        self.subreps:nn.ModuleList[GroupRepresentation] = nn.ModuleList()
+        self.subreps:list[LookupRepresentation] = nn.ModuleList()
         for dim in dims:
             self.subreps.append(
-                    LookupRepresentation(n_actions,dim,device=device, 
-                                         normalize=normalize_subrepresentations))
+                    LookupRepresentation(
+                            n_actions,dim,device=device, 
+                            normalize=normalize_subrepresentations,
+                            normalize_post_action=normalize_post_action))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         R = torch.zeros(*a.shape,self.dim_representation,

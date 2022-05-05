@@ -144,6 +144,9 @@ def net_args(parser):
                         help='If True, the representation vector is ' + 
                              'normalized prior to being forwarded to ' +
                              'group action or decoder')
+    ngroup.add_argument('--spherical_post_action',action='store_true', 
+                        help='If True, the representation vector is ' + 
+                             'normalized after each group action')
     ngroup.add_argument('--reconstruct_first',action='store_true',
                         help='Reconstructs the input prior to any action, '+
                              'this pathway is equivalent to a classic '+
@@ -256,4 +259,7 @@ def group_repr_args(parser, representation):
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
                                  'acted on.')
+    ggroup.add_argument('--normalize_post_action',action='store_true', 
+                        help='If True, the representation vector is ' + 
+                             'normalized after each group action')
 

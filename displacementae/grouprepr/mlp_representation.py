@@ -35,9 +35,11 @@ class MLPRepresentation(GroupRepresentation):
     """
     def __init__(self, n_action_units: int, dim_representation: int, 
                  hidden_units=[], activation=torch.relu, normalize=False, 
-                 device='cpu') -> None:
+                 device='cpu',
+                 normalize_post_action:bool=False) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
-                         normalize=normalize)
+                         normalize=normalize, 
+                         normalize_post_action=normalize_post_action)
         self.net = MLP(n_action_units,dim_representation**2,hidden_units,
                        activation).to(device)
                        

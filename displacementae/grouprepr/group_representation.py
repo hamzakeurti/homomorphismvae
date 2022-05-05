@@ -40,7 +40,7 @@ class GroupRepresentation(nn.Module):
     """
     def __init__(self, n_action_units:int, dim_representation:int, device='cpu',
                  repr_loss_on = False, repr_loss_weight = 0., 
-                 normalize= False) -> None:
+                 normalize= False, normalize_post_action=False) -> None:
         super().__init__()
         self.device=device
         self.n_action_units = n_action_units
@@ -48,6 +48,7 @@ class GroupRepresentation(nn.Module):
         self.repr_loss_on = repr_loss_on
         self.repr_loss_weight = repr_loss_weight
         self.normalize = normalize
+        self.normalize_post_action = normalize_post_action
 
     def forward(self,a:torch.Tensor) -> torch.Tensor:
         """
@@ -71,8 +72,8 @@ class GroupRepresentation(nn.Module):
                         shape: `[batch_size,n_repr_units]`
         """
         z_out =  torch.einsum("...jk,...k->...j",self.forward(a),z)
-        if self.normalize:
-            z_out = F.normalize(z_out,dim=-1)
+        if self.normalize_post_action:
+            z_out = self.normalize_vector(z_out)
         return z_out
 
     def get_example_repr(self,a:torch.Tensor=None) -> np.ndarray:

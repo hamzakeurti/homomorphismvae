@@ -137,7 +137,8 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 dims=dims,
                 hidden_units=hidden_units,
                 device=device,
-                normalize_subrepresentations=config.normalize_subrepresentations).to(device)
+                normalize_subrepresentations=config.normalize_subrepresentations,
+                normalize_post_action=config.normalize_post_action,).to(device)
    
     elif representation == Representation.MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
@@ -145,7 +146,8 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 n_action_units=dhandler.action_shape[0],
                 dim_representation=config.dim,
                 hidden_units=hidden_units,device=device, 
-                normalize=config.normalize).to(device)
+                normalize=config.normalize,
+                normalize_post_action=config.normalize_post_action,).to(device)
     
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
@@ -160,7 +162,8 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 n_actions=dhandler.n_actions,
                 dim_representation=config.dim,
                 device=device,
-                normalize=config.normalize).to(device)
+                normalize=config.normalize,
+                normalize_post_action=config.normalize_post_action,).to(device)
    
     elif representation == Representation.BLOCK_LOOKUP:
         dims = misc.str_to_ints(config.dims)
@@ -169,7 +172,9 @@ def setup_grp_morphism(config:Namespace, dhandler:TransitionDataset,
                 dims=dims,
                 dim_representation=sum(dims),
                 device=device,
-                normalize_subrepresentations=config.normalize_subrepresentations).to(device)
+                normalize_subrepresentations=config.normalize_subrepresentations,
+                normalize_post_action=config.normalize_post_action,
+                ).to(device)
  
     elif representation == Representation.TRIVIAL:
         grp_morphism = TrivialRepresentation(
@@ -238,6 +243,7 @@ def setup_multistep_autoencoder(config, dhandler, device, representation):
                         n_repr_units=repr_units, 
                         n_transform_units = dim_representation,
                         spherical=config.spherical,
+                        spherical_post_action=config.spherical_post_action,
                         reconstruct_first=config.reconstruct_first)
 
 
