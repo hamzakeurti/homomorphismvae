@@ -38,6 +38,7 @@ from grouprepr.prodrepr.action_lookup import ActionLookup
 from grouprepr.representation_utils import Representation
 from grouprepr.lookup_representation import LookupRepresentation
 from grouprepr.block_lookup_representation import BlockLookupRepresentation
+from grouprepr.unstructured_representation import UnstructuredRepresentation
 
 
 AUTOENCODER = 'autoencoder'
@@ -163,45 +164,48 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 dims=dims,
                 dim_representation=sum(dims),
                 device=device).to(device)
-
-
+    elif representation == Representation.UNSTRUCTURED:
+        grp_morphism = UnstructuredRepresentation(
+                n_action_units=dhandler.n_actions,
+                dim_representation=config.dim,
+                device=device).to(device)
     else:
         raise NotImplementedError(
                 f'Representation {representation} is not implemented.')
     return grp_morphism
-        
+
 
 def setup_autoencoder_network(config, dhandler, device, representation):
     """
     Sets up an autoencoder with a geometric transformation of the latent
     units.
-    
-    The autoencoder consists of a contracting path, 
+
+    The autoencoder consists of a contracting path,
     a geometric transformation of the latent space and
     an expanding path back into the input space.
 
     Args:
-        config (Namespace): configuration of the experiment, obtained 
+        config (Namespace): configuration of the experiment, obtained
                             from cli.
         dhandler (dataset): Handler for dataset.
         device (str): indicates device where parameters are stored.
-        representation (str): Indicates which group representation to use for the 
+        representation (str): Indicates which group representation to use for the
                     observed actions.
-                    if 'block_repr': group representation is block 
+                    if 'block_repr': group representation is block
                     diagonal 2D rotation matrices.
     """
 
-    # a 2D representation space for each action unit 
+    # a 2D representation space for each action unit
     # TODO should be specified by user
 
     grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
                                       representation=representation)
-    
+
     dim_representation = grp_morphism.dim_representation
     n_free_units = config.n_free_units
-    repr_units =  dim_representation + n_free_units
-    
-    encoder, decoder = setup_encoder_decoder(config, dhandler, device, 
+    repr_units = dim_representation + n_free_units
+
+    encoder, decoder = setup_encoder_decoder(config, dhandler, device,
                                              repr_units)
 
     autoencoder = AutoEncoder(
