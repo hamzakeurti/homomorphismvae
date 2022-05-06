@@ -33,7 +33,7 @@ class MLPRepresentation(GroupRepresentation):
 
     """
     def __init__(self, n_action_units: int, dim_representation: int, hidden_units=[],
-                 activation=nn.ReLU, layer_norm=True, device='cpu') -> None:
+                 activation=nn.ReLU, layer_norm=False, device='cpu') -> None:
         super().__init__(n_action_units, dim_representation, device=device)
         self.net = MLP(in_features=n_action_units,
                        out_features=dim_representation ** 2,
@@ -50,7 +50,8 @@ class MLPRepresentation(GroupRepresentation):
         """
         R = self.net(a)
         R = R.view(-1, self.dim_representation, self.dim_representation)
-        return R
+
+        return torch.matrix_exp(R)
 
 
 if __name__ == '__main__':
