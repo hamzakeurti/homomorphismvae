@@ -27,6 +27,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from grouprepr.prodrepr.action_lookup import ActionLookup
+from grouprepr.block_lookup_representation import BlockLookupRepresentation
 from data.trajs import TrajectoryDataset
 import networks.network_utils as net_utils
 import networks.variational_utils as var_utils
@@ -118,9 +119,9 @@ def evaluate(dhandler: TrajectoryDataset,
     if nets.variational:
         shared.kl_loss.append(kl_loss.item())
     a_in, a = dhandler.get_example_actions()
-    example_R = nets.grp_morphism.get_example_repr(
-                    torch.as_tensor([a_in], dtype=torch.float32, device=device))
-    shared.learned_repr = example_R.tolist()
+    #example_R = nets.grp_morphism.get_example_repr(
+    #                torch.as_tensor([a_in], dtype=torch.float32, device=device))
+    #shared.learned_repr = example_R.tolist()
     shared.actions = [a]
 
     shared.summary[LOSS_FINAL] = total_loss.item()
@@ -217,6 +218,8 @@ def train(dhandler: List[TrajectoryDataset],
             if isinstance(nets.grp_morphism, ActionLookup):
                 ent_loss = nets.grp_morphism.entanglement_loss()
                 total_loss = total_loss + .01 * ent_loss
+            elif isinstance(nets.grp_morphism, BlockLookupRepresentation):
+                total_loss = total_loss + config.gamma * latent_l2
             total_loss = total_loss
             total_loss.backward()
             total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.parameters() if p.grad is not None]))
