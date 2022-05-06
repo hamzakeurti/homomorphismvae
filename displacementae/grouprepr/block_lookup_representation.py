@@ -28,29 +28,30 @@ import torch.nn as nn
 from grouprepr.group_representation import GroupRepresentation
 from grouprepr.lookup_representation import LookupRepresentation
 
+
 class BlockLookupRepresentation(GroupRepresentation):
     """
-    This subclass of group representations is a direct product of 
-    subrepresentations, as such it maps transitions to block diagonal 
+    This subclass of group representations is a direct product of
+    subrepresentations, as such it maps transitions to block diagonal
     matrices.
 
     """
-    def __init__(self, n_actions:int, dim_representation:int, 
-                 dims:list, device:str='cpu') -> None:
-        super().__init__(n_action_units=1, 
+    def __init__(self, n_actions: int, dim_representation: int,
+                 dims: list, device: str = 'cpu') -> None:
+        super().__init__(n_action_units=1,
                          dim_representation=dim_representation, device=device)
         self.dims = dims
         self.n_actions = n_actions
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
-        self.subreps:nn.ModuleList[GroupRepresentation] = nn.ModuleList()
+        self.subreps: nn.ModuleList[GroupRepresentation] = nn.ModuleList()
         for dim in dims:
             self.subreps.append(
-                    LookupRepresentation(n_actions,dim,device=device))
-            
+                    LookupRepresentation(n_actions, dim, device=device))
+
     def forward(self, a: torch.Tensor) -> torch.Tensor:
-        R = torch.zeros(*a.shape,self.dim_representation,
-                        self.dim_representation,device=a.device)
+        R = torch.zeros(*a.shape, self.dim_representation,
+                        self.dim_representation, device=a.device)
         for i in range(self.n_subreps):
             R[...,self.cumdims[i]:self.cumdims[i+1], 
               self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a)
