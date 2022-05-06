@@ -37,11 +37,8 @@ class BlockMLPRepresentation(GroupRepresentation):
     """
     def __init__(self, n_action_units:int, dim_representation:int, 
                  dims:list, hidden_units:list=[],
-                 activation:Callable=torch.relu, device:str='cpu', 
-                 repr_loss_on:bool=False, repr_loss_weight:float=0.) -> None:
-        super().__init__(n_action_units, dim_representation, device=device, 
-                         repr_loss_on=repr_loss_on, 
-                         repr_loss_weight=repr_loss_weight)
+                 activation:Callable=torch.relu, device:str='cpu') -> None:
+        super().__init__(n_action_units, dim_representation, device=device,)
         self.dims = dims
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]

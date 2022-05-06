@@ -49,6 +49,9 @@ class TrivialRepresentation(GroupRepresentation):
         Acts trivially on input z.
         """
         return z
+    
+    def representation_loss(self, *args):
+        return 0
 
 if __name__ == '__main__':
     pass

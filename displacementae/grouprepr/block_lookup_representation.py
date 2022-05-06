@@ -36,12 +36,9 @@ class BlockLookupRepresentation(GroupRepresentation):
 
     """
     def __init__(self, n_actions:int, dim_representation:int, 
-                 dims:list, device:str='cpu', repr_loss_on:bool=False, 
-                 repr_loss_weight:float=0.) -> None:
+                 dims:list, device:str='cpu') -> None:
         super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device,
-                         repr_loss_on=repr_loss_on, 
-                         repr_loss_weight=repr_loss_weight)
+                         dim_representation=dim_representation, device=device,)
         self.dims = dims
         self.n_actions = n_actions
         self.n_subreps = len(dims)

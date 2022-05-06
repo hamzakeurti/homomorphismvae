@@ -37,14 +37,12 @@ class GroupRepresentation(nn.Module):
     representation vectors through the matrix product with the 
     representation of a given action, through the :method:`act` method. 
     """
-    def __init__(self, n_action_units:int, dim_representation:int, device='cpu',
-                 repr_loss_on = False, repr_loss_weight = 0.) -> None:
+    def __init__(self, n_action_units:int, dim_representation:int, 
+                 device='cpu',) -> None:
         super().__init__()
         self.device=device
         self.n_action_units = n_action_units
         self.dim_representation = dim_representation
-        self.repr_loss_on = repr_loss_on
-        self.repr_loss_weight = repr_loss_weight
 
     def forward(self,a:torch.Tensor) -> torch.Tensor:
         """
@@ -88,17 +86,15 @@ class GroupRepresentation(nn.Module):
         Estimates the discrepancy between representation matrices 
         and the unitary matrices.
         """
-        if self.repr_loss_on:
-            a = args[0]
-            a = a.view(np.prod(a.shape[:-1]),-1)
-            R = self.forward(a)
-            # R[a].T @ R[a] for each matrix 
-            loss = torch.einsum('...ij,...ik->...jk', R,R) \
-                - torch.eye(R.shape[-1]).to(R.device)
-            loss = loss.square().sum()/ np.prod(R.shape[:-2])
-            return loss
-        else:
-            return 0
+        a = args[0]
+        a = a.view(np.prod(a.shape[:-1]),-1)
+        R = self.forward(a)
+        # R[a].T @ R[a] for each matrix 
+        loss = torch.einsum('...ij,...ik->...jk', R,R) \
+            - torch.eye(R.shape[-1]).to(R.device)
+        loss = loss.square().sum()/ np.prod(R.shape[:-2])
+        return loss
 
+    
     def end_iteration(self):
         pass

@@ -58,7 +58,7 @@ def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, e
         shared.bce_loss = []
         if config.variational:
             shared.kl_loss = []
-        if nets.grp_morphism.repr_loss_on:
+        if config.repr_loss_on:
             shared.grp_loss = []
     if epoch % config.val_epoch == 0:
         with torch.no_grad():
@@ -83,7 +83,7 @@ def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, e
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
-            if nets.grp_morphism.repr_loss_on:
+            if config.repr_loss_on:
                 grp_loss = nets.grp_morphism.representation_loss() 
                 total_loss += nets.grp_morphism.repr_loss_weight * grp_loss
             # Logging     
@@ -94,7 +94,7 @@ def evaluate(dhandler, nets:AutoEncoder, device, config, shared, logger, mode, e
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
                 log_text += f'+\tKL {kl_loss.item():.5f}'
                 shared.kl_loss.append(kl_loss.item())
-            if nets.grp_morphism.repr_loss_on:
+            if config.repr_loss_on:
                 log_text += f'=\tGRP {grp_loss.item():.2f}'
                 shared.grp_loss.append(grp_loss.item())
             logger.info(log_text)
@@ -182,7 +182,7 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
-            if nets.grp_morphism.repr_loss_on:
+            if config.repr_loss_on:
                 grp_loss = nets.grp_morphism.representation_loss() 
                 total_loss += nets.grp_morphism.repr_loss_weight * grp_loss
 
@@ -198,7 +198,7 @@ def train(dhandler, dloader, nets, config, shared, device, logger, mode):
                 log_text += f'=\tBCE {bce_loss.item():.2f} '
                 log_text += f'+\tKL {kl_loss.item():.5f}'
                 shared.kl_loss.append(kl_loss.item())
-            if nets.grp_morphism.repr_loss_on:
+            if config.repr_loss_on:
                 log_text += f'=\tGRP {grp_loss.item():.2f}'
                 shared.grp_loss.append(grp_loss.item())
             logger.info(log_text)

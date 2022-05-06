@@ -132,3 +132,5 @@ class OrthogonalMatrix(GroupRepresentation):
             else:
                 return super().get_example_repr(a)
         
+    def representation_loss(self, *args):
+        return 0
