@@ -29,6 +29,7 @@ import networks.autoencoder_prodrep as aeprod
 import utils.misc as misc
 import utils.data_utils as udutils
 from sklearn.random_projection import GaussianRandomProjection
+from scipy.stats import sem
 
 _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
 
@@ -188,15 +189,15 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             ax.set_xlabel(f'latent {plot_latent[0]}', fontsize=ts)
             ax.set_ylabel(f'latent {plot_latent[1]}', fontsize=ts)
             dx = np.abs(results).max()
-            if config.spherical:
-                ax.set_xlim(_TWO_D_MISC.x_range_medium)
-                ax.set_ylim(_TWO_D_MISC.y_range_medium)
-            elif dx <= 0.3:
-                ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-                ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-            else:
-                ax.set_xlim(_TWO_D_MISC.x_range)
-                ax.set_ylim(_TWO_D_MISC.y_range)
+            #if config.spherical:
+            #    ax.set_xlim(_TWO_D_MISC.x_range_medium)
+            #    ax.set_ylim(_TWO_D_MISC.y_range_medium)
+            #elif dx <= 0.3:
+            #    ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+            #    ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+            #else:
+            #    ax.set_xlim(_TWO_D_MISC.x_range)
+            #    ax.set_ylim(_TWO_D_MISC.y_range)
             plt.colorbar(f)
         ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
@@ -271,15 +272,15 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         ax.set_xlabel(f'latent component 0', fontsize=ts)
         ax.set_ylabel(f'latent component 1', fontsize=ts)
         dx = np.abs(latent2d).max()
-        if config.spherical:
-            ax.set_xlim(_TWO_D_MISC.x_range_medium)
-            ax.set_ylim(_TWO_D_MISC.y_range_medium)
-        elif dx <= 0.3:
-            ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-            ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-        else:
-            ax.set_xlim(_TWO_D_MISC.x_range)
-            ax.set_ylim(_TWO_D_MISC.y_range)
+        #if config.spherical:
+        #    ax.set_xlim(_TWO_D_MISC.x_range_medium)
+        #    ax.set_ylim(_TWO_D_MISC.y_range_medium)
+        #elif dx <= 0.3:
+        #    ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+        #    ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+        #else:
+        #    ax.set_xlim(_TWO_D_MISC.x_range)
+        #    ax.set_ylim(_TWO_D_MISC.y_range)
         
         plt.colorbar(f)
         
@@ -308,14 +309,15 @@ def plot_curves(shared,config,logger,figname=None,val_name=None):
                 plt.savefig(figname1)
             plt.close()
 
+
 def plot_step_recon_loss(step_losses, config, figname=None):
     if config.plot_on_black:
         plt.style.use('dark_background')
 
     fig, ax = plt.subplots(figsize=(8, 7))
-    mean, std = np.mean(step_losses, axis=0), np.std(step_losses, axis=0)
+    mean, se = np.mean(step_losses, axis=0), sem(step_losses, axis=0)
     ax.plot(np.arange(mean.shape[0]), mean, color='C0')
-    ax.fill_between(np.arange(mean.shape[0]), mean - std, mean + std, color='C0', alpha=0.3)
+    ax.fill_between(np.arange(mean.shape[0]), mean - se, mean + se, color='C0', alpha=0.3)
     ax.set_xlabel('Step')
     ax.set_ylabel('Reconstruction Loss')
     if figname is not None:
@@ -324,7 +326,7 @@ def plot_step_recon_loss(step_losses, config, figname=None):
     plt.close()
 
 
-def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
+def plot_thetas(dhandler, nets: aeprod.AutoencoderProdrep, config, logger,
                 figname=None):
     if config.plot_on_black:
         plt.style.use('dark_background')
@@ -333,52 +335,51 @@ def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
     dim = nets.grp_morphism.dim_representation
     x = np.arange(len(reps[0].thetas))
     xticks = []
-    for i in range(1,dim+1):
-        for j in range(i+1,dim+1):
+    for i in range(1, dim + 1):
+        for j in range(i + 1, dim + 1):
             xticks.append(f'{i}{j}')
-    width=0.5
+    width = 0.5
 
-    nrows = dhandler.action_dim + 1 
+    nrows = dhandler.action_dim + 1
     ncols = 2
-    fig, axes = plt.subplots(nrows,ncols,figsize=(2*2,nrows*2))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(2 * 2, nrows * 2))
     # kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
     for n in range(dhandler.action_dim):
         for sign in range(2):
-                
-            a = torch.zeros(dhandler.action_dim,dtype=int)
+
+            a = torch.zeros(dhandler.action_dim, dtype=int)
             a[n] = 1 - 2 * sign
             id = dhandler.transition_to_index(a)
-            
+
             thetas = reps[id].thetas.to('cpu').data.numpy()
             # kwargs = {}
-            axes[n,sign].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
-            axes[n,sign].set_ylim(-.5,.5)
-            axes[n,sign].axhline(0)
-            axes[n,sign].set_xticks(x-0.25)
-            axes[n,sign].set_xticklabels(xticks)
-            axes[n,sign].set_xlabel('$ij$')
-            axes[n,sign].set_ylabel(r"$\theta / 2\pi$")
-            axes[n,sign].set_title(f"${a.numpy()}$")
+            axes[n, sign].bar(x - width / 2, thetas / (2 * np.pi), label='Rep {}'.format(a))
+            axes[n, sign].set_ylim(-.5, .5)
+            axes[n, sign].axhline(0)
+            axes[n, sign].set_xticks(x - 0.25)
+            axes[n, sign].set_xticklabels(xticks)
+            axes[n, sign].set_xlabel('$ij$')
+            axes[n, sign].set_ylabel(r"$\theta / 2\pi$")
+            axes[n, sign].set_title(f"${a.numpy()}$")
 
-
-    a = torch.zeros(dhandler.action_dim,dtype=int)
+    a = torch.zeros(dhandler.action_dim, dtype=int)
     id = udutils.action_to_id(a)
     thetas = reps[id].thetas.to('cpu').data.numpy()
-    axes[-1,0].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
-    axes[-1,0].set_ylim(-.5,.5)
-    axes[-1,0].axhline(0)     
-    axes[-1,0].set_xticks(x-0.25)
-    axes[-1,0].set_xticklabels(xticks)
-    axes[-1,0].set_xlabel('$ij$')
-    axes[-1,0].set_ylabel(r"$\theta / 2\pi$")
-    axes[-1,0].set_title(f"${a.numpy()}$")
-    
-    axes[-1,-1].axis('off')
+    axes[-1, 0].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
+    axes[-1, 0].set_ylim(-.5, .5)
+    axes[-1, 0].axhline(0)
+    axes[-1, 0].set_xticks(x-0.25)
+    axes[-1, 0].set_xticklabels(xticks)
+    axes[-1, 0].set_xlabel('$ij$')
+    axes[-1, 0].set_ylabel(r"$\theta / 2\pi$")
+    axes[-1, 0].set_title(f"${a.numpy()}$")
+
+    axes[-1, -1].axis('off')
 
     plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
     if figname is not None:
-        figname1 = figname + 'thetas.pdf' 
+        figname1 = figname + 'thetas.pdf'
         plt.savefig(figname1)
         logger.info(f'Figure saved {figname1}')
     plt.close(fig)
@@ -386,9 +387,9 @@ def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
     # TODO
     pass
     # for rep in nets.grp_morphism.actions_reps:
-        
+
     #     fig, ax = plt.subplots(figsize=(8,7))
-        
+
     #         ax.plot(epochs,vars(shared)[key])
     #         ax.set_xlabel('epochs')
     #         ax.set_ylabel(key)
