@@ -140,6 +140,9 @@ def net_args(parser):
                         help='Beta factor of the beta-VAE ' +
                         'balances contribution of prior matching loss. ' +
                         'Defaults to 1.')
+    ngroup.add_argument('--gamma', type=float, default=0.,
+                        help='Gamma factor for latent consistency loss' +
+                        'Defaults to 0.')
     ngroup.add_argument('--n_free_units', type=int, default=0,
                         help='number of representation units ' +
                         'not transformed by the action representations.')
@@ -190,15 +193,15 @@ def group_repr_args(parser, representation):
     ggroup = parser.add_argument_group('Group Representation options')
     if representation == Representation.BLOCK_MLP:
         ggroup.add_argument('--dims', type=str, default='',
-                            help='List of dimensions of the subreps. '+
-                                 'The resulting representation is of dim '+
-                                 'the sum of provided dims and it maps to '+
+                            help='List of dimensions of the subreps. ' +
+                                 'The resulting representation is of dim ' +
+                                 'the sum of provided dims and it maps to ' +
                                  'block diagonal matrices.')
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list for all subreps\' MLP')
     elif representation == Representation.MLP:
         ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space '+
+                            help='Dimension of the representation space ' +
                                  'acted on.')
         ggroup.add_argument('--group_hidden_units', type=str, default='',
                             help='Hidden units list of the rep\'s MLP')
@@ -221,11 +224,15 @@ def group_repr_args(parser, representation):
                             help='Plots learned thetas')
     elif representation == Representation.BLOCK_LOOKUP:
         ggroup.add_argument('--dims', type=str, default='',
-                    help='List of dimensions of the subreps. '+
-                            'The resulting representation is of dim '+
-                            'the sum of provided dims and it maps to '+
+                            help='List of dimensions of the subreps. ' +
+                            'The resulting representation is of dim ' +
+                            'the sum of provided dims and it maps to ' +
                             'block diagonal matrices.')
     elif representation == Representation.LOOKUP:
         ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space '+
+                            help='Dimension of the representation space ' +
+                                 'acted on.')
+    elif representation == Representation.UNSTRUCTURED:
+        ggroup.add_argument('--dim', type=int, default=2,
+                            help='Dimension of the representation space ' +
                                  'acted on.')
