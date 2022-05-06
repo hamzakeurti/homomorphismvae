@@ -1,4 +1,3 @@
-from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -20,6 +19,8 @@ def parse_args():
                         help="Number of trajectories to generate")
     parser.add_argument("--save_dir", type=str, default='./trajs/',
                         help="Path to save")
+    parser.add_argument("--composite_action", action='store_true',
+                        help="Use composite action")
     parser.add_argument("--latent_active", type=int, nargs='+', default=[0, 1, 2, 3, 4],
                         help="Active latents (only for dsprite)")
     return parser.parse_args()
@@ -211,11 +212,15 @@ def gen_dsprites(args):
                 delta = delta * 2 - 1
                 latent_idx = args.latent_active[_idx]
                 coord[latent_idx] = (coord[latent_idx] + delta) % periods[latent_idx]
+
             imgs.append(_imgs[coord_to_idx(coord)])
             actions.append(action)
 
     imgs = np.array(imgs).reshape(args.trajs, args.steps + 1, 64, 64)
-    actions = np.array(actions).reshape(args.trajs, args.steps)
+    if args.composite_action:
+        actions = np.array(actions).reshape(args.trajs, args.steps, N_LATENTS)
+    else:
+        actions = np.array(actions).reshape(args.trajs, args.steps)
 
     # Save trajectories
     np.savez(os.path.join(args.save_dir, 'trajs.npz'),
