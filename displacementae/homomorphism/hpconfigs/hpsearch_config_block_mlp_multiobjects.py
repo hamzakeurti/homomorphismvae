@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp.py
+# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp_multiobjects.py
 # author         :Hamza Keurti
 # contact        :hkeurti@ethz.ch
 # created        :11/04/2022
@@ -57,8 +57,8 @@ grid = {
     'data_root': ['/home/hamza/datasets/dsprites/'],
     'cyclic_trans' : [True],
     'fixed_in_intervention': ['"0,1,2,3"'],
-    'fixed_in_sampling': ['"0,1,2,3"'],
-    'fixed_values': ['"0,1,5,14"'],
+    'fixed_in_sampling': ['"0,2,3"'],
+    'fixed_values': ['"0,5,14"'],
     'distrib': ['uniform'],
     'displacement_range': ['"-2,2"','"-5,5"','"-10,10"'],
     'integer_actions' : [False],
@@ -85,7 +85,6 @@ grid = {
     'kernel_sizes': ['"6,4"','"6,4,4"','"6,4,4,4"'],
     'strides': ['"2,2,1,1"','"2,2,1"','"2,2"'],
     # 'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
-
     # 'conv_channels': ['"32,32"'],
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
@@ -95,26 +94,22 @@ grid = {
     'beta': [1],
     'net_act' : ['relu'],
     'spherical':[True],
-    # 'normalize_post_action':[False,True],
+    # 'normalize_post_act':[False,True],
     'normalize_subrepresentations':[False,True],
 
     ### Group ###
     'dims' : ['"2,2"'],
     'group_hidden_units': ['"20,20"','"10,10"','"10,10,10"','"20,20,20"',],
-    'normalize_post_act':[False],
-    'reconstruct_first':[False],
-    'grp_loss_on':[True],
-    'grp_loss_weight':[1,1e-1,1e-2,1e-3],
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp'],
+    'wandb_project_name' : ['morphism_block_mlp_multiobjects'],
     'log_wandb':[True],
 
     ### Plot options ###
     'no_plots': [False],
-    'plot_epoch': [100],
+    'plot_epoch': [50],
     'plot_manifold_latent': ['"[0,1]"'],
     'plot_on_black': [False],
     'plot_pca': [True],

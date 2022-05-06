@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp.py
+# title          :homomorphism/hpconfigs/hpsearch_config_vae.py
 # author         :Hamza Keurti
 # contact        :hkeurti@ethz.ch
 # created        :11/04/2022
@@ -25,7 +25,7 @@ Hyperparameter-search configuration for Dsprites and Block MLP group representat
 
 A configuration file for our custom hyperparameter search script. This
 configuration is meant for hyperparameter searches of the simulation defined by
-:mod:`homomorphism.train_block_mlp_repr`.
+:mod:`homomorphism.train_vae`.
 """
 
 
@@ -56,13 +56,13 @@ grid = {
     'dataset': ['dsprites'],
     'data_root': ['/home/hamza/datasets/dsprites/'],
     'cyclic_trans' : [True],
-    'fixed_in_intervention': ['"0,1,2,3"'],
+    'fixed_in_intervention': ['"0,1,2,3,4"'],
     'fixed_in_sampling': ['"0,1,2,3"'],
     'fixed_values': ['"0,1,5,14"'],
     'distrib': ['uniform'],
-    'displacement_range': ['"-2,2"','"-5,5"','"-10,10"'],
+    'displacement_range': ['"0,0"'],
     'integer_actions' : [False],
-    'n_steps': [2],
+    'n_steps': [1],
     'rotate_actions':[0],
 
 
@@ -70,7 +70,7 @@ grid = {
     ### Training options ###
     'num_train': [15000],
     'batch_size': [500],
-    'epochs' : [1001],
+    'epochs' : [2001],
     'lr' : [1e-4, 1e-3],
     'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
@@ -83,9 +83,7 @@ grid = {
     ### network options ###
     'conv_channels': ['"32,32"','"32,32,32"','"32,32,32,32"'],
     'kernel_sizes': ['"6,4"','"6,4,4"','"6,4,4,4"'],
-    'strides': ['"2,2,1,1"','"2,2,1"','"2,2"'],
-    # 'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
-
+    'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
     # 'conv_channels': ['"32,32"'],
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
@@ -95,28 +93,22 @@ grid = {
     'beta': [1],
     'net_act' : ['relu'],
     'spherical':[True],
-    # 'normalize_post_action':[False,True],
-    'normalize_subrepresentations':[False,True],
 
     ### Group ###
-    'dims' : ['"2,2"'],
-    'group_hidden_units': ['"20,20"','"10,10"','"10,10,10"','"20,20,20"',],
-    'normalize_post_act':[False],
     'reconstruct_first':[False],
-    'grp_loss_on':[True],
-    'grp_loss_weight':[1,1e-1,1e-2,1e-3],
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp'],
-    'log_wandb':[True],
+    'log_wandb' : [True],
+    'wandb_project_name' : ['morphism_vae'],
+
 
     ### Plot options ###
     'no_plots': [False],
     'plot_epoch': [100],
     'plot_manifold_latent': ['"[0,1]"'],
-    'plot_on_black': [False],
+    'plot_on_black': [True],
     'plot_pca': [True],
     'plot_vary_latents': ['"[4,5]"'],
 }
@@ -188,7 +180,7 @@ conditions = conditions
 # Name of the script that should be executed by the hyperparameter search.
 # Note, the working directory is set seperately by the hyperparameter search
 # script, so don't include paths.
-_SCRIPT_NAME = 'train_block_mlp_repr.py'
+_SCRIPT_NAME = 'train_vae.py'
 
 # This file is expected to reside in the output folder of the simulation.
 _SUMMARY_FILENAME = 'performance_overview.txt'
@@ -267,9 +259,7 @@ from grouprepr.representation_utils import Representation
 import homomorphism.train_args as targs
 
 _ARGPARSE_HANDLE = lambda argv : targs.parse_cmd_arguments( \
-    representation=Representation.BLOCK_MLP, argv=argv)
+    representation=Representation.TRIVIAL, argv=argv)
 
 if __name__ == '__main__':
     pass
-
-

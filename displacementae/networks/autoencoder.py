@@ -77,7 +77,8 @@ class AutoEncoder(nn.Module):
             mu, logvar = h[:, : half], h[:, half:]
             h = var_utils.reparametrize(mu, logvar)
         if self.spherical:
-            h = F.normalize(h).squeeze()
+            h[...,:self.n_transform_units] =\
+                 F.normalize(h[...,:self.n_transform_units].clone()).squeeze()
         if self.variational:
             return h, mu, logvar
         else:

@@ -36,17 +36,23 @@ class BlockLookupRepresentation(GroupRepresentation):
 
     """
     def __init__(self, n_actions:int, dim_representation:int, 
-                 dims:list, device:str='cpu') -> None:
+                 dims:list, device:str='cpu', 
+                 normalize_subrepresentations:bool=False, 
+                 normalize_post_action:bool=False) -> None:
         super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device,)
+                         dim_representation=dim_representation, device=device, 
+                         normalize_post_action=normalize_post_action)
         self.dims = dims
         self.n_actions = n_actions
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
-        self.subreps:nn.ModuleList[GroupRepresentation] = nn.ModuleList()
+        self.subreps:list[LookupRepresentation] = nn.ModuleList()
         for dim in dims:
             self.subreps.append(
-                    LookupRepresentation(n_actions,dim,device=device))
+                    LookupRepresentation(
+                            n_actions,dim,device=device, 
+                            normalize=normalize_subrepresentations,
+                            normalize_post_action=normalize_post_action))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         R = torch.zeros(*a.shape,self.dim_representation,
@@ -64,6 +70,13 @@ class BlockLookupRepresentation(GroupRepresentation):
                         a,z[...,self.cumdims[i]:self.cumdims[i+1]])
         return z_out
     
+    def normalize_vector(self, z: torch.Tensor):
+        z_out = z
+        for i in range(self.n_subreps):
+            z_out[...,self.cumdims[i]:self.cumdims[i+1]] =\
+                    self.subreps[i].normalize_vector(
+                        z[...,self.cumdims[i]:self.cumdims[i+1]].clone())   
+        return z_out
 
 if __name__ == '__main__':
     n_action_units = 5

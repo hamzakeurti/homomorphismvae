@@ -100,7 +100,13 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
 
     imgs, latents, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(imgs[:,0]).to(device)
-    Xi = torch.FloatTensor(imgs[:,1:]).to(device)
+   
+
+    if config.reconstruct_first:
+        Xi = torch.FloatTensor(imgs).to(device)
+    else:
+        Xi = torch.FloatTensor(imgs[:,1:]).to(device)
+
     dj = torch.FloatTensor(dj).to(device)
 
 
@@ -108,7 +114,10 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
     Xi_hat = torch.sigmoid(h)    
     
     nrows = 7
-    ncols = 1 + 2*n_steps
+    if config.reconstruct_first:
+        ncols = 2 + 2*n_steps
+    else:
+        ncols = 1 + 2*n_steps
 
     unit_length = 1.5
 
@@ -118,9 +127,14 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
     kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
     for row in range(nrows):
         axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
+        if config.reconstruct_first:
+            axes[row,1].imshow(Xi_hat[row,0,0].cpu().numpy(),**kwargs)
+            s = 2
+        else:
+            s = 1
         for i in range(n_steps):
-            axes[row,1+2*i].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)
-            axes[row,2+2*i].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
+            axes[row,2*i+s].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)
+            axes[row,2*i+s+1].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
         if config.plot_on_black:
             for j in range(ncols):
                 axes[row,j].axes.xaxis.set_visible(False)
@@ -173,6 +187,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
         X = torch.FloatTensor(images).to(device)
         with torch.no_grad():
             h, mu, logvar = nets.encode(X)
+            h = nets.normalize_representation(h)
             results.append(h[:,plot_latent].cpu().numpy())
     results = np.vstack(results).squeeze()
     
@@ -181,7 +196,7 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
     else:
         kwargs={}
 
-    kwargs['alpha']=0.5
+    kwargs['alpha']=0.8
     kwargs['edgecolors']='none'
 
     for i in range(len(vary_latents)):
@@ -210,12 +225,15 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             plt.colorbar(f)
         ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
-            figname1 = figname + 'repr_manifold_latent=' + misc.ints_to_str(plot_latent) 
-            figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
+            figname1 = figname + 'repr_units=' + misc.ints_to_str(plot_latent) 
+            figname1 += '_varied='+ misc.ints_to_str(vary_latents)
+            figname1 += '_clr='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
         if config.log_wandb:
-            wandb.log({f'plot/manifold_{i}':wandb.Image(plt)})
+            wandb.log({f'plot/manifold_repr{misc.ints_to_str(plot_latent)}'+
+                       f'_varied{misc.ints_to_str(vary_latents)}_col{i}':\
+                                                        wandb.Image(plt)})
         plt.close(fig)
 
 def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
@@ -246,6 +264,7 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         X = torch.FloatTensor(images).to(device)
         with torch.no_grad():
             h, mu, logvar = nets.encode(X)
+            h = nets.normalize_representation(h)
             results.append(h[:,:].cpu().numpy())
     results = np.vstack(results).squeeze()
 
@@ -298,11 +317,14 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
             figname1 = figname + 'repr_manifold_pca' 
+            figname1 += '_varied='+ misc.ints_to_str(vary_latents)
             figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
             plt.savefig(figname1)
             logger.info(f'Figure saved {figname1}')
         if config.log_wandb:
-            wandb.log({f'plot/manifold_{i}':wandb.Image(plt)})
+            wandb.log({f'plot/manifold_repr'+
+                       f'_varied{misc.ints_to_str(vary_latents)}_col{i}':\
+                                                        wandb.Image(plt)})
         plt.close(fig)
 
 

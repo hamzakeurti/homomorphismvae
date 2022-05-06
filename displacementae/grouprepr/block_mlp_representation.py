@@ -37,20 +37,27 @@ class BlockMLPRepresentation(GroupRepresentation):
     """
     def __init__(self, n_action_units:int, dim_representation:int, 
                  dims:list, hidden_units:list=[],
-                 activation:Callable=torch.relu, device:str='cpu') -> None:
-        super().__init__(n_action_units, dim_representation, device=device,)
+                 activation:Callable=torch.relu, device:str='cpu', 
+                 normalize_subrepresentations = False,
+                 normalize_post_action:bool=False) -> None:
+        super().__init__(n_action_units, dim_representation, device=device, 
+                         normalize_post_action=normalize_post_action)
         self.dims = dims
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
         self.subreps:nn.ModuleList[GroupRepresentation] = nn.ModuleList()
         for dim in dims:
             self.subreps.append(
-                    MLPRepresentation(n_action_units,dim,
-                                      hidden_units=hidden_units,
-                                      activation=activation, device=device))
+                    MLPRepresentation(
+                            n_action_units,dim,
+                            hidden_units=hidden_units,
+                            activation=activation, device=device, 
+                            normalize=normalize_subrepresentations, 
+                            normalize_post_action=normalize_post_action))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
-        R = torch.zeros(*a.shape[:-1],self.dim_representation,self.dim_representation,device=a.device)
+        d = self.dim_representation
+        R = torch.zeros(*a.shape[:-1],d,d,device=a.device)
         for i in range(self.n_subreps):
             R[...,self.cumdims[i]:self.cumdims[i+1], 
               self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a)
@@ -63,7 +70,14 @@ class BlockMLPRepresentation(GroupRepresentation):
                     self.subreps[i].act(
                         a,z[...,self.cumdims[i]:self.cumdims[i+1]])
         return z_out
-    
+
+    def normalize_vector(self, z: torch.Tensor):
+        z_out = z
+        for i in range(self.n_subreps):
+            z_out[...,self.cumdims[i]:self.cumdims[i+1]] =\
+                    self.subreps[i].normalize_vector(
+                        z[...,self.cumdims[i]:self.cumdims[i+1]].clone())   
+        return z_out
 
 if __name__ == '__main__':
     pass
