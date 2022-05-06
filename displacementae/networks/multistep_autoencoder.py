@@ -87,7 +87,8 @@ class MultistepAutoencoder(AutoEncoder):
         # Normalize the encoder's output according to subspaces of 
         # the group representation.
         h[:,:self.n_transform_units] = \
-            self.grp_morphism.normalize_vector(h[:,:self.n_transform_units])
+                self.grp_morphism.normalize_vector(
+                    h[:,:self.n_transform_units].clone())
 
         if self.reconstruct_first:
             h_out[:,0,...] = h.clone()
