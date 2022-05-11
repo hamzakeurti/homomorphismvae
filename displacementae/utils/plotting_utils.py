@@ -31,6 +31,7 @@ import networks.autoencoder_prodrep as aeprod
 import utils.misc as misc
 import utils.data_utils as udutils
 from sklearn.random_projection import GaussianRandomProjection
+from scipy.stats import sem
 
 _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
 
@@ -60,27 +61,26 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
         X2 = X1.clone()
     dj = torch.FloatTensor(dj).to(device).squeeze()
     if config.intervene:
-        h, mu, logvar = nets(X1, dj)
+        h, _, _, mu, logvar = nets(X1, dj)
     else:
-        h, mu, logvar = nets(X1, None)
+        h, _, _, mu, logvar = nets(X1, None)
     X2_hat = torch.sigmoid(h)
     nrows = 7
     ncols = 3
-    fig, axes = plt.subplots(nrows,ncols,figsize=(5,8))
-    kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5, 8))
+    kwargs = {'vmin': 0, 'vmax': 1, 'cmap': 'gray'}
     for row in range(nrows):
-        axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
-        axes[row,1].imshow(X2[row,0].cpu().numpy(),**kwargs)
-        axes[row,2].imshow(X2_hat[row,0].cpu().numpy(),**kwargs)
+        axes[row, 0].imshow(X1[row, 0].cpu().numpy(), **kwargs)
+        axes[row, 1].imshow(X2[row, 0].cpu().numpy(), **kwargs)
+        axes[row, 2].imshow(X2_hat[row, 0].cpu().numpy(), **kwargs)
         if config.plot_on_black:
             for i in range(3):
-                axes[row,i].axes.xaxis.set_visible(False)
-                axes[row,i].axes.yaxis.set_visible(False)
+                axes[row, i].axes.xaxis.set_visible(False)
+                axes[row, i].axes.yaxis.set_visible(False)
         else:
             for i in range(3):
-                axes[row,i].axis('off')
+                axes[row, i].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
-
 
     if figname is not None:
         figname += 'reconstructions.pdf'
@@ -89,10 +89,9 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
     if config.log_wandb:
         wandb.log({'plot/reconstruction':wandb.Image(plt)})
     plt.close(fig)
-    
 
-def plot_n_step_reconstruction(dhandler, nets, config, device, logger, 
-                        epoch,figname):
+
+def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
     if config.plot_on_black:
         plt.style.use('dark_background')
 
@@ -100,8 +99,6 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
 
     imgs, latents, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(imgs[:,0]).to(device)
-   
-
     if config.reconstruct_first:
         Xi = torch.FloatTensor(imgs).to(device)
     else:
@@ -109,10 +106,9 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
 
     dj = torch.FloatTensor(dj).to(device)
 
+    h, _, _, mu, logvar = nets(X1, dj)
+    Xi_hat = torch.sigmoid(h)
 
-    h, mu, logvar = nets(X1, dj)
-    Xi_hat = torch.sigmoid(h)    
-    
     nrows = 7
     if config.reconstruct_first:
         ncols = 2 + 2*n_steps
@@ -121,10 +117,10 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
 
     unit_length = 1.5
 
-    fig, axes = plt.subplots(nrows,ncols,
-                             figsize=(ncols*unit_length,
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=(ncols * unit_length,
                                       nrows * unit_length))
-    kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
+    kwargs = {'vmin': 0, 'vmax': 1, 'cmap': 'gray'}
     for row in range(nrows):
         axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
         if config.reconstruct_first:
@@ -137,17 +133,16 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
             axes[row,2*i+s+1].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
         if config.plot_on_black:
             for j in range(ncols):
-                axes[row,j].axes.xaxis.set_visible(False)
-                axes[row,j].axes.yaxis.set_visible(False)
+                axes[row, j].axes.xaxis.set_visible(False)
+                axes[row, j].axes.yaxis.set_visible(False)
         else:
             for j in range(ncols):
-                axes[row,j].axis('off')
+                axes[row, j].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
-
 
     if figname is not None:
         figname += 'reconstructions.pdf'
-        plt.savefig(figname,bbox_inches='tight')
+        plt.savefig(figname, bbox_inches='tight')
         logger.info(f'Figure saved {figname}')
     if config.log_wandb:
         wandb.log({'plot/reconstructions':wandb.Image(plt)})
@@ -155,7 +150,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger,
 
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
-                epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
+                  epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
     """
     Produces colored scatter plot of the latent representation of 
     the different positions in the joint space.
@@ -213,15 +208,15 @@ def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
             ax.set_xlabel(f'latent {plot_latent[0]}', fontsize=ts)
             ax.set_ylabel(f'latent {plot_latent[1]}', fontsize=ts)
             dx = np.abs(results).max()
-            if config.spherical:
-                ax.set_xlim(_TWO_D_MISC.x_range_medium)
-                ax.set_ylim(_TWO_D_MISC.y_range_medium)
-            elif dx <= 0.3:
-                ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-                ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-            else:
-                ax.set_xlim(_TWO_D_MISC.x_range)
-                ax.set_ylim(_TWO_D_MISC.y_range)
+            #if config.spherical:
+            #    ax.set_xlim(_TWO_D_MISC.x_range_medium)
+            #    ax.set_ylim(_TWO_D_MISC.y_range_medium)
+            #elif dx <= 0.3:
+            #    ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+            #    ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+            #else:
+            #    ax.set_xlim(_TWO_D_MISC.x_range)
+            #    ax.set_ylim(_TWO_D_MISC.y_range)
             plt.colorbar(f)
         ax.set_title('Manifold latent for latent: ' + latent_name)
         if figname is not None:
@@ -302,15 +297,15 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         ax.set_xlabel(f'latent component 0', fontsize=ts)
         ax.set_ylabel(f'latent component 1', fontsize=ts)
         dx = np.abs(latent2d).max()
-        if config.spherical:
-            ax.set_xlim(_TWO_D_MISC.x_range_medium)
-            ax.set_ylim(_TWO_D_MISC.y_range_medium)
-        elif dx <= 0.3:
-            ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-            ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-        else:
-            ax.set_xlim(_TWO_D_MISC.x_range)
-            ax.set_ylim(_TWO_D_MISC.y_range)
+        #if config.spherical:
+        #    ax.set_xlim(_TWO_D_MISC.x_range_medium)
+        #    ax.set_ylim(_TWO_D_MISC.y_range_medium)
+        #elif dx <= 0.3:
+        #    ax.set_xlim(_TWO_D_MISC.x_range_narrow)
+        #    ax.set_ylim(_TWO_D_MISC.y_range_narrow)
+        #else:
+        #    ax.set_xlim(_TWO_D_MISC.x_range)
+        #    ax.set_ylim(_TWO_D_MISC.y_range)
         
         plt.colorbar(f)
         
@@ -328,10 +323,7 @@ def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
         plt.close(fig)
 
 
-
-
-
-T_SERIES = ["bce_loss","kl_loss","learned_alpha"]
+T_SERIES = ["bce_loss", "kl_loss", "learned_alpha"]
 def plot_curves(shared,config,logger,figname=None,val_name=None):
     if config.plot_on_black:
         plt.style.use('dark_background')
@@ -384,10 +376,23 @@ def plot_matrix(example_R,a, config, logger, figname=None):
             wandb.log(log_dict)
         plt.close(fig)
     
+def plot_step_recon_loss(step_losses, config, figname=None):
+    if config.plot_on_black:
+        plt.style.use('dark_background')
 
+    fig, ax = plt.subplots(figsize=(8, 7))
+    mean, se = np.mean(step_losses, axis=0), sem(step_losses, axis=0)
+    ax.plot(np.arange(mean.shape[0]), mean, color='C0')
+    ax.fill_between(np.arange(mean.shape[0]), mean - se, mean + se, color='C0', alpha=0.3)
+    ax.set_xlabel('Step')
+    ax.set_ylabel('Reconstruction Loss')
+    if figname is not None:
+        figname1 = figname + 'step_recon.pdf'
+        plt.savefig(figname1)
+    plt.close()
 
-def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
-                epoch, figname=None):
+def plot_thetas(dhandler, nets: aeprod.AutoencoderProdrep, config, logger,
+                figname=None):
     if config.plot_on_black:
         plt.style.use('dark_background')
 
@@ -395,52 +400,51 @@ def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
     dim = nets.grp_morphism.dim_representation
     x = np.arange(len(reps[0].thetas))
     xticks = []
-    for i in range(1,dim+1):
-        for j in range(i+1,dim+1):
+    for i in range(1, dim + 1):
+        for j in range(i + 1, dim + 1):
             xticks.append(f'{i}{j}')
-    width=0.5
+    width = 0.5
 
-    nrows = dhandler.action_dim + 1 
+    nrows = dhandler.action_dim + 1
     ncols = 2
-    fig, axes = plt.subplots(nrows,ncols,figsize=(2*2,nrows*2))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(2 * 2, nrows * 2))
     # kwargs={'vmin':0,'vmax':1,'cmap':'gray'}
     for n in range(dhandler.action_dim):
         for sign in range(2):
-                
-            a = torch.zeros(dhandler.action_dim,dtype=int)
+
+            a = torch.zeros(dhandler.action_dim, dtype=int)
             a[n] = 1 - 2 * sign
             id = dhandler.transition_to_index(a)
-            
+
             thetas = reps[id].thetas.to('cpu').data.numpy()
             # kwargs = {}
-            axes[n,sign].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
-            axes[n,sign].set_ylim(-.5,.5)
-            axes[n,sign].axhline(0)
-            axes[n,sign].set_xticks(x-0.25)
-            axes[n,sign].set_xticklabels(xticks)
-            axes[n,sign].set_xlabel('$ij$')
-            axes[n,sign].set_ylabel(r"$\theta / 2\pi$")
-            axes[n,sign].set_title(f"${a.numpy()}$")
+            axes[n, sign].bar(x - width / 2, thetas / (2 * np.pi), label='Rep {}'.format(a))
+            axes[n, sign].set_ylim(-.5, .5)
+            axes[n, sign].axhline(0)
+            axes[n, sign].set_xticks(x - 0.25)
+            axes[n, sign].set_xticklabels(xticks)
+            axes[n, sign].set_xlabel('$ij$')
+            axes[n, sign].set_ylabel(r"$\theta / 2\pi$")
+            axes[n, sign].set_title(f"${a.numpy()}$")
 
-
-    a = torch.zeros(dhandler.action_dim,dtype=int)
+    a = torch.zeros(dhandler.action_dim, dtype=int)
     id = udutils.action_to_id(a)
     thetas = reps[id].thetas.to('cpu').data.numpy()
-    axes[-1,0].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
-    axes[-1,0].set_ylim(-.5,.5)
-    axes[-1,0].axhline(0)     
-    axes[-1,0].set_xticks(x-0.25)
-    axes[-1,0].set_xticklabels(xticks)
-    axes[-1,0].set_xlabel('$ij$')
-    axes[-1,0].set_ylabel(r"$\theta / 2\pi$")
-    axes[-1,0].set_title(f"${a.numpy()}$")
-    
-    axes[-1,-1].axis('off')
+    axes[-1, 0].bar(x - width/2, thetas/(2*np.pi), label='Rep {}'.format(a))
+    axes[-1, 0].set_ylim(-.5, .5)
+    axes[-1, 0].axhline(0)
+    axes[-1, 0].set_xticks(x-0.25)
+    axes[-1, 0].set_xticklabels(xticks)
+    axes[-1, 0].set_xlabel('$ij$')
+    axes[-1, 0].set_ylabel(r"$\theta / 2\pi$")
+    axes[-1, 0].set_title(f"${a.numpy()}$")
+
+    axes[-1, -1].axis('off')
 
     plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
     if figname is not None:
-        figname1 = figname + 'thetas.pdf' 
+        figname1 = figname + 'thetas.pdf'
         plt.savefig(figname1)
         logger.info(f'Figure saved {figname1}')
     if config.log_wandb:
@@ -450,9 +454,9 @@ def plot_thetas(dhandler, nets : aeprod.AutoencoderProdrep, config, logger,
     # TODO
     pass
     # for rep in nets.grp_morphism.actions_reps:
-        
+
     #     fig, ax = plt.subplots(figsize=(8,7))
-        
+
     #         ax.plot(epochs,vars(shared)[key])
     #         ax.set_xlabel('epochs')
     #         ax.set_ylabel(key)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2021 Hamza Keurti
+# Copyright 2022 Hamza Keurti
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,34 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/networks/variational_utils.py
+# @title          :displacementae/autoencoder/train_block_mlp_repr.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
-# @created        :18/11/2021
+# @created        :10/03/2022
 # @version        :1.0
 # @python_version :3.7.4
 
-import torch
-import torch.nn as nn
+import __init__
 
 
-def reparametrize(mu, logvar):
-    """
-    Reparametrization trick for sampling from a gaussian of
-    which parameters are outputted by a model.
-    """
-    eps = torch.randn_like(mu)
-    std = torch.exp(0.5*logvar)
-    return mu + std*eps
+import utils.train_utils as ututils
 
+from grouprepr.representation_utils import Representation
 
-def kl_loss(mu, logvar):
-    loss = torch.exp(logvar) + mu**2 - 1. - logvar
-    return 0.5 * torch.sum(loss)/mu.shape[0]
-
-
-def bce_loss(x_hat, x, reduction='sum'):
-    loss = nn.BCELoss(reduction=reduction)(x_hat, x)
-    if reduction == 'sum':
-        loss /= x.shape[0]
-    return loss
+if __name__ == '__main__':
+    ututils.run(mode='trajectory',
+                representation=Representation.BLOCK_LOOKUP)

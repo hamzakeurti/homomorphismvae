@@ -26,23 +26,24 @@ import torch.nn.functional as F
 
 import numpy as np
 
+
 class GroupRepresentation(nn.Module):
     """
     An interface for group representation classes.
 
-    Group representations are maps from the abstract action group to 
-    invertible matrices through the :method:`forward` method. 
-    Group representations also define a linear 
-    action of the abstract group on the representation space of 
-    observations, as such the group representation transforms input 
-    representation vectors through the matrix product with the 
-    representation of a given action, through the :method:`act` method. 
+    Group representations are maps from the abstract action group to
+    invertible matrices through the :method:`forward` method.
+    Group representations also define a linear
+    action of the abstract group on the representation space of
+    observations, as such the group representation transforms input
+    representation vectors through the matrix product with the
+    representation of a given action, through the :method:`act` method.
     """
     def __init__(self, n_action_units:int, dim_representation:int, device='cpu',
                  repr_loss_on = False, repr_loss_weight = 0., 
                  normalize= False, normalize_post_action=False) -> None:
         super().__init__()
-        self.device=device
+        self.device = device
         self.n_action_units = n_action_units
         self.dim_representation = dim_representation
         self.repr_loss_on = repr_loss_on
@@ -50,20 +51,20 @@ class GroupRepresentation(nn.Module):
         self.normalize = normalize
         self.normalize_post_action = normalize_post_action
 
-    def forward(self,a:torch.Tensor) -> torch.Tensor:
+    def forward(self, a: torch.Tensor) -> torch.Tensor:
         """
         Gets the representation matrix of input transition :arg:`a`.
         """
         pass
 
-    def act(self, a:torch.Tensor, z:torch.Tensor) -> torch.Tensor:
+    def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
-        Acts on an input representation vector :arg:`z` through matrix 
-        product with the representation matrix of input transition 
+        Acts on an input representation vector :arg:`z` through matrix
+        product with the representation matrix of input transition
         :arg:`a`.
 
         Args:
-            a, torch.Tensor: Batch of transitions. 
+            a, torch.Tensor: Batch of transitions.
                         shape: `[batch_size,n_action]`
             z, torch.Tensor: Batch of representation vectors.
                         shape: `[batch_size,n_repr]`
@@ -76,20 +77,21 @@ class GroupRepresentation(nn.Module):
             z_out = self.normalize_vector(z_out)
         return z_out
 
-    def get_example_repr(self,a:torch.Tensor=None) -> np.ndarray:
+    def get_example_repr(self, a: torch.Tensor = None) -> np.ndarray:
         with torch.no_grad():
             if a is None:
-                a = torch.zeros(self.n_action_units*2+1,self.n_action_units,
+                a = torch.zeros(self.n_action_units*2+1,
+                                self.n_action_units,
                                 device=self.device)
                 for i in range(self.n_action_units):
                     a[1+2*i:3+2*i,i] = torch.tensor([1,-1])
 
             R = self.forward(a)
-            
+
             if R.device.type == 'cuda':
                 R = R.cpu()
             return R.numpy()
-    
+
     def representation_loss(self, *args):
         pass
 

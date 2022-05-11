@@ -23,48 +23,50 @@
 Dataset of simple shapes in different positions.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The module :mod:`data.dsprites` contains a data handler for the 
+The module :mod:`data.dsprites` contains a data handler for the
 `dsprites dataset <https://github.com/deepmind/dsprites-dataset>`.
 """
 
 import numpy as np
 import torch.nn as nn
-from torch.utils.data import Dataset,Sampler
+from torch.utils.data import Dataset, Sampler
 import os
 import h5py
 
-import data.transition_dataset as trns_dataset 
+import data.transition_dataset as trns_dataset
 
 IMGS = "imgs"
 LATENTS = "latents"
 CLASSES = "classes"
 VALUES = "values"
 
+
 class LatentIdx:
     COLOR = 0
     SHAPE = 1
-    SCALE = 2 
+    SCALE = 2
     ORIENT = 3
     POSX = 4
     POSY = 5
 
+
 LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 
+
 class DspritesDataset(trns_dataset.TransitionDataset):
-    def __init__(self,root,rseed=None, fixed_in_sampling=[], 
-                fixed_values=[], fixed_in_action=[], transitions_on=True,
-                n_transitions:int = None, action_range:list=[-1,1], 
-                num_train = 200, 
-                num_val:int=30,cyclic_trans:bool=False,
-                dist:str = 'uniform',
-                return_integer_actions:bool = False,
-                rotate_actions:float= 0):
+    def __init__(self, root, rseed=None, fixed_in_sampling=[],
+                 fixed_values=[], fixed_in_action=[], transitions_on=True,
+                 n_transitions: int = None, action_range: list = [-1, 1],
+                 num_train=200,
+                 num_val: int = 30, cyclic_trans: bool = False,
+                 dist: str = 'uniform',
+                 return_integer_actions: bool = False,
+                 rotate_actions: float = 0):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Distribution
         self.dist = dist
         self.return_integer_actions = return_integer_actions
-
 
         # Number of samples
         self.num_train = num_train
@@ -74,25 +76,25 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         self.transitions_on = transitions_on
         self.n_latents = 6
         self.latents = np.arange(self.n_latents)
-        
+
         self.fixed_in_sampling = fixed_in_sampling
         self.fixed_values = fixed_values
-        self.varied_in_sampling = [i for i in self.latents \
-            if i not in self.fixed_in_sampling]
+        self.varied_in_sampling = [i for i in self.latents
+                                   if i not in self.fixed_in_sampling]
         self.fixed_in_action = fixed_in_action
-        self.varied_in_action = np.array([i for i in self.latents \
-            if i not in self.fixed_in_action])
+        self.varied_in_action = np.array([i for i in self.latents
+                                          if i not in self.fixed_in_action])
         if not self.transitions_on:
             self.varied_in_action = np.array([])
             self.fixed_in_action = self.latents
         self.transition_range = action_range
         # Types of latents
         if not cyclic_trans:
-            self.lin_idx = [LatentIdx.SCALE,LatentIdx.POSX,LatentIdx.POSY]
+            self.lin_idx = [LatentIdx.SCALE, LatentIdx.POSX, LatentIdx.POSY]
             self.rot_idx = [LatentIdx.ORIENT]
         else:
             self.lin_idx = [LatentIdx.SCALE]
-            self.rot_idx = [LatentIdx.ORIENT,LatentIdx.POSX,LatentIdx.POSY]
+            self.rot_idx = [LatentIdx.ORIENT, LatentIdx.POSX, LatentIdx.POSY]
 
         # Read Data from file.
         self._root = root
@@ -199,7 +201,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         if self.dist == 'disentangled':
             return (self.transition_range[1] - self.transition_range[0]+1)\
                     * self.action_dim
-    
+
     def get_latent_name(self,id):
         """
         Returns the name of the latent corresponding to the input id.
@@ -217,29 +219,29 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     def get_val_batch(self):
         indices = self.val_idx
         images = self.images[indices]
-        latents = self.latents[indices]  
+        latents = self.latents[indices]
         dj = self.val_dj
         return images, latents, dj
 
-    def transition(self,index):
+    def transition(self, index):
         """"""
         latents = self.latents[index]
         if len(self.varied_in_action)==0:
             return index,None
         #sample displacement
-        dj = np.zeros((latents.shape[0],self.n_latents)).squeeze()
-        dj[...,self.varied_in_action] = self._sample_displacement(
+        dj = np.zeros((latents.shape[0], self.n_latents)).squeeze()
+        dj[..., self.varied_in_action] = self._sample_displacement(
             self.transition_range, self.action_dim, latents.shape[0],
-            dist = self.dist)
-        new_latents,dj = self._transition_linear(latents,dj)
-        new_latents,dj = self._transition_circular(new_latents,dj)
+            dist=self.dist)
+        new_latents, dj = self._transition_linear(latents, dj)
+        new_latents, dj = self._transition_circular(new_latents, dj)
         indices2 = self.latents_2_index(new_latents)
-        dj = dj[...,self.varied_in_action]
+        dj = dj[..., self.varied_in_action]
         if self.return_integer_actions:
             dj = self.transition_to_index(dj)
-        return indices2,dj
+        return indices2, dj
 
-    def _sample_displacement(self,range,dim,n_samples,dist='uniform'):
+    def _sample_displacement(self, range, dim, n_samples, dist='uniform'):
         """Sample displacements around initial latent vector.
 
         Args:
@@ -247,29 +249,29 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             n_samples, int: Number of samples.
             dim, int: Dimensionality of the displacement vector.
             dist, str: Distribution choice to sample from, defaults to 'uniform'
-        
+
         Returns:
             ndarray: displacement vector.
         """
         if dist == 'uniform':
-            d = self._rand.randint(low=range[0], high=range[1]+1, 
-                                   size=(n_samples,dim))
+            d = self._rand.randint(low=range[0], high=range[1]+1,
+                                   size=(n_samples, dim))
         elif dist == 'disentangled':
             eye = np.eye(dim)
             # Random one hot vectors
-            mask = eye[self._rand.randint(dim,size=n_samples)] 
-            d = mask * self._rand.randint(low=range[0], high=range[1]+1, 
-                                   size=(n_samples,1))
+            mask = eye[self._rand.randint(dim, size=n_samples)]
+            d = mask * self._rand.randint(low=range[0], high=range[1]+1,
+                                          size=(n_samples, 1))
         return d
 
-    def _transition_linear(self,joints,dj):
+    def _transition_linear(self, joints, dj):
         new_joints = joints.copy()
         lin_idx = self.lin_idx
         new_joints[...,lin_idx] = np.clip(
             joints[...,lin_idx] + dj[...,lin_idx],0,self.num_latents[lin_idx]-1)
         dj[...,lin_idx] = new_joints[...,lin_idx] - joints[...,lin_idx]
         return new_joints,dj
-    
+
     def _transition_circular(self,joints,dj):
         """
         Adds a displacement on latents with a cyclic topology.
@@ -278,12 +280,12 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         """
         rot_idx = self.rot_idx
         num_latents = self.num_latents[rot_idx]
-        # Last coincides with first 
+        # Last coincides with first
         num_latents[0] = num_latents[0] - 1
         new_joints = joints.copy()
-        new_joints[...,rot_idx] = (joints[...,rot_idx] + dj[...,rot_idx])\
+        new_joints[..., rot_idx] = (joints[..., rot_idx] + dj[..., rot_idx])\
              % num_latents
-        return new_joints,dj
+        return new_joints, dj
 
     def joints_to_index(self,joints):
         index = 0
@@ -297,17 +299,17 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     #     return np.dot(
     #         joints[...,self.varied_in_sampling],self.latent_bases_varied)
 
-    def get_index(self,i):
+    def get_index(self, i):
         """
-        Transfers indices from range (0,self.n_samples) to indices of samples 
+        Transfers indices from range (0,self.n_samples) to indices of samples
         in the dataset with desired fixed factors.
         """
         ret = 0
         k = 0
-        for f in range(len(self.num_latents)-1,-1,-1):
+        for f in range(len(self.num_latents)-1, -1, -1):
             if f in self.fixed_in_sampling:
                 val = self.fixed_values[self.fixed_in_sampling.index(f)]
-                ret += val*self.cumulative_product[::-1][f+1] 
+                ret += val*self.cumulative_product[::-1][f+1]
             else:
                 ret += ((i % self.cum_prod_fix[k+1]) // self.cum_prod_fix[k]) \
                     * self.cumulative_product[::-1][f+1]
@@ -367,7 +369,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
 
     @property
     def allowed_indices(self):
-        if hasattr(self,'_allowed_indices'):
+        if hasattr(self, '_allowed_indices'):
             pass
         else:
             self._allowed_indices = [self.get_index(i) for i in range(self.n_samples)]
@@ -380,7 +382,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     @property
     def action_shape(self):
         return self._data["action_shape"]
-    
+
 
 if __name__ == '__main__':
     pass

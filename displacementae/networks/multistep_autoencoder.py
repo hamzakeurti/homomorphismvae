@@ -56,8 +56,8 @@ class MultistepAutoencoder(AutoEncoder):
         """
         Encodes the input image and predicts the `n_steps` following images.
 
-        Encodes the input image `x`. Decodes each image after the ith observed 
-        transition. Transitions `dz` are mapped to matrices through the 
+        Encodes the input image `x`. Decodes each image after the ith observed
+        transition. Transitions `dz` are mapped to matrices through the
         `grp_morphism`, matrices are applied to the obtained representation.
         """
         h = x
@@ -72,12 +72,13 @@ class MultistepAutoencoder(AutoEncoder):
     
         # Through encoder
         h, mu, logvar = self.encode(h)
+        latent = h
 
         h_out = torch.empty(
             size=[x.shape[0]] + [n_images, self.n_repr_units],device=x.device)
 
         if self.n_repr_units > self.n_transform_units:
-            # The part of the transformation that is not transformed 
+            # The part of the transformation that is not transformed
             # is repeated for all transition steps.
             h_out[:,:,self.n_transform_units:] = \
                                     h[:,self.n_transform_units:]\
@@ -109,13 +110,14 @@ class MultistepAutoencoder(AutoEncoder):
                  F.normalize(h_out[...,:self.n_transform_units].clone(),dim=-1)            
 
         # Through decoder
+        latent_hat = h_out
         h_out = h_out.view(-1, self.n_repr_units)
         h_out = self.decoder(h_out)
         h_out = h_out.view(x.shape[0],n_images,*x.shape[1:])
         if self.variational:
-            return h_out, mu, logvar
+            return h_out, latent, latent_hat, mu, logvar
         else:
-            return h_out, None, None
+            return h_out, latent, latent_hat, None, None
 
     def normalize_representation(self,z:torch.Tensor) -> torch.Tensor:
         """

@@ -24,7 +24,7 @@ import torch
 import torch.nn as nn
 
 from grouprepr.group_representation import GroupRepresentation
-from networks.mlp import MLP
+
 
 class LookupRepresentation(GroupRepresentation):
     """
@@ -40,21 +40,19 @@ class LookupRepresentation(GroupRepresentation):
                          normalize_post_action=normalize_post_action)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
-                 0.1*torch.randn(size=(dim_representation,dim_representation)))
+                 0.1*torch.randn(size=(dim_representation, dim_representation)))
             for _ in range(n_actions)
         ])
-    
-    
+        
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """
         Looks up representation matrices for each input action.
         """
         a = a.int()
         R = [self.action_reps[a[i]] for i in range(a.shape[0])]
-        R = torch.stack(R,dim=0)   
+        R = torch.stack(R, dim=0)
         return R
-    
+
 
 if __name__ == '__main__':
     pass
-    

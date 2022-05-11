@@ -22,11 +22,13 @@
 
 from enum import Enum
 
+
 class Representation(Enum):
     TRIVIAL = 0
     BLOCK_ROTS = 1
     MLP = 2
     BLOCK_MLP = 3
     PROD_ROTS_LOOKUP = 4
-    LOOKUP=5
-    BLOCK_LOOKUP=6
+    LOOKUP = 5
+    BLOCK_LOOKUP = 6
+    UNSTRUCTURED = 7

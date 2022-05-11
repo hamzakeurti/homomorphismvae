@@ -26,19 +26,20 @@ import wandb
 
 import utils.sim_utils as sim_utils
 import data.data_utils as data_utils
-import networks.network_utils as net_utils 
+import networks.network_utils as net_utils
 
 from grouprepr.representation_utils import Representation
 
-def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
+
+def run(mode='autoencoder', representation=Representation.BLOCK_ROTS):
     """Script for setting up and launching the training of the models.
 
     Args:
-        mode (str): architecture type, supports 'autoencoder', defaults to 
+        mode (str): architecture type, supports 'autoencoder', defaults to
             'autoencoder'
         representation (str): group representation, defaults to 'Representation.BLOCK_ROTS'.
-            'Representation.BLOCK_ROTS': actions are represented by block diagonal matrices of 
-            2D rotation matrices. 
+            'Representation.BLOCK_ROTS': actions are represented by block diagonal matrices of
+            2D rotation matrices.
     """
     # Mode dependent imports
     if mode == 'autoencoder':
@@ -47,6 +48,9 @@ def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
     elif mode == 'homomorphism':
         import homomorphism.train_args as train_args
         import homomorphism.train_utils as tutils
+    elif mode == 'trajectory':
+        import trajectory.train_args as train_args
+        import trajectory.train_utils as tutils
 
     # parse commands
     config = train_args.parse_cmd_arguments(representation)
@@ -57,7 +61,7 @@ def run(mode='autoencoder',representation=Representation.BLOCK_ROTS):
     dhandler, dloader = data_utils.setup_data(config, mode)
     # setup models
     nets = net_utils.setup_network(config, dhandler, device, mode=mode,
-        representation=representation)
+                                   representation=representation)
     # setup shared
     shared = Namespace()
     sim_utils.setup_summary_dict(config, shared, nets)

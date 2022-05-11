@@ -25,31 +25,32 @@ import utils.misc as misc
 import torch.nn as nn
 from typing import List
 
+
 class Scheduler():
-    def __init__(self,  grp1:List[nn.Module], grp2:List[nn.Module], toggle_every = [10,10]):
+    def __init__(self,  grp1: List[nn.Module], grp2: List[nn.Module], toggle_every=[10, 10]):
         self.toggle_every = toggle_every
         self.counter = 0
         self.grp1 = grp1
         self.grp2 = grp2
         for net2 in self.grp2:
-            toggle_grad(net2,False)
+            toggle_grad(net2, False)
         for net1 in self.grp1:
-            toggle_grad(net1,True)
+            toggle_grad(net1, True)
 
     def toggle_train(self):
         """
         Switches requires grad on/off every `toggle_every` epochs.
-        """ 
+        """
         if self.counter == self.toggle_every[0]:
             for net1 in self.grp1:
-                toggle_grad(net1,False)
+                toggle_grad(net1, False)
             for net2 in self.grp2:
-                toggle_grad(net2,True)
+                toggle_grad(net2, True)
         elif self.counter == sum(self.toggle_every):
             for net2 in self.grp2:
-                toggle_grad(net2,False)
+                toggle_grad(net2, False)
             for net1 in self.grp1:
-                toggle_grad(net1,True)
+                toggle_grad(net1, True)
             self.counter = 0
         # if (epoch//2) % self.toggle_every == 0:
         #     for net2 in nets2:
@@ -61,15 +62,17 @@ class Scheduler():
         #         toggle_grad(net1,False)
         #     for net2 in nets2:
         #         toggle_grad(net2,True)
-        self.counter += 1 
+        self.counter += 1
 
-def toggle_grad(model, on = True):
+
+def toggle_grad(model, on=True):
     for p in model.parameters():
         p.requires_grad = on
 
-def setup_scheduler(config:Namespace, group1:list, group2:list)->Scheduler:
+
+def setup_scheduler(config: Namespace, group1: list, group2: list) -> Scheduler:
     toggle_every = misc.str_to_ints(config.toggle_training_every)
-    if isinstance(toggle_every,int):
-        toggle_every = [toggle_every,toggle_every]
-    return Scheduler(group1, group2,toggle_every)
-    
+    if isinstance(toggle_every, int):
+        toggle_every = [toggle_every, toggle_every]
+
+    return Scheduler(group1, group2, toggle_every)

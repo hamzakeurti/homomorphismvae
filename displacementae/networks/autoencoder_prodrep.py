@@ -27,15 +27,16 @@ import grouprepr.prodrepr.action_lookup as al
 import networks.variational_utils as var_utils
 import utils.data_utils as udutils
 
+
 class AutoencoderProdrep(ae.AutoEncoder):
     """An autoencoder with a transformation of the latent from a known action.
-    The transformation is a matrix multiplication with an SO(n) matrix 
-    represented by a product of matrices of 2D rotations. 
+    The transformation is a matrix multiplication with an SO(n) matrix
+    represented by a product of matrices of 2D rotations.
 
     Args:
-        encoder (`torch.nn.Module`): Maps the input to a latent representation, 
+        encoder (`torch.nn.Module`): Maps the input to a latent representation,
                 or, if :param:variational is `True` to a posterior distribution.
-        decoder (`torch.nn.Module`): Maps from the latent space back to the 
+        decoder (`torch.nn.Module`): Maps from the latent space back to the
                 input space.
         n_actions (int): Number of possible actions.
         n_repr_units (int): Total number of representation units.
