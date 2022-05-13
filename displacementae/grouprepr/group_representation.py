@@ -98,8 +98,8 @@ class GroupRepresentation(nn.Module):
     def end_iteration(self):
         pass
 
-    def normalize_vector(self, z:torch.Tensor):
-        out = z
+    def normalize_vector(self, z: torch.Tensor):
         if self.normalize:
-            out = F.normalize(out,dim=-1)
-        return out
+            return F.normalize(z, dim=-1)
+        else:
+            return z
