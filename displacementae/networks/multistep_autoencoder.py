@@ -139,7 +139,7 @@ class MultistepAutoencoder(AutoEncoder):
         n_images = n_steps
         if self.reconstruct_first:
             n_images += 1
-    
+
         # Through encoder
         h, mu, logvar = self.encode(h)
 
@@ -152,56 +152,46 @@ class MultistepAutoencoder(AutoEncoder):
         else:
             return h_out, None, None
 
-
-
     def act(self, h, dz):
         """
-        Forwards latent vectors through the group representation of input 
+        Forwards latent vectors through the group representation of input
         transitions.
 
         """
         n_steps = dz.shape[1]
 
-        n_images = n_steps
-        if self.reconstruct_first:
-            n_images += 1
-
         h_out = torch.empty(
-            size=[dz.shape[0]] + [n_images, self.n_repr_units],device=dz.device)
+            size=[dz.shape[0]] + [n_steps + 1, self.n_repr_units], device=dz.device)
 
         if self.n_repr_units > self.n_transform_units:
             # The part of the transformation that is not transformed
             # is repeated for all transition steps.
-            h_out[:,:,self.n_transform_units:] = \
-                                    h[:,self.n_transform_units:]\
-                                        .unsqueeze(1).repeat(1,n_images,1)
+            h_out[:, :, self.n_transform_units:] = \
+                h[:, None, self.n_transform_units:].repeat(1, n_steps + 1, 1)
 
-
-        # Normalize the encoder's output according to subspaces of 
+        # Normalize the encoder's output according to subspaces of
         # the group representation.
-        h[:,:self.n_transform_units] = \
-                self.grp_morphism.normalize_vector(
-                    h[:,:self.n_transform_units].clone())
+        h[:, :self.n_transform_units] = \
+            self.grp_morphism.normalize_vector(
+                    h[:, :self.n_transform_units].clone())
 
-        if self.reconstruct_first:
-            h_out[:,0,...] = h.clone()
-        else:
-            h_out[:,0,:self.n_transform_units] = self.grp_morphism.act(
-                                      dz[:,0], 
-                                      h[:,:self.n_transform_units])   
+        h_out[:, 0] = h.clone()
 
         # Through geometry
-        for i in range(1,n_steps):
-            h_out[:,i,:self.n_transform_units] = \
+        for i in range(n_steps):
+            h_out[:, i + 1, :self.n_transform_units] = \
                     self.grp_morphism.act(
-                            dz[:,i], 
-                            h_out[:,i-1,:self.n_transform_units].clone())
+                            dz[:, i],
+                            h_out[:, i, :self.n_transform_units].clone())
 
         if self.spherical_post_action:
-            h_out[...,:self.n_transform_units] =\
-                 F.normalize(h_out[...,:self.n_transform_units].clone(),dim=-1)            
-    
-        return h_out
+            h_out[..., :self.n_transform_units] =\
+                 F.normalize(h_out[..., :self.n_transform_units].clone(), dim=-1)
+
+        if self.reconstruct_first:
+            return h_out
+        else:
+            return h_out[:, 1:]
 
     def decode(self, h):
         """
