@@ -33,7 +33,8 @@ class LookupRepresentation(GroupRepresentation):
     """
     def __init__(self, n_actions: int, dim_representation: int,
                  device='cpu', normalize:bool=False,
-                 normalize_post_action:bool=False) -> None:
+                 normalize_post_action:bool=False,
+                 exponential_map=False) -> None:
         super().__init__(n_action_units=1, 
                          dim_representation=dim_representation, device=device, 
                          normalize=normalize, 
@@ -43,7 +44,8 @@ class LookupRepresentation(GroupRepresentation):
                  0.1*torch.randn(size=(dim_representation, dim_representation)))
             for _ in range(n_actions)
         ])
-        
+        self.exponential_map = exponential_map
+
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """
         Looks up representation matrices for each input action.
@@ -51,6 +53,8 @@ class LookupRepresentation(GroupRepresentation):
         a = a.int()
         R = [self.action_reps[a[i]] for i in range(a.shape[0])]
         R = torch.stack(R, dim=0)
+        if self.exponential_map:
+            R = torch.matrix_exp(R)
         return R
 
 

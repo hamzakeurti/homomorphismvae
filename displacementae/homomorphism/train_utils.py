@@ -92,9 +92,20 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 xi = imgs
             else:
                 xi = imgs[:,1:]
-            ### Forward ###
-            h, latent, latent_hat, mu, logvar = nets(x1, dj)
-            xi_hat = torch.sigmoid(h)
+          
+            # =========================
+            # ### Forward ###
+            # h, latent, latent_hat, mu, logvar = nets(x1, dj)
+            # xi_hat = torch.sigmoid(h)
+            # =========================
+
+            ### Forward
+            h, mu, logvar = nets.encode(x1)
+            h_hat = nets.act(h, dj)
+            xi_hat = torch.sigmoid(nets.decode(h_hat))
+            if config.latent_loss:
+                h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+                h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
 
             ### Losses
             # Reconstruction
@@ -107,6 +118,9 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if config.variational:
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
+            if config.latent_loss:
+                latent_loss = (h_code - h_hat).square().mean()
+                total_loss += config.latent_loss_weight * latent_loss
             
             # Get representation matrices for typical actions
             a_in, a = dhandler.get_example_actions()
@@ -119,6 +133,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             log_text += f'=\tBCE {bce_loss.item():.2f} '
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f} '
+            if config.latent_loss:
+                log_text += f'\tLL {latent_loss.item():.5f} '
             logger.info(log_text)
             
             ### WandB Logging
@@ -127,6 +143,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                             'val/bce_loss':bce_loss.item()}
                 if nets.variational:
                     log_dict['val/kl_loss'] = kl_loss.item()
+                if config.latent_loss:
+                    log_dict['val/ll_loss'] = latent_loss.item()
                 wandb.log(log_dict)
             if (epoch % config.plot_epoch == 0):
                 # log_dict['val/learned_repr']=example_R.tolist()
@@ -233,26 +251,43 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             else:
                 xi = imgs[:,1:]
             ### Forward ###
-            h, latent, latent_hat, mu, logvar = nets(x1, dj)
-            latent_nstep, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
-            latent_nstep = latent_nstep.reshape(*xi.shape[:2], latent_nstep.shape[-1])
-            x1_hat = torch.sigmoid(nets.decoder(latent))
-            xi_hat = torch.sigmoid(h)
+            # h, latent, latent_hat, mu, logvar = nets(x1, dj)
+            # latent_nstep, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+            # latent_nstep = latent_nstep.reshape(*xi.shape[:2], latent_nstep.shape[-1])
+            # x1_hat = torch.sigmoid(nets.decoder(latent))
+            # xi_hat = torch.sigmoid(h)
+
+            ### Forward
+            h, mu, logvar = nets.encode(x1)
+            h_hat = nets.act(h, dj)
+            xi_hat = torch.sigmoid(nets.decode(h_hat))
+            if config.latent_loss:
+                h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+                h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
+
+
+
             ### Losses
             # consistency
-            latent_loss = (latent_nstep - latent_hat).square().mean()
             # Reconstruction
-            bce_loss_1 = var_utils.bce_loss(x1_hat, x1, 'none').unsqueeze(1)
-            bce_loss_n = var_utils.bce_loss(xi_hat, xi, 'none')
-            bce_loss = torch.cat([bce_loss_1, bce_loss_n], dim=1).mean()
+            # bce_loss_1 = var_utils.bce_loss(x1_hat, x1, 'none').unsqueeze(1)
+            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+            bce_loss_per_image =\
+                bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
+            bce_loss = bce_loss_per_image.sum()/config.n_steps
+            total_loss = bce_loss
+
+            # bce_loss = torch.cat([bce_loss_1, bce_loss_n], dim=1).mean()
             #bce_loss = (bce_loss_1 + bce_loss_n) / (x1.shape[0] * (config.n_steps + 1))
             #bce_loss = var_utils.bce_loss(xi_hat, xi, 'none').mean()
-            total_loss = bce_loss
+            # total_loss = bce_loss
             if nets.variational:
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
-                total_loss = total_loss + config.beta * kl_loss
-            total_loss = total_loss + config.gamma * latent_loss
+                total_loss += config.beta * kl_loss
+            if config.latent_loss:
+                latent_loss = (h_code - h_hat).square().mean()
+                total_loss += config.latent_loss_weight * latent_loss
             total_loss.backward()
             total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.parameters() if p.grad is not None]))
             decoder_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.decoder.parameters() if p.grad is not None]))
@@ -266,9 +301,10 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             log_text = f'[{epoch}:{i}] loss\t{total_loss.item():.2f} '
             log_text += f'=\tBCE {bce_loss.item():.5f} '
 
-            if nets.variational:
+            if config.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'
-            log_text += f'\tLL {latent_loss.item():.5f} '
+            if config.latent_loss:
+                log_text += f'\tLL {latent_loss.item():.5f} '
             log_text += f'\tG-Norm {total_norm.item():.2f}/{decoder_norm.item():.2f}/{act_norm.item():.2f} '
             logger.info(log_text)
             
@@ -276,8 +312,10 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             if config.log_wandb:
                 log_dict = {'train/epoch':epoch,'train/total_loss':total_loss.item(),
                             'train/bce_loss':bce_loss.item()}
-                if nets.variational:
+                if config.variational:
                     log_dict['train/kl_loss'] = kl_loss.item()
+                if config.latent_loss:
+                    log_dict['train/ll_loss'] = latent_loss.item()
                 wandb.log(log_dict,step=batch_cnt,commit=False)
                 batch_cnt += 1
     

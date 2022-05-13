@@ -131,7 +131,17 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
             dim_representation=dhandler.action_shape[0] * 2, device=device,
             learn_params=config.learn_geometry,
             specified_step=specified_step).to(device)
-    
+   
+    elif representation == Representation.MLP:
+        hidden_units = misc.str_to_ints(config.group_hidden_units)
+        grp_morphism = MLPRepresentation(
+                n_action_units=dhandler.action_shape[0],
+                dim_representation=config.dim,
+                hidden_units=hidden_units,device=device, 
+                normalize=config.normalize,
+                normalize_post_action=config.normalize_post_action,
+                exponential_map=config.exponential_map).to(device)
+
     elif representation == Representation.BLOCK_MLP:
         dims = misc.str_to_ints(config.dims)
         hidden_units = misc.str_to_ints(config.group_hidden_units)
@@ -142,16 +152,8 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 hidden_units=hidden_units,
                 device=device,
                 normalize_subrepresentations=config.normalize_subrepresentations,
-                normalize_post_action=config.normalize_post_action,).to(device)
-   
-    elif representation == Representation.MLP:
-        hidden_units = misc.str_to_ints(config.group_hidden_units)
-        grp_morphism = MLPRepresentation(
-                n_action_units=dhandler.action_shape[0],
-                dim_representation=config.dim,
-                hidden_units=hidden_units,device=device, 
-                normalize=config.normalize,
-                normalize_post_action=config.normalize_post_action,).to(device)
+                normalize_post_action=config.normalize_post_action,
+                exponential_map=config.exponential_map).to(device)
     
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
@@ -159,7 +161,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 dim_representation=config.dim,
                 repr_loss_on=True,
                 repr_loss_weight=config.grp_loss_weight,
-                device=device).to(device)
+                device=device,).to(device)
   
     elif representation == Representation.LOOKUP:
         grp_morphism = LookupRepresentation(
@@ -167,7 +169,8 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 dim_representation=config.dim,
                 device=device,
                 normalize=config.normalize,
-                normalize_post_action=config.normalize_post_action,).to(device)
+                normalize_post_action=config.normalize_post_action,
+                exponential_map=config.exponential_map).to(device)
    
     elif representation == Representation.BLOCK_LOOKUP:
         dims = misc.str_to_ints(config.dims)
@@ -178,7 +181,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 device=device,
                 normalize_subrepresentations=config.normalize_subrepresentations,
                 normalize_post_action=config.normalize_post_action,
-                ).to(device)
+                exponential_map=config.exponential_map).to(device)
  
     elif representation == Representation.TRIVIAL:
         grp_morphism = TrivialRepresentation(

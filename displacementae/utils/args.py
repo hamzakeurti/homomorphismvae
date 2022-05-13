@@ -106,6 +106,7 @@ def train_args(parser):
     tgroup.add_argument('--use_adam', action='store_true',
                         help='Use Adam optimizer instead of SGD.')
 
+
 def net_args(parser):
     """
     Arguments specified in this function:
@@ -157,10 +158,11 @@ def net_args(parser):
                         help='Reconstructs the input prior to any action, '+
                              'this pathway is equivalent to a classic '+
                              'AutoEncoder.')
-    # ngroup.add_argument('--normalize_post_act',action='store_true', 
-    #                     help='If True, the representation vector is ' + 
-    #                     'normalized after each group action ')
-    
+    ngroup.add_argument('--latent_loss',action='store_true',
+                        help='Whether to enforce equivariance '+
+                             'at the latents level')
+    ngroup.add_argument('--latent_loss_weight', type=float,
+                        help='Weight of the latent equivariance loss.')    
 
 
 def misc_args(parser, dout_dir=None):
@@ -217,6 +219,10 @@ def group_repr_args(parser, representation):
                             help='Whether the group action on each ' +
                                  'subrepresentation normalizes the ' +
                                  'representation post action')
+        ggroup.add_argument('--exponential_map', 
+                            action='store_true',
+                            help='Whether the matrix exponential is applied ' +
+                                 'to the parametrized matrix.')
     elif representation == Representation.MLP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space ' +
@@ -227,6 +233,11 @@ def group_repr_args(parser, representation):
                             action='store_true',
                             help='Whether the group action normalizes the ' +
                                  'representation post action')
+        ggroup.add_argument('--exponential_map', 
+                            action='store_true',
+                            help='Whether the matrix exponential is applied ' +
+                                 'to the parametrized matrix.')
+
     elif representation == Representation.BLOCK_ROTS:
         ggroup.add_argument('--learn_geometry', action='store_true',
                             help='Whether to learn the grp action parameters. ' +
@@ -255,6 +266,10 @@ def group_repr_args(parser, representation):
                             help='Whether the group action on each ' +
                                  'subrepresentation normalizes the ' +
                                  'representation post action')
+        ggroup.add_argument('--exponential_map', 
+                            action='store_true',
+                            help='Whether the matrix exponential is applied ' +
+                                 'to the parametrized matrix.')
     elif representation == Representation.LOOKUP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+
@@ -262,6 +277,10 @@ def group_repr_args(parser, representation):
         ggroup.add_argument('--normalize', action='store_true',
                             help='Whether the group action normalizes the ' +
                                     'representation post action')
+        ggroup.add_argument('--exponential_map', 
+                            action='store_true',
+                            help='Whether the matrix exponential is applied ' +
+                                 'to the parametrized matrix.')
     elif representation == Representation.TRIVIAL:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space '+

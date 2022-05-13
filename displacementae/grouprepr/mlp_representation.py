@@ -40,18 +40,19 @@ class MLPRepresentation(GroupRepresentation):
                  normalize=False, 
                  device='cpu',
                  layer_norm=False, 
-                 normalize_post_action:bool=False) -> None:
+                 normalize_post_action:bool=False,
+                 exponential_map:bool=False) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
                          normalize=normalize, 
                          normalize_post_action=normalize_post_action)
-        self.net = MLP(n_action_units,dim_representation**2,hidden_units,
+        self.net = MLP(in_features=n_action_units,
                        out_features=dim_representation ** 2,
                        hidden_units=hidden_units,
                        activation=activation,
                        dropout_rate=0,
                        bias=True,
                        layer_norm=layer_norm).to(device)
-                       
+        self.exponential_map = exponential_map
     
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """
@@ -60,8 +61,9 @@ class MLPRepresentation(GroupRepresentation):
         """
         R = self.net(a)
         R = R.view(-1, self.dim_representation, self.dim_representation)
-
-        return torch.matrix_exp(R)
+        if self.exponential_map:
+            R = torch.matrix_exp(R) 
+        return R
 
 
 if __name__ == '__main__':

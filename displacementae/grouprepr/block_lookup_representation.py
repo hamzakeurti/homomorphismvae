@@ -39,7 +39,8 @@ class BlockLookupRepresentation(GroupRepresentation):
     def __init__(self, n_actions:int, dim_representation:int, 
                  dims:list, device:str='cpu', 
                  normalize_subrepresentations:bool=False, 
-                 normalize_post_action:bool=False) -> None:
+                 normalize_post_action:bool=False,
+                 exponential_map:bool=False) -> None:
         super().__init__(n_action_units=1, 
                          dim_representation=dim_representation, device=device, 
                          normalize_post_action=normalize_post_action)
@@ -53,7 +54,8 @@ class BlockLookupRepresentation(GroupRepresentation):
                     LookupRepresentation(
                             n_actions,dim,device=device, 
                             normalize=normalize_subrepresentations,
-                            normalize_post_action=normalize_post_action))
+                            normalize_post_action=normalize_post_action,
+                            exponential_map=exponential_map))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         R = torch.zeros(*a.shape, self.dim_representation,

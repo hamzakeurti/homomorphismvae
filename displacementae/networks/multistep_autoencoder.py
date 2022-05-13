@@ -74,6 +74,8 @@ class MultistepAutoencoder(AutoEncoder):
         h, mu, logvar = self.encode(h)
         latent = h
 
+        h_out = self.act(h,dz)
+
         h_out = torch.empty(
             size=[x.shape[0]] + [n_images, self.n_repr_units],device=x.device)
 
@@ -118,6 +120,100 @@ class MultistepAutoencoder(AutoEncoder):
             return h_out, latent, latent_hat, mu, logvar
         else:
             return h_out, latent, latent_hat, None, None
+
+
+    def forward2(self, x, dz):
+        """
+        Encodes the input image and predicts the `n_steps` following images.
+
+        Encodes the input image `x`. Decodes each image after the ith observed
+        transition. Transitions `dz` are mapped to matrices through the
+        `grp_morphism`, matrices are applied to the obtained representation.
+        """
+        h = x
+        if dz is None:
+            n_steps = 0
+        else:
+            n_steps = dz.shape[1]
+
+        n_images = n_steps
+        if self.reconstruct_first:
+            n_images += 1
+    
+        # Through encoder
+        h, mu, logvar = self.encode(h)
+
+        h_out = self.act(h, dz)
+
+        h_out = self.decode(h_out)
+
+        if self.variational:
+            return h_out, mu, logvar
+        else:
+            return h_out, None, None
+
+
+
+    def act(self, h, dz):
+        """
+        Forwards latent vectors through the group representation of input 
+        transitions.
+
+        """
+        n_steps = dz.shape[1]
+
+        n_images = n_steps
+        if self.reconstruct_first:
+            n_images += 1
+
+        h_out = torch.empty(
+            size=[dz.shape[0]] + [n_images, self.n_repr_units],device=dz.device)
+
+        if self.n_repr_units > self.n_transform_units:
+            # The part of the transformation that is not transformed
+            # is repeated for all transition steps.
+            h_out[:,:,self.n_transform_units:] = \
+                                    h[:,self.n_transform_units:]\
+                                        .unsqueeze(1).repeat(1,n_images,1)
+
+
+        # Normalize the encoder's output according to subspaces of 
+        # the group representation.
+        h[:,:self.n_transform_units] = \
+                self.grp_morphism.normalize_vector(
+                    h[:,:self.n_transform_units].clone())
+
+        if self.reconstruct_first:
+            h_out[:,0,...] = h.clone()
+        else:
+            h_out[:,0,:self.n_transform_units] = self.grp_morphism.act(
+                                      dz[:,0], 
+                                      h[:,:self.n_transform_units])   
+
+        # Through geometry
+        for i in range(1,n_steps):
+            h_out[:,i,:self.n_transform_units] = \
+                    self.grp_morphism.act(
+                            dz[:,i], 
+                            h_out[:,i-1,:self.n_transform_units].clone())
+
+        if self.spherical_post_action:
+            h_out[...,:self.n_transform_units] =\
+                 F.normalize(h_out[...,:self.n_transform_units].clone(),dim=-1)            
+    
+        return h_out
+
+    def decode(self, h):
+        """
+        Forwards a sequence of latent vectors through the decoder.
+        Outputs images
+        """
+        # Through decoder
+        h_out = h.view(-1, self.n_repr_units)
+        h_out = self.decoder(h_out)
+        h_out = h_out.view(h.shape[0],h.shape[1],*h_out.shape[1:])
+        return h_out
+
 
     def normalize_representation(self,z:torch.Tensor) -> torch.Tensor:
         """

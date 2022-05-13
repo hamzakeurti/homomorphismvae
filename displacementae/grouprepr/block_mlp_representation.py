@@ -40,7 +40,8 @@ class BlockMLPRepresentation(GroupRepresentation):
                  dims:list, hidden_units:list=[],
                  activation: nn.Module = torch.nn.ReLU, device: str = 'cpu',
                  normalize_subrepresentations = False,
-                 normalize_post_action:bool=False) -> None:
+                 normalize_post_action:bool=False,
+                 exponential_map:bool=False) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
                          normalize_post_action=normalize_post_action)
         self.dims = dims
@@ -57,7 +58,8 @@ class BlockMLPRepresentation(GroupRepresentation):
                             device=device, 
                             layer_norm=True,
                             normalize=normalize_subrepresentations, 
-                            normalize_post_action=normalize_post_action))
+                            normalize_post_action=normalize_post_action,
+                            exponential_map=exponential_map))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         d = self.dim_representation
