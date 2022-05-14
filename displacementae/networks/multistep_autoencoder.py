@@ -199,7 +199,7 @@ class MultistepAutoencoder(AutoEncoder):
         Outputs images
         """
         # Through decoder
-        h_out = h.view(-1, self.n_repr_units)
+        h_out = h.reshape(-1, self.n_repr_units)
         h_out = self.decoder(h_out)
         h_out = h_out.view(h.shape[0],h.shape[1],*h_out.shape[1:])
         return h_out
