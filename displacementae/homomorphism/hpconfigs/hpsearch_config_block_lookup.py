@@ -61,7 +61,7 @@ grid = {
     'fixed_values': ['"0,1,5,14"'],
     'distrib': ['uniform'],
     'displacement_range': ['"-10,10"','"-2,2"','"-5,5"'],
-    'integer_actions' : [False],
+    'integer_actions' : [True],
     'n_steps': [2],
     'rotate_actions':[0],
 
