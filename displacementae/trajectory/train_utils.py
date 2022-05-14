@@ -72,40 +72,59 @@ def evaluate(dhandler: TrajectoryDataset,
     if not epoch % config.val_epoch == 0:
         return
 
-    total_loss, step_loss, bce_losses, kl_losses = [], [], [], []
+    total_losses, step_losses, bce_losses, kl_losses = [], [], [], []
     for batch in dloader:
         imgs, actions = [torch.as_tensor(elem, dtype=torch.float32, device=device) for elem in batch]
         # imgs is of shape
         # [batch_size, n_steps+1, channels, height, width]
         # actions is of shape [batch_size, n_steps, n_actions]
-
         x1 = imgs[:, 0]  # initial observed image
-        xi = imgs[:, 1:]  # All other images to predict
+        if config.reconstruct_first:
+            xi = imgs
+        else:
+            xi = imgs[:, 1:]  # All other images to predict
+
         ### Forward ###
-        h, latent, latent_hat, mu, logvar = nets(x1, actions)
-        x1_hat = torch.sigmoid(nets.decoder(latent))
-        xi_hat = torch.sigmoid(h)
+        h, mu, logvar = nets.encode(x1)
+        h_hat = nets.act(h, actions)
+        xi_hat = torch.sigmoid(nets.decode(h_hat))
+        if config.latent_loss:
+            h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+            h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
+
 
         ### Losses
         # Reconstruction
-        bce_loss_1 = var_utils.bce_loss(x1_hat, x1, 'none').mean(dim=[1, 2, 3]).unsqueeze(-1)
-        bce_loss_n = var_utils.bce_loss(xi_hat, xi, 'none').mean(dim=[2, 3, 4])
-        bce_loss_step = torch.cat([bce_loss_1, bce_loss_n], dim=1)
+        bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+        bce_loss_step = bce_loss_elementwise.mean(dim=[2, 3, 4])
         bce_loss = bce_loss_step.mean(dim=1)
-        loss = bce_loss
+        total_loss = bce_loss
+
+        if nets.variational:
+            # KL
+            kl_loss = var_utils.kl_loss(mu, logvar)
+            total_loss = total_loss + config.beta * kl_loss
+        if config.latent_loss:
+            latent_loss = (h_code - h_hat).square().mean()
+            total_loss = total_loss + config.latent_loss_weight * latent_loss
+
+        if isinstance(nets.grp_morphism, ActionLookup):
+            ent_loss = nets.grp_morphism.entanglement_loss()
+            total_loss = total_loss + .01 * ent_loss
+
         # KL
         if config.variational:
             kl_loss = var_utils.kl_loss(mu, logvar)
             kl_losses.append(kl_loss)
-            loss = loss + config.beta * kl_loss
+            total_loss = total_loss + config.beta * kl_loss
 
         bce_losses.append(bce_loss)
-        total_loss.append(loss)
-        step_loss.append(bce_loss_step)
+        total_losses.append(total_loss)
+        step_losses.append(bce_loss_step)
 
     bce_losses = torch.cat(bce_losses).mean()
-    total_loss = torch.cat(total_loss).mean()
-    step_loss = torch.cat(step_loss)
+    total_loss = torch.cat(total_losses).mean()
+    step_loss = torch.cat(step_losses)
 
     ### Logging
     logger.info(f'EVALUATION prior to epoch [{epoch}]...')
@@ -195,32 +214,38 @@ def train(dhandler: List[TrajectoryDataset],
             imgs, actions = [torch.as_tensor(elem, dtype=torch.float32, device=device) for elem in batch]
 
             x1 = imgs[:, 0]  # initial observed image
-            xi = imgs[:, 1:]  # All other images to predict
+            if config.reconstruct_first:
+                xi = imgs
+            else:
+                xi = imgs[:, 1:]  # All other images to predict
+
+
             ### Forward ###
-            h, latent, latent_hat, mu, logvar = nets(x1, actions)
-            latent_nstep, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
-            latent_nstep = latent_nstep.reshape(*xi.shape[:2], latent_nstep.shape[-1])
-            x1_hat = torch.sigmoid(nets.decoder(latent))
-            xi_hat = torch.sigmoid(h)
+            h, mu, logvar = nets.encode(x1)
+            h_hat = nets.act(h, actions)
+            xi_hat = torch.sigmoid(nets.decode(h_hat))
+            if config.latent_loss:
+                h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+                h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
+
             ### Losses
-            # consistency
-            latent_l2 = (latent_nstep - latent_hat).square().mean()
             # Reconstruction
-            bce_loss_1 = var_utils.bce_loss(x1_hat, x1, 'none').sum()
-            bce_loss_n = var_utils.bce_loss(xi_hat, xi, 'none').sum()
-            bce_loss = (bce_loss_1 + bce_loss_n) / np.prod(imgs.shape)
+            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+            bce_loss = bce_loss_elementwise.mean()
             total_loss = bce_loss
+
             if nets.variational:
                 # KL
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss = total_loss + config.beta * kl_loss
+            if config.latent_loss:
+                latent_loss = (h_code - h_hat).square().mean()
+                total_loss = total_loss + config.latent_loss_weight * latent_loss
 
             if isinstance(nets.grp_morphism, ActionLookup):
                 ent_loss = nets.grp_morphism.entanglement_loss()
                 total_loss = total_loss + .01 * ent_loss
-            elif isinstance(nets.grp_morphism, BlockLookupRepresentation):
-                total_loss = total_loss + config.gamma * latent_l2
-            total_loss = total_loss
+
             total_loss.backward()
             total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.parameters() if p.grad is not None]))
             decoder_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.decoder.parameters() if p.grad is not None]))
@@ -236,7 +261,8 @@ def train(dhandler: List[TrajectoryDataset],
 
             if nets.variational:
                 log_text += f'+\tKL {kl_loss.item():.5f}'
-            log_text += f'\tLL {latent_l2.item():.5f} '
+            if config.latent_loss:
+                log_text += f'\tLL {latent_loss.item():.5f} '
             if isinstance(nets.grp_morphism, ActionLookup):
                 log_text += f'\tEL {ent_loss.item():.5f} '
             log_text += f'\tG-Norm {total_norm.item():.2f}/{decoder_norm.item():.2f}/{act_norm.item():.2f} '
