@@ -51,7 +51,7 @@ def setup_optimizer(params, config):
     lr = config.lr
     weight_decay = config.weight_decay
     if config.use_adam:
-        optimizer = torch.optim.Adam(params, lr=lr, weight_decay=weight_decay)
+        optimizer = torch.optim.Adam(params, lr=lr, weight_decay=weight_decay, amsgrad=True)
     else:
         optimizer = torch.optim.SGD(params, lr=lr, weight_decay=weight_decay)
     return optimizer
@@ -96,7 +96,7 @@ def evaluate(dhandler: TrajectoryDataset,
         ### Losses
         # Reconstruction
         bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
-        bce_loss_step = bce_loss_elementwise.mean(dim=[2, 3, 4])
+        bce_loss_step = bce_loss_elementwise.sum(dim=[2, 3, 4])
         bce_loss = bce_loss_step.mean(dim=1)
         total_loss = bce_loss
 
@@ -107,10 +107,9 @@ def evaluate(dhandler: TrajectoryDataset,
         if config.latent_loss:
             latent_loss = (h_code - h_hat).square().mean()
             total_loss = total_loss + config.latent_loss_weight * latent_loss
-
         if isinstance(nets.grp_morphism, ActionLookup):
             ent_loss = nets.grp_morphism.entanglement_loss()
-            total_loss = total_loss + .01 * ent_loss
+            total_loss = total_loss + config.grp_loss_weight * ent_loss
 
         # KL
         if config.variational:
@@ -231,7 +230,8 @@ def train(dhandler: List[TrajectoryDataset],
             ### Losses
             # Reconstruction
             bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
-            bce_loss = bce_loss_elementwise.mean()
+            bce_loss = bce_loss_elementwise.sum(dim=[2, 3, 4]).mean()
+            #bce_loss = bce_loss_elementwise.mean()
             total_loss = bce_loss
 
             if nets.variational:
@@ -244,7 +244,7 @@ def train(dhandler: List[TrajectoryDataset],
 
             if isinstance(nets.grp_morphism, ActionLookup):
                 ent_loss = nets.grp_morphism.entanglement_loss()
-                total_loss = total_loss + .01 * ent_loss
+                total_loss = total_loss + config.grp_loss_weight * ent_loss
 
             total_loss.backward()
             total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.parameters() if p.grad is not None]))
