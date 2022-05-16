@@ -36,13 +36,16 @@ class BlockLookupRepresentation(GroupRepresentation):
     matrices.
 
     """
-    def __init__(self, n_actions:int, dim_representation:int, 
-                 dims:list, device:str='cpu', 
-                 normalize_subrepresentations:bool=False, 
-                 normalize_post_action:bool=False,
-                 exponential_map:bool=False) -> None:
-        super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device, 
+    def __init__(self,
+                 n_actions: int,
+                 dim_representation: int,
+                 dims: list,
+                 device: str = 'cpu',
+                 normalize_subrepresentations: bool = False,
+                 normalize_post_action: bool = False,
+                 exponential_map: bool = False) -> None:
+        super().__init__(n_action_units=1,
+                         dim_representation=dim_representation, device=device,
                          normalize_post_action=normalize_post_action)
         self.dims = dims
         self.n_actions = n_actions
@@ -52,7 +55,7 @@ class BlockLookupRepresentation(GroupRepresentation):
         for dim in dims:
             self.subreps.append(
                     LookupRepresentation(
-                            n_actions,dim,device=device, 
+                            n_actions,dim,device=device,
                             normalize=normalize_subrepresentations,
                             normalize_post_action=normalize_post_action,
                             exponential_map=exponential_map))
@@ -61,7 +64,7 @@ class BlockLookupRepresentation(GroupRepresentation):
         R = torch.zeros(*a.shape, self.dim_representation,
                         self.dim_representation, device=a.device)
         for i in range(self.n_subreps):
-            R[...,self.cumdims[i]:self.cumdims[i+1], 
+            R[...,self.cumdims[i]:self.cumdims[i+1],
               self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a)
         return R
 
