@@ -31,17 +31,25 @@ class LookupRepresentation(GroupRepresentation):
     A Lookup table of learned matrices.
 
     """
-    def __init__(self, n_actions: int, dim_representation: int,
-                 device='cpu', normalize:bool=False,
-                 normalize_post_action:bool=False,
-                 exponential_map=False) -> None:
-        super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device, 
-                         normalize=normalize, 
+    def __init__(self,
+                 n_actions: int,
+                 dim_representation: int,
+                 scale: float = 0.01,
+                 device: str = 'cpu',
+                 normalize: bool = False,
+                 normalize_post_action: bool = False,
+                 exponential_map: bool = False) -> None:
+        super().__init__(n_action_units=1,
+                         dim_representation=dim_representation, device=device,
+                         normalize=normalize,
                          normalize_post_action=normalize_post_action)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
+<<<<<<< HEAD
                  0.01*torch.randn(size=(dim_representation, dim_representation)))
+=======
+                 scale * torch.randn(size=(dim_representation, dim_representation)))
+>>>>>>> 50bf00a (add scale argument, change default scale to 0.01)
             for _ in range(n_actions)
         ])
         self.exponential_map = exponential_map
