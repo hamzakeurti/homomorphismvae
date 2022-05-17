@@ -41,7 +41,7 @@ class LookupRepresentation(GroupRepresentation):
                          normalize_post_action=normalize_post_action)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
-                 0.1*torch.randn(size=(dim_representation, dim_representation)))
+                 0.01*torch.randn(size=(dim_representation, dim_representation)))
             for _ in range(n_actions)
         ])
         self.exponential_map = exponential_map
