@@ -180,6 +180,7 @@ def gen_dsprites(args):
     """
 
     N_LATENTS = 5
+    T_RANGE = 5
 
     with h5py.File(args.data, 'r') as f:
         _imgs = f['imgs'][:]
@@ -193,7 +194,20 @@ def gen_dsprites(args):
             + 32 * coord[3] \
             + coord[4]
 
+    def action_map(action):
+        q = action
+        vec = []
+        for _ in args.latent_active:
+            q, r = divmod(q, 2 * T_RANGE + 1)
+            vec.append(r - T_RANGE)
+        return [0] * (N_LATENTS - len(args.latent_active)) + vec
+
     imgs, actions = [], []
+    if args.composite_action:
+        n_actions = (2 * T_RANGE + 1) ** len(args.latent_active)
+    else:
+        n_actions = len(args.latent_active) * 2 + 1
+
     for t in tqdm(range(args.trajs)):
 
         coord = [0] * N_LATENTS
@@ -205,28 +219,30 @@ def gen_dsprites(args):
         imgs.append(_imgs[coord_to_idx(coord)])
 
         for i in range(args.steps):
-            action = random.randrange(len(args.latent_active) * 2 + 1)
+            action = random.randrange(n_actions)
 
-            if action != 0:
-                _idx, delta = divmod(action - 1, 2)
-                delta = delta * 2 - 1
-                latent_idx = args.latent_active[_idx]
-                coord[latent_idx] = (coord[latent_idx] + delta) % periods[latent_idx]
+            if args.composite_action:
+                d = action_map(action)
+                for i in range(N_LATENTS):
+                    coord[i] = (coord[i] + d[i]) % periods[i]
+            else:
+                if action != 0:
+                    _idx, delta = divmod(action - 1, 2)
+                    delta = delta * 2 - 1
+                    latent_idx = args.latent_active[_idx]
+                    coord[latent_idx] = (coord[latent_idx] + delta) % periods[latent_idx]
 
             imgs.append(_imgs[coord_to_idx(coord)])
             actions.append(action)
 
     imgs = np.array(imgs).reshape(args.trajs, args.steps + 1, 64, 64)
-    if args.composite_action:
-        actions = np.array(actions).reshape(args.trajs, args.steps, N_LATENTS)
-    else:
-        actions = np.array(actions).reshape(args.trajs, args.steps)
+    actions = np.array(actions).reshape(args.trajs, args.steps)
 
     # Save trajectories
     np.savez(os.path.join(args.save_dir, 'trajs.npz'),
-             imgs=imgs,
+             imgs=imgs.astype(np.uint8),
              actions=actions,
-             n_actions=np.array(len(args.latent_active) * 2 + 1))
+             n_actions=np.array(n_actions))
 
 
 if __name__ == '__main__':
