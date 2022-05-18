@@ -154,7 +154,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 normalize_subrepresentations=config.normalize_subrepresentations,
                 normalize_post_action=config.normalize_post_action,
                 exponential_map=config.exponential_map).to(device)
-    
+
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
                 n_action_units=dhandler.n_actions,
@@ -162,7 +162,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 repr_loss_on=True,
                 repr_loss_weight=config.grp_loss_weight,
                 device=device,).to(device)
-  
+
     elif representation == Representation.LOOKUP:
         grp_morphism = LookupRepresentation(
                 n_actions=dhandler.n_actions,
@@ -171,7 +171,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 normalize=config.normalize,
                 normalize_post_action=config.normalize_post_action,
                 exponential_map=config.exponential_map).to(device)
-   
+
     elif representation == Representation.BLOCK_LOOKUP:
         dims = misc.str_to_ints(config.dims)
         grp_morphism = BlockLookupRepresentation(
@@ -182,7 +182,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 normalize_subrepresentations=config.normalize_subrepresentations,
                 normalize_post_action=config.normalize_post_action,
                 exponential_map=config.exponential_map).to(device)
- 
+
     elif representation == Representation.TRIVIAL:
         grp_morphism = TrivialRepresentation(
                 dim_representation=config.dim,
@@ -191,6 +191,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
         grp_morphism = UnstructuredRepresentation(
                 n_action_units=dhandler.n_actions,
                 dim_representation=config.dim,
+                hidden_units=config.group_hidden_units,
                 device=device).to(device)
     else:
         raise NotImplementedError(
