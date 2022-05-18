@@ -73,7 +73,7 @@ def setup_trajectory_dataset(config):
     ]
     dloaders = [
         DataLoader(dataset=dhandlers[0], batch_size=config.batch_size, shuffle=config.shuffle),
-        DataLoader(dataset=dhandlers[1], batch_size=config.batch_size, shuffle=False),
+        DataLoader(dataset=dhandlers[1], batch_size=10, shuffle=False),
     ]
 
     return dhandlers, dloaders
