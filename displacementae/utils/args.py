@@ -289,6 +289,8 @@ def group_repr_args(parser, representation):
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space ' +
                                  'acted on.')
+        ggroup.add_argument('--group_hidden_units', type=int, nargs='+',
+                            help='Hidden units list for all subreps\' MLP')
     ggroup.add_argument('--normalize_post_action',action='store_true', 
                         help='If True, the representation vector is ' + 
                              'normalized after each group action')
