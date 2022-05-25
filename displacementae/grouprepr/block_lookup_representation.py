@@ -51,15 +51,17 @@ class BlockLookupRepresentation(GroupRepresentation):
         self.n_actions = n_actions
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
-        self.subreps:list[LookupRepresentation] = nn.ModuleList()
+        self.subreps: list[LookupRepresentation] = nn.ModuleList()
         for dim in dims:
             self.subreps.append(
                     LookupRepresentation(
-                            n_actions,dim,device=device,
+                            n_actions,
+                            dim,
+                            device=device,
                             normalize=normalize_subrepresentations,
                             normalize_post_action=normalize_post_action,
                             exponential_map=exponential_map))
-            
+
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         R = torch.zeros(*a.shape, self.dim_representation,
                         self.dim_representation, device=a.device)
@@ -75,13 +77,13 @@ class BlockLookupRepresentation(GroupRepresentation):
                     self.subreps[i].act(
                         a,z[...,self.cumdims[i]:self.cumdims[i+1]])
         return z_out
-    
+
     def normalize_vector(self, z: torch.Tensor):
         z_out = z
         for i in range(self.n_subreps):
             z_out[...,self.cumdims[i]:self.cumdims[i+1]] =\
                     self.subreps[i].normalize_vector(
-                        z[...,self.cumdims[i]:self.cumdims[i+1]].clone())   
+                        z[...,self.cumdims[i]:self.cumdims[i+1]].clone())
         return z_out
 
 if __name__ == '__main__':

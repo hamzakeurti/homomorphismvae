@@ -75,6 +75,7 @@ class GroupRepresentation(nn.Module):
         z_out =  torch.einsum("...jk,...k->...j",self.forward(a),z)
         if self.normalize_post_action:
             z_out = self.normalize_vector(z_out)
+
         return z_out
 
     def get_example_repr(self, a: torch.Tensor = None) -> np.ndarray:

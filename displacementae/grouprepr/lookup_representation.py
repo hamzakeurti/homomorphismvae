@@ -34,7 +34,7 @@ class LookupRepresentation(GroupRepresentation):
     def __init__(self,
                  n_actions: int,
                  dim_representation: int,
-                 scale: float = 0.01,
+                 scale: float = 0.05,
                  device: str = 'cpu',
                  normalize: bool = False,
                  normalize_post_action: bool = False,
