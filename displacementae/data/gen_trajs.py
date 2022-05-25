@@ -23,6 +23,7 @@ def parse_args():
                         help="Use composite action")
     parser.add_argument("--latent_active", type=int, nargs='+', default=[0, 1, 2, 3, 4],
                         help="Active latents (only for dsprite)")
+    parser.add_argument("--rotate_translation", action='store_true')
     return parser.parse_args()
 
 
@@ -184,6 +185,7 @@ def gen_dsprites(args):
 
     with h5py.File(args.data, 'r') as f:
         _imgs = f['imgs'][:]
+        _lats = f['latents']['values'][:]
 
     periods = [3, 6, 40, 32, 32]
 
@@ -210,7 +212,7 @@ def gen_dsprites(args):
 
     for t in tqdm(range(args.trajs)):
 
-        coord = [0] * N_LATENTS
+        coord = [0, 2, 0, 0, 0]
 
         # randomize initial state
         for lat in args.latent_active:
@@ -230,8 +232,23 @@ def gen_dsprites(args):
                     _idx, delta = divmod(action - 1, 2)
                     delta = delta * 2 - 1
                     latent_idx = args.latent_active[_idx]
-                    coord[latent_idx] = (coord[latent_idx] + delta) % periods[latent_idx]
-
+                    if (latent_idx == 3 or latent_idx == 4) and args.rotate_translation:
+                        if latent_idx == 3:
+                            if delta == 1:
+                                coord[3] = (coord[3] + 1) % periods[3]
+                                coord[4] = (coord[4] + 1) % periods[4]
+                            else:
+                                coord[3] = (coord[3] - 1) % periods[3]
+                                coord[4] = (coord[4] - 1) % periods[4]
+                        else:
+                            if delta == 1:
+                                coord[3] = (coord[3] + 1) % periods[3]
+                                coord[4] = (coord[4] - 1) % periods[3]
+                            else:
+                                coord[3] = (coord[3] - 1) % periods[3]
+                                coord[4] = (coord[4] + 1) % periods[3]
+                    else:
+                        coord[latent_idx] = (coord[latent_idx] + delta) % periods[latent_idx]
             imgs.append(_imgs[coord_to_idx(coord)])
             actions.append(action)
 
