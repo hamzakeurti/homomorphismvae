@@ -186,7 +186,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     def __getitem__(self, idx):
         indices = self.train_idx[idx]
         images = self.images[indices]
-        latents = self.latents[indices]  
+        latents = self.latents[indices]
         dj = self.train_dj[idx]
         return images, latents, dj
 
@@ -196,7 +196,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         Number of all possible discrete actions.
         """
         if self.dist == 'uniform':
-            return  (self.transition_range[1] - self.transition_range[0]+1)\
+            return (self.transition_range[1] - self.transition_range[0]+1)\
                     ** self.action_dim
         if self.dist == 'disentangled':
             return (self.transition_range[1] - self.transition_range[0]+1)\
