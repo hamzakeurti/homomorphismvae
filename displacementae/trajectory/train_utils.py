@@ -133,6 +133,8 @@ def evaluate(dhandler: TrajectoryDataset,
         log_text += f'+\tKL {torch.cat(kl_losses).mean().item():.5f}'
     logger.info(log_text)
     # Save Losses
+    np.save(os.path.join(config.out_dir, f'loss_{epoch}'),
+            step_loss.cpu().numpy())
     shared.bce_loss.append(step_loss.mean(dim=0).tolist())
     if nets.variational:
         shared.kl_loss.append(kl_loss.item())
@@ -140,6 +142,12 @@ def evaluate(dhandler: TrajectoryDataset,
     #example_R = nets.grp_morphism.get_example_repr(
     #                torch.as_tensor([a_in], dtype=torch.float32, device=device))
     #shared.learned_repr = example_R.tolist()
+    if (isinstance(nets.grp_morphism, BlockLookupRepresentation) or
+            isinstance(nets.grp_morphism, ActionLookup)):
+        reprs = nets.grp_morphism(torch.arange(dhandler.n_actions, device=device))
+        np.save(os.path.join(config.out_dir, f'repr_{epoch}'),
+                reprs.cpu().numpy())
+
     shared.actions = [a]
 
     shared.summary[LOSS_FINAL] = total_loss.item()
@@ -206,7 +214,7 @@ def train(dhandler: List[TrajectoryDataset],
 
         logger.info(f"Training epoch {epoch}.")
         nets.grp_morphism.end_iteration()
-
+        nets.train()
         for i, batch in enumerate(dloader[0]):
             optim.zero_grad()
 
@@ -231,7 +239,6 @@ def train(dhandler: List[TrajectoryDataset],
             # Reconstruction
             bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
             bce_loss = bce_loss_elementwise.sum(dim=[2, 3, 4]).mean()
-            #bce_loss = bce_loss_elementwise.mean()
             total_loss = bce_loss
 
             if nets.variational:
