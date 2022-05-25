@@ -19,7 +19,7 @@ class TrajectoryDataset(Dataset):
         self._actions = self._data['actions']
         self.n_actions = int(self._data['n_actions'])
         self.in_shape = self._imgs.shape[2:]
-        self.action_shape = [1]
+        self.action_shape = [1] if len(self._actions.shape) == 2 else self._actions.shape[-1:]
 
         if rseed is not None:
             self._rand = np.random.RandomState(rseed)
