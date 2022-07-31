@@ -60,7 +60,7 @@ grid = {
     'fixed_in_sampling': ['"0,1,2,3"'],
     'fixed_values': ['"0,1,5,14"'],
     'distrib': ['uniform'],
-    'displacement_range': ['"-2,2"','"-5,5"','"-10,10"'],
+    'displacement_range': ['"-10,10"'],
     'integer_actions' : [False],
     'n_steps': [2],
     'rotate_actions':[0],
@@ -68,9 +68,9 @@ grid = {
 
 
     ### Training options ###
-    'num_train': [15000],
+    'num_train': [50000],
     'batch_size': [500],
-    'epochs' : [2001],
+    'epochs' : [201],
     'lr' : [1e-4, 1e-3],
     'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
@@ -81,38 +81,42 @@ grid = {
     ### Model options ###
 
     ### network options ###
-    'conv_channels': ['"32,32"','"32,32,32"','"32,32,32,32"'],
-    'kernel_sizes': ['"6,4"','"6,4,4"','"6,4,4,4"'],
-    'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
+    'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
+    'kernel_sizes': ['"6,4,4,4"'],
+    'strides': ['"2,2,1,1"'],
     # 'conv_channels': ['"32,32"'],
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
 
-    'lin_channels': ['"128,64,32"','"128,64,64"'],
-    'variational': [True],
-    'beta': [1],
+    'lin_channels': ['"128,64,32"','"1024"'],
+    'variational': [False],
+    'beta': [0],
     'net_act' : ['relu'],
-    'spherical':[True],
+    'spherical':[False],
     # 'normalize_post_action':[False,True],
-    'normalize_subrepresentations':[False,True],
+    'normalize_subrepresentations':[False],
 
     ### Group ###
     'dims' : ['"2,2"'],
-    'group_hidden_units': ['"20,20"','"10,10"','"10,10,10"','"20,20,20"',],
-    'normalize_post_act':[False,True],
-    'reconstruct_first':[False,True],
+    'group_hidden_units': ['"20,20"','"128,128"','"64,64,64"','"20,20,20"',],
+    'normalize_post_action':[False],
+    'reconstruct_first':[True],
+    'exponential_map':[True],
+    'latent_loss':[True],
+    'latent_loss_weight':[1000,500,200,100,50],
+    
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp'],
+    'wandb_project_name' : ['morphism_block_mlp_'],
     'log_wandb':[True],
 
     ### Plot options ###
     'no_plots': [False],
-    'plot_epoch': [100],
+    'plot_epoch': [10],
     'plot_manifold_latent': ['"[0,1]"'],
-    'plot_on_black': [True, False],
+    'plot_on_black': [False],
     'plot_pca': [True],
     'plot_vary_latents': ['"[4,5]"'],
 }
@@ -139,9 +143,9 @@ conditions = [
     #({'clip_grad_value': [1.]}, {'clip_grad_norm': [-1]}),
     #({'clip_grad_norm': [1.]}, {'clip_grad_value': [-1]}),
     ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
-    ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"']}),
+    ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"']}),
     ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
-    
+    ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
 ]
 
 
