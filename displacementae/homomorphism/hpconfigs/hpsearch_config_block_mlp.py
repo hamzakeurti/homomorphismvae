@@ -91,8 +91,7 @@ grid = {
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
 
-    # 'lin_channels': ['"128,64,32"','"1024"'],
-    'lin_channels': ['"128,64,32"'],
+    'lin_channels': ['"128,64,32"','"1024"'],
     'variational': [False],
     'beta': [0],
     'net_act' : ['relu'],
@@ -102,11 +101,7 @@ grid = {
 
     ### Group ###
     'dims' : ['"2,2"'],
-    'group_hidden_units': ['"128,128"','"20,20,20"',],
     'normalize_post_action':[False],
-    'reconstruct_first':[True],
-    'exponential_map':[True],
-    'latent_loss':[True],
     'latent_loss_weight':[1000,800,600,500,400,300,200],
     
 
