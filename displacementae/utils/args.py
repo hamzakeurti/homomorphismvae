@@ -223,7 +223,7 @@ def group_repr_args(parser, representation):
                             action='store_true',
                             help='Whether the matrix exponential is applied ' +
                                  'to the parametrized matrix.')
-    elif representation in Representation.MLP:
+    elif representation == Representation.MLP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space ' +
                                  'acted on.')

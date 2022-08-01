@@ -40,7 +40,7 @@ from grouprepr.block_lookup_representation import BlockLookupRepresentation
 from grouprepr.trivial_representation import TrivialRepresentation
 from grouprepr.mlp_representation import MLPRepresentation
 from grouprepr.unstructured_representation import UnstructuredRepresentation
-
+from grouprepr.soft_block_mlp_representation import SoftBlockMLPRepresentation
 
 AUTOENCODER = 'autoencoder'
 
@@ -193,6 +193,15 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 dim_representation=config.dim,
                 hidden_units=config.group_hidden_units,
                 device=device).to(device)
+    elif representation == Representation.SOFT_BLOCK_MLP:
+        hidden_units = misc.str_to_ints(config.group_hidden_units)
+        grp_morphism = SoftBlockMLPRepresentation(                n_action_units=dhandler.action_shape[0],
+                dim_representation=config.dim,
+                hidden_units=hidden_units,device=device, 
+                normalize=config.normalize,
+                normalize_post_action=config.normalize_post_action,
+                exponential_map=config.exponential_map).to(device)
+            
     else:
         raise NotImplementedError(
                 f'Representation {representation} is not implemented.')

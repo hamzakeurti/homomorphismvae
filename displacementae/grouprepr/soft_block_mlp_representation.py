@@ -54,6 +54,7 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
                  normalize_post_action=normalize_post_action,
                  exponential_map=exponential_map)
         self.masks = self._get_masks().to(device)
+        self.repr_loss_on = True
         
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         return super().forward(a)
@@ -66,9 +67,10 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
             M[i,i+1:,i+1:] = 0
         return M
 
-    def representation_loss(self, R):
+    def representation_loss(self, dj):
+        R = self(dj)
         l = self.masks.unsqueeze(0)*R.unsqueeze(1)
-        l = l.square().sum(2,3).sqrt().sum(1).square().sum().sqrt()
+        l = l.square().sum((2,3)).sqrt().sum(1).square().sum().sqrt()
         return l
         
 if __name__ == '__main__':

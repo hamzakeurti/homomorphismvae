@@ -68,6 +68,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
         shared.learned_repr = []
         if config.variational:
             shared.kl_loss = []
+        if config.grp_loss_on:
+            shared.grp_loss = []
 
     if epoch % config.val_epoch == 0:
 
@@ -118,10 +120,15 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if config.variational:
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
+            # Latent Loss
             if config.latent_loss:
                 latent_loss = (h_code - h_hat).square().mean()
                 total_loss += config.latent_loss_weight * latent_loss
-            
+            # Grp Loss
+            if nets.grp_morphism.repr_loss_on:
+                grp_loss = nets.grp_morphism.representation_loss(dj)
+                total_loss += config.grp_loss_weight * grp_loss
+
             # Get representation matrices for typical actions
             a_in, a = dhandler.get_example_actions()
             example_R = nets.grp_morphism.get_example_repr(
@@ -135,6 +142,9 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 log_text += f'+\tKL {kl_loss.item():.5f} '
             if config.latent_loss:
                 log_text += f'\tLL {latent_loss.item():.5f} '
+            if nets.grp_morphism.repr_loss_on:
+                log_text += f'\tGL {grp_loss.item():.5f} '
+
             logger.info(log_text)
             
             ### WandB Logging
@@ -145,6 +155,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                     log_dict['val/kl_loss'] = kl_loss.item()
                 if config.latent_loss:
                     log_dict['val/ll_loss'] = latent_loss.item()
+                if nets.grp_morphism.repr_loss_on:
+                    log_dict['val/gl_loss'] = grp_loss.item()
                 wandb.log(log_dict)
             if (epoch % config.plot_epoch == 0):
                 # log_dict['val/learned_repr']=example_R.tolist()
@@ -157,6 +169,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
+            if nets.grp_morphism.repr_loss_on:
+                shared.grp_loss.append(grp_loss.item())
             shared.learned_repr = example_R.tolist()
             shared.actions = a.tolist()
 
@@ -288,6 +302,11 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             if config.latent_loss:
                 latent_loss = (h_code - h_hat).square().mean()
                 total_loss += config.latent_loss_weight * latent_loss
+            # Grp Loss
+            if nets.grp_morphism.repr_loss_on:
+                grp_loss = nets.grp_morphism.representation_loss(dj)
+                total_loss += config.grp_loss_weight * grp_loss
+
             total_loss.backward()
             total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.parameters() if p.grad is not None]))
             decoder_norm = torch.norm(torch.stack([torch.norm(p.grad.detach()).to(device) for p in nets.decoder.parameters() if p.grad is not None]))
@@ -305,7 +324,10 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                 log_text += f'+\tKL {kl_loss.item():.5f}'
             if config.latent_loss:
                 log_text += f'\tLL {latent_loss.item():.5f} '
-            log_text += f'\tG-Norm {total_norm.item():.2f}/{decoder_norm.item():.2f}/{act_norm.item():.2f} '
+            if nets.grp_morphism.repr_loss_on:
+                log_text += f'\tGL {grp_loss.item():.5f} '
+            
+            log_text += f'\tTotal {total_norm.item():.2f}/{decoder_norm.item():.2f}/{act_norm.item():.2f} '
             logger.info(log_text)
             
             ### WandB Logging
@@ -315,7 +337,9 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                 if config.variational:
                     log_dict['train/kl_loss'] = kl_loss.item()
                 if config.latent_loss:
-                    log_dict['train/ll_loss'] = latent_loss.item()
+                    log_dict['train/ll_loss'] = latent_loss.item()                
+                if nets.grp_morphism.repr_loss_on:
+                    log_dict['train/gl_loss'] = grp_loss.item()
                 wandb.log(log_dict,step=batch_cnt,commit=False)
                 batch_cnt += 1
     
