@@ -56,21 +56,22 @@ grid = {
     'dataset': ['dsprites'],
     'data_root': ['/home/hamza/datasets/dsprites/'],
     'cyclic_trans' : [True],
-    'fixed_in_intervention': ['"0,1,2,3"'],
-    'fixed_in_sampling': ['"0,1,2,3"'],
-    'fixed_values': ['"0,1,5,14"'],
+    'fixed_in_intervention': ['"0,1,2"'],
+    'fixed_in_sampling': ['"0,1,2"'],
+    'fixed_values': ['"0,2,5"'],
     'distrib': ['uniform'],
     'displacement_range': ['"-10,10"'],
     'integer_actions' : [False],
     'n_steps': [2],
     'rotate_actions':[0],
+    'data_random_seed':[11],
 
 
 
     ### Training options ###
     'num_train': [50000],
     'batch_size': [500],
-    'epochs' : [201],
+    'epochs' : [301],
     'lr' : [1e-4, 1e-3],
     'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
@@ -81,9 +82,9 @@ grid = {
     ### Model options ###
 
     ### network options ###
-    'conv_channels': ['"64,64,64"','"32,32,32,32"'],
-    'kernel_sizes': ['"6,4,4,4"','"6,4,4"'],
-    'strides': ['"2,2,1,1"','"2,2,2"'],
+    'conv_channels': ['"64,64,64,64"','"32,32,32,32"','"16,16,16,16"'],
+    'kernel_sizes': ['"6,4,4,4"'],
+    'strides': ['"2,2,1,1"'],
     # 'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
     # 'kernel_sizes': ['"6,4,4,4"'],
     # 'strides': ['"2,2,1,1"'],
@@ -92,7 +93,7 @@ grid = {
     # 'strides': ['"2,2"','"1,1"'],
 
     # 'lin_channels': ['"128,64,32"','"1024"'],
-    'lin_channels': ['"128,64,32"'],
+    'lin_channels': ['"128,64,32"','"1024"','"512"','"256"'],
     'variational': [False],
     'beta': [0],
     'net_act' : ['relu'],
@@ -101,7 +102,7 @@ grid = {
     'normalize_subrepresentations':[False],
 
     ### Group ###
-    'dims' : ['"2,2"'],
+    'dims' : ['"2,2,2"'],
     'group_hidden_units': ['"128,128"','"20,20,20"',],
     'normalize_post_action':[False],
     'reconstruct_first':[True],
@@ -113,16 +114,16 @@ grid = {
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp_'],
+    'wandb_project_name' : ['morphism_block_mlp_3'],
     'log_wandb':[True],
 
     ### Plot options ###
     'no_plots': [False],
     'plot_epoch': [10],
-    'plot_manifold_latent': ['"[0,1]"'],
+    'plot_manifold_latent': ['"[0,1],[0,1],[0,1],[2,3],[2,3],[2,3],[4,5],[4,5],[4,5]"'],
     'plot_on_black': [False],
-    'plot_pca': [True],
-    'plot_vary_latents': ['"[4,5]"'],
+    'plot_pca': [False],
+    'plot_vary_latents': ['"[3],[4],[5],[3],[4],[5],[3],[4],[5]"'],
 }
 
 # Sometimes, not the whole grid should be searched. For instance, if an SGD
@@ -146,9 +147,9 @@ conditions = [
     ### Add your conditions here ###
     #({'clip_grad_value': [1.]}, {'clip_grad_norm': [-1]}),
     #({'clip_grad_norm': [1.]}, {'clip_grad_value': [-1]}),
-    ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
-    ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"']}),
-    ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
+    # ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
+    # ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"']}),
+    # ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
     ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
 ]
 

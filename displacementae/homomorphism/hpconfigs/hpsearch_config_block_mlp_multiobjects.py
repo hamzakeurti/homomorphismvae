@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp_multiobjects.py
+# title          :homomorphism/hpconfigs/hpsearch_config_block_mlp.py
 # author         :Hamza Keurti
 # contact        :hkeurti@ethz.ch
 # created        :11/04/2022
@@ -60,19 +60,19 @@ grid = {
     'fixed_in_sampling': ['"0,2,3"'],
     'fixed_values': ['"0,5,14"'],
     'distrib': ['uniform'],
-    'displacement_range': ['"-2,2"','"-5,5"','"-10,10"'],
+    'displacement_range': ['"-10,10"'],
     'integer_actions' : [False],
     'n_steps': [2],
-    'rotate_actions':[0],
+    'rotate_actions':[45],
 
 
 
     ### Training options ###
-    'num_train': [15000],
+    'num_train': [50000],
     'batch_size': [500],
-    'epochs' : [1001],
+    'epochs' : [501],
     'lr' : [1e-4, 1e-3],
-    'toggle_training_every': ['"6,4"', '"2,2"'],
+    'toggle_training_every': ['"6,4"'],
     'shuffle':[1],
     'use_adam':[True],
     'use_cuda':[True],
@@ -81,39 +81,45 @@ grid = {
     ### Model options ###
 
     ### network options ###
-    'conv_channels': ['"32,32"','"32,32,32"','"32,32,32,32"'],
-    'kernel_sizes': ['"6,4"','"6,4,4"','"6,4,4,4"'],
-    'strides': ['"2,2,1,1"','"2,2,1"','"2,2"'],
-    # 'strides': ['"2,2,1,1"','"1,1,1,1"','"2,2,1"','"2,2"','"1,1,1"'],
+    'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
+    'kernel_sizes': ['"6,4,4,4"'],
+    'strides': ['"2,2,1,1"'],
     # 'conv_channels': ['"32,32"'],
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
 
-    'lin_channels': ['"128,64,32"','"128,64,64"'],
-    'variational': [True],
-    'beta': [1],
+    'lin_channels': ['"1024"'],
+    'variational': [False],
+    'beta': [0],
     'net_act' : ['relu'],
-    'spherical':[True],
-    # 'normalize_post_act':[False,True],
-    'normalize_subrepresentations':[False,True],
+    'spherical':[False],
+    # 'normalize_post_action':[False,True],
+    'normalize_subrepresentations':[False],
+    'n_free_units':[1],
 
     ### Group ###
     'dims' : ['"2,2"'],
-    'group_hidden_units': ['"20,20"','"10,10"','"10,10,10"','"20,20,20"',],
+    'group_hidden_units': ['"128,128"','"20,20,20"','"64,64"'],
+    'normalize_post_action':[False],
+    'reconstruct_first':[True],
+    'exponential_map':[True],
+    'latent_loss':[True],
+    'latent_loss_weight':[1000,800,600,500,400,300,200],
+    
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp_multiobjects'],
+    'wandb_project_name' : ['morphism_block_mlp_multiobjects__'],
     'log_wandb':[True],
 
     ### Plot options ###
     'no_plots': [False],
-    'plot_epoch': [50],
+    'plot_epoch': [20],
     'plot_manifold_latent': ['"[0,1]"'],
     'plot_on_black': [False],
     'plot_pca': [True],
-    'plot_vary_latents': ['"[4,5]"'],
+    'plot_vary_latents': ['"[1,4,5]"'],
 }
 
 # Sometimes, not the whole grid should be searched. For instance, if an SGD
@@ -137,10 +143,10 @@ conditions = [
     ### Add your conditions here ###
     #({'clip_grad_value': [1.]}, {'clip_grad_norm': [-1]}),
     #({'clip_grad_norm': [1.]}, {'clip_grad_value': [-1]}),
-    ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
-    ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"']}),
-    ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
-    
+    # ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
+    # ({'strides': ['"2,2,1"','"2,2,2"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"']}),
+    # ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
+    ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
 ]
 
 

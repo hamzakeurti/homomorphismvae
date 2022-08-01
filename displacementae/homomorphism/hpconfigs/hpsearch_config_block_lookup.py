@@ -53,6 +53,7 @@ grid = {
     ### ALL COMMAND-LINE OPTIONS ACCESSIBLE TO THE HPSEARCH GO HERE ###
     ###################################################################
     ### Dataset options ###
+
     'dataset': ['dsprites'],
     'data_root': ['/home/hamza/datasets/dsprites/'],
     'cyclic_trans' : [True],
@@ -60,7 +61,7 @@ grid = {
     'fixed_in_sampling': ['"0,1,2,3"'],
     'fixed_values': ['"0,1,5,14"'],
     'distrib': ['uniform'],
-    'displacement_range': ['"-10,10"','"-2,2"','"-5,5"'],
+    'displacement_range': ['"-10,10"','"-5,5"','"-2,2"', ],
     'integer_actions' : [True],
     'n_steps': [2],
     'rotate_actions':[0],
@@ -68,7 +69,7 @@ grid = {
 
 
     ### Training options ###
-    'num_train': [50000],
+    'num_train': [10000],
     'batch_size': [500],
     'epochs' : [501],
     'lr' : [1e-4, 1e-3],
@@ -81,9 +82,9 @@ grid = {
     ### Model options ###
 
     ### network options ###
-    'conv_channels': ['"64,64,64"','"32,32,32,32"'],
-    'kernel_sizes': ['"6,4,4,4"','"6,4,4"'],
-    'strides': ['"2,2,1,1"','"2,2,2"'],
+    'conv_channels': ['"64,64,64,64"','"32,32,32,32"','"16,16,16,16"'],
+    'kernel_sizes': ['"6,4,4,4"'],
+    'strides': ['"2,2,1,1"'],
     # 'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
     # 'kernel_sizes': ['"6,4,4,4"'],
     # 'strides': ['"2,2,1,1"'],
@@ -92,9 +93,9 @@ grid = {
     # 'strides': ['"2,2"','"1,1"'],
 
     # 'lin_channels': ['"128,64,32"','"1024"'],
-    'lin_channels': ['"128,64,32"'],
+    'lin_channels': ['"128,64,32"','"1024"','"512"','"256"'],
     'variational': [False],
-    'beta': [0],
+    'beta': [1],
     'net_act' : ['relu'],
     'spherical':[False],
     # 'normalize_post_action':[False,True],
@@ -112,12 +113,12 @@ grid = {
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp_'],
+    'wandb_project_name' : ['morphism_block_lookup_3'],
     'log_wandb':[True],
 
     ### Plot options ###
     'no_plots': [False],
-    'plot_epoch': [10],
+    'plot_epoch': [20],
     'plot_manifold_latent': ['"[0,1]"'],
     'plot_on_black': [False],
     'plot_pca': [True],
@@ -148,7 +149,7 @@ conditions = [
     ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
     ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"']}),
     ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
-    ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
+    # ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
 ]
 
 
