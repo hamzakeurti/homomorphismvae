@@ -223,7 +223,7 @@ def group_repr_args(parser, representation):
                             action='store_true',
                             help='Whether the matrix exponential is applied ' +
                                  'to the parametrized matrix.')
-    elif representation == Representation.MLP:
+    elif representation in Representation.MLP:
         ggroup.add_argument('--dim', type=int, default=2,
                             help='Dimension of the representation space ' +
                                  'acted on.')
@@ -291,6 +291,26 @@ def group_repr_args(parser, representation):
                                  'acted on.')
         ggroup.add_argument('--group_hidden_units', type=int, nargs='+',
                             help='Hidden units list for all subreps\' MLP')
+    elif representation == Representation.SOFT_BLOCK_MLP:
+        ggroup.add_argument('--dim', type=int, default=2,
+                            help='Dimension of the representation space ' +
+                                 'acted on.')
+        ggroup.add_argument('--group_hidden_units', type=str, default='',
+                            help='Hidden units list of the rep\'s MLP')
+        ggroup.add_argument('--normalize', 
+                            action='store_true',
+                            help='Whether the group action normalizes the ' +
+                                 'representation post action')
+        ggroup.add_argument('--exponential_map', 
+                            action='store_true',
+                            help='Whether the matrix exponential is applied ' +
+                                 'to the parametrized matrix.')
+        ggroup.add_argument('--grp_loss_on', type=bool, default='True',
+                            help='whether to add group representation loss.')
+        ggroup.add_argument('--grp_loss_weight', type=float, default=1e-2,
+                            help='Factor of the grp loss in the total loss.')
+
+
     ggroup.add_argument('--normalize_post_action',action='store_true', 
                         help='If True, the representation vector is ' + 
                              'normalized after each group action')
