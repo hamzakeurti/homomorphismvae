@@ -75,6 +75,40 @@ def data_args(parser, mode='autoencoder'):
                             help='Number of observed transitions per example.')
 
 
+def data_gen_args(parser):
+    group = parser.add_argument_group("Data Generation Options")
+    group.add_argument('--out_path', type=str,
+                        help='Root directory for saving the generated '+
+                        'dataset.')
+    group.add_argument('--obj_filename', type=str,
+                        help='obj file path storing the 3D object.')
+    group.add_argument('--gen_random_seed', default=42, type=int,
+                        help='Specify data gen random seed for '+
+                             'reproducibility.')
+    group.add_argument('--batch_size', type=int, default=100, 
+                        help='Number of samples generated every loop.')
+    group.add_argument('--figsize', type=str, default="3,3", 
+                        help='Figure size in inches. Use jointly with --dpi')
+    group.add_argument('--dpi', type=int, default=24, 
+                        help='Dots per inch.')
+    group.add_argument('--mode', type=str, choices=["continuous","discrete"], 
+                        default="continuous", help='Dots per inch.')
+    group.add_argument('--action_range', type=str, default="-0.8,0.8", 
+                        help='range of small rotations')
+    group.add_argument('--n_values', type=int, default=0, 
+                        help='Number of values in the angle range for the ' + 
+                             'discrete sampling.')                              
+    group.add_argument('--n_steps', type=int, default=0, 
+                        help='Number of rotation steps from the initial ' + 
+                             'orientation.')
+    group.add_argument('--n_samples', type=int, default=10000, 
+                        help='Number of generated  ' + 
+                             'discrete sampling.')
+    
+    
+    
+
+
 def train_args(parser):
     """
     Arguments specified in this function:
