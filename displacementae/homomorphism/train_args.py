@@ -47,3 +47,12 @@ def parse_cmd_arguments(representation=Representation.BLOCK_ROTS,
     config.intervene = True
     return config
 
+def process_config(config):
+
+    # Process plotting options
+    if config.no_plots:
+        config.plot_reconstruction = False
+        config.plot_manifold = False
+        config.plot_matrices = False
+        
+    return config

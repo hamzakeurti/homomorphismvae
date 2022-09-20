@@ -215,6 +215,12 @@ def misc_args(parser, dout_dir=None):
                         help='Whether to plot using dark background style')
     mgroup.add_argument('--no_plots', action='store_true',
                         help='Whether to plot figures')
+    mgroup.add_argument('--plot_reconstruction', action='store_true',
+                        help='Whether to plot reconstrucion figures')
+    mgroup.add_argument('--plot_manifold', action='store_true',
+                        help='Whether to plot representation manifold figures')
+    mgroup.add_argument('--plot_matrices', action='store_true',
+                        help='Whether to plot group representation figures')                        
     mgroup.add_argument('--plot_manifold_latent', type=str, default='',
                         help='Which latent units to visualize the manifold of.')
     mgroup.add_argument('--plot_vary_latents', type=str, default='',

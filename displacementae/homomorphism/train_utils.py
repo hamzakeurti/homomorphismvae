@@ -61,22 +61,25 @@ def setup_optimizer(params, config):
 def evaluate(dhandler:trns_data.TransitionDataset,
              nets:ms_ae.MultistepAutoencoder,
              device, config, shared, logger, mode, epoch,
-             save_fig=False, plot=False):
+             save_fig=False, plot=False, plot_reconstruction:bool=False, 
+             plot_manifold:bool=False, plot_matrices:bool=False):
+
     nets.eval()
     if epoch == 0:
         shared.bce_loss = []
         shared.learned_repr = []
         if config.variational:
             shared.kl_loss = []
-        if config.grp_loss_on:
+        if nets.grp_morphism.repr_loss_on:
             shared.grp_loss = []
 
     if epoch % config.val_epoch == 0:
 
         with torch.no_grad():
             batch = dhandler.get_val_batch()
-            imgs, latents, dj = [torch.from_numpy(elem).to(device)
-                                 for elem in batch]
+            imgs, _, dj = batch
+            imgs, dj = [torch.from_numpy(elem).to(device)
+                                 for elem in [imgs, dj]]
             # imgs is of shape
             # [batch_size, n_steps+1, channels, height, width]
             # dj is of shape [batch_size, n_steps, n_actions]
@@ -129,10 +132,6 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 grp_loss = nets.grp_morphism.representation_loss(dj)
                 total_loss += config.grp_loss_weight * grp_loss
 
-            # Get representation matrices for typical actions
-            a_in, a = dhandler.get_example_actions()
-            example_R = nets.grp_morphism.get_example_repr(
-                            torch.from_numpy(a_in).float().to(device))
 
             ### Logging
             logger.info(f'EVALUATION prior to epoch [{epoch}]...')
@@ -158,21 +157,26 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 if nets.grp_morphism.repr_loss_on:
                     log_dict['val/gl_loss'] = grp_loss.item()
                 wandb.log(log_dict)
-            if (epoch % config.plot_epoch == 0):
+
+            if config.plot_matrices and (epoch % config.plot_epoch == 0):
+            # Get representation matrices for typical actions
+                a_in, a = dhandler.get_example_actions()
+                example_R = nets.grp_morphism.get_example_repr(
+                                torch.from_numpy(a_in).float().to(device))
+
+                shared.actions = a.tolist()
+                shared.learned_repr = example_R.tolist()        
                 # log_dict['val/learned_repr']=example_R.tolist()
                 fig_dir = os.path.join(config.out_dir, 'figures')
                 figname=os.path.join(fig_dir,'learned_repr_')
                 plt_utils.plot_matrix(example_R, a, config,
                                       logger, figname=figname)
-        
             # Save Losses
             shared.bce_loss.append(bce_loss_per_image.tolist())
             if nets.variational:
                 shared.kl_loss.append(kl_loss.item())
             if nets.grp_morphism.repr_loss_on:
                 shared.grp_loss.append(grp_loss.item())
-            shared.learned_repr = example_R.tolist()
-            shared.actions = a.tolist()
 
             shared.summary[LOSS_FINAL] = total_loss.item()
             if shared.summary[LOSS_LOWEST] == -1 or\
@@ -203,26 +207,29 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             if save_fig:
                 figname = os.path.join(fig_dir, f'{epoch}_')
                 shared.figname = figname
-            plt_utils.plot_n_step_reconstruction(dhandler, nets, config,
+            if config.plot_reconstruction:
+                plt_utils.plot_n_step_reconstruction(dhandler, nets, config,
                                                  device, logger, figname)
-            vary_latents = misc.str_to_ints(config.plot_vary_latents)
-            plot_latent = misc.str_to_ints(config.plot_manifold_latent)
-            if len(plot_latent) > 0:
-                if not isinstance(plot_latent[0], list):
-                    plot_latent = [plot_latent]
-                    vary_latents = [vary_latents]
-                for i in range(len(vary_latents)):
-                    if config.plot_pca:
-                        plt_utils.plot_manifold_pca(dhandler, nets, shared, config,
-                                                    device, logger, mode, epoch,
-                                                    vary_latents=vary_latents[i],
-                                                    figname=figname)
-                    else:
-                        plt_utils.plot_manifold(dhandler, nets, shared, config, 
-                                        device, logger, mode, epoch, 
-                                        vary_latents=vary_latents[i],
-                                        plot_latent=plot_latent[i], 
-                                        figname=figname)
+            
+            if config.plot_manifold:
+                vary_latents = misc.str_to_ints(config.plot_vary_latents)
+                plot_latent = misc.str_to_ints(config.plot_manifold_latent)
+                if len(plot_latent) > 0:
+                    if not isinstance(plot_latent[0], list):
+                        plot_latent = [plot_latent]
+                        vary_latents = [vary_latents]
+                    for i in range(len(vary_latents)):
+                        if config.plot_pca:
+                            plt_utils.plot_manifold_pca(dhandler, nets, shared, config,
+                                                        device, logger, mode, epoch,
+                                                        vary_latents=vary_latents[i],
+                                                        figname=figname)
+                        else:
+                            plt_utils.plot_manifold(dhandler, nets, shared, config, 
+                                            device, logger, mode, epoch, 
+                                            vary_latents=vary_latents[i],
+                                            plot_latent=plot_latent[i], 
+                                            figname=figname)
     nets.train()
 
 def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, 
@@ -250,8 +257,8 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
 
         for i, batch in enumerate(dloader):
             optim.zero_grad()
-
-            imgs, latents, dj = [elem.to(device) for elem in batch]
+            imgs, _, dj = batch 
+            imgs, dj = [elem.to(device) for elem in (imgs, dj)]
             # imgs is of shape [batch_size, n_steps+1, channels, height, width]
             # dj is of shape [batch_size, n_steps, n_actions]
 

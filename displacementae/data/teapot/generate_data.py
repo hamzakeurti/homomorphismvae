@@ -31,7 +31,7 @@ import __init__
 import data.teapot.gen_args as gargs
 import utils.misc as misc
 
-def read_obj(filename):
+def read_obj(filename, center=True):
     # Code taken from https://yuchen52.medium.com/beyond-data-scientist-3d-plots-in-python-with-examples-2a8bd7aa654b
     triangles = []
     vertices = []
@@ -47,7 +47,10 @@ def read_obj(filename):
                 # e.g. "v  30.2180 89.5757 -76.8089"
                 vertex = list(map(lambda c: float(c), components[1:]))
                 vertices.append(vertex)
-    return np.array(vertices), np.array(triangles)
+    vertices = np.array(vertices)
+    if center:
+        vertices -= vertices.mean(axis=0)[None,:]
+    return vertices, np.array(triangles)
 
 
 
@@ -136,7 +139,7 @@ def get_image(vertices, triangles, figsize=(3,3), dpi=36):
     Plots a 3D view of the object and returns it as a numpy array.
     """
     fig = plt.figure(figsize=figsize,dpi=dpi)   
-    ax = fig.add_subplot(projection='3d')
+    ax = plt.axes(projection='3d')
 
     lim = 1.5
     ax.set_xlim([-lim,lim])
@@ -155,6 +158,7 @@ def get_image(vertices, triangles, figsize=(3,3), dpi=36):
     # image = np.moveaxis(image,-1,0)
     plt.close()
     return image
+
 
 def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
     """
@@ -210,11 +214,15 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24,
         n_batches = n_samples//batch_size
         for i in range(n_batches):
             print(f'Sampling batch {i}/{n_batches}')
-            v, a = sample_n_steps_orientations_from_canonical(vertices,batch_size=batch_size,n_steps=n_steps,mode=mode,n_values=n_values,action_range=action_range)
-            images = vertices_to_images(v,triangles,figsize=figsize,dpi=dpi)
+            v, a = sample_n_steps_orientations_from_canonical(
+                    vertices, batch_size=batch_size,
+                    n_steps=n_steps, mode=mode,
+                    n_values=n_values, action_range=action_range)
+            images = vertices_to_images(
+                    v, triangles, figsize=figsize, dpi=dpi)
             dset_img[i*batch_size:(i+1)*batch_size] = images
             dset_rot[i*batch_size:(i+1)*batch_size] = a
-    return
+    return 
 
 
 if __name__=='__main__':
