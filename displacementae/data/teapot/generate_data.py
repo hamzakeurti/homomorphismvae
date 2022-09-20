@@ -109,13 +109,13 @@ def sample_n_steps_orientations_from_canonical(
     low, high = action_range
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
-        dtype=np.half)
+        dtype=np.float32)
     
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
         shape=(batch_size, n_steps+1, 3),
-        dtype=np.half)
+        dtype=np.float32)
     # Sample initial positions
     v_out[:,0,...], a_out[:,0,...] = sample_orientations_from_canonical(
                     vertices, batch_size, mode=mode,
@@ -123,6 +123,7 @@ def sample_n_steps_orientations_from_canonical(
     # for step
     #    sample orientations
     for step in range(n_steps):
+
         v_out[:,step+1,...], a_out[:,step+1,...] = sample_orientations_from_orientations(
                     vertices=v_out[:,step,...],
                     mode=mode, n_values=n_values, low=low, high=high)
@@ -180,6 +181,8 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
     images_out = np.zeros(shape=[*v.shape[:-2],h,w,3])
     # v = v.reshape([-1,*v.shape[-2:]])
     for i in range(v.shape[0]):
+        # if i%10 == 9:
+        print(f'iter {i}/{v.shape[0]}')
         for j in range(v.shape[1]):
             images_out[i,j] = get_image(v[i,j], triangles,
                                         figsize=figsize, dpi=dpi)
@@ -198,14 +201,15 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24,
         dset_img = f.create_dataset('images', 
                 shape=(n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
                 maxshape=(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
-                dtype=np.half)
+                dtype=np.float32)
         dset_rot = f.create_dataset('rotations', 
                 shape=(n_samples, n_steps+1, 3), 
                 maxshape=(None, n_steps+1, 3),
-                dtype=np.half)
+                dtype=np.float32)
 
         n_batches = n_samples//batch_size
         for i in range(n_batches):
+            print(f'Sampling batch {i}/{n_batches}')
             v, a = sample_n_steps_orientations_from_canonical(vertices,batch_size=batch_size,n_steps=n_steps,mode=mode,n_values=n_values,action_range=action_range)
             images = vertices_to_images(v,triangles,figsize=figsize,dpi=dpi)
             dset_img[i*batch_size:(i+1)*batch_size] = images
