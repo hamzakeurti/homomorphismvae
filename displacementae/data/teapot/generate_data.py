@@ -112,13 +112,13 @@ def sample_n_steps_orientations_from_canonical(
     low, high = action_range
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
-        dtype=np.half)
+        dtype=np.float32)
     
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
         shape=(batch_size, n_steps+1, 3),
-        dtype=np.half)
+        dtype=np.float32)
     # Sample initial positions
     v_out[:,0,...], a_out[:,0,...] = sample_orientations_from_canonical(
                     vertices, batch_size, mode=mode,
@@ -126,6 +126,7 @@ def sample_n_steps_orientations_from_canonical(
     # for step
     #    sample orientations
     for step in range(n_steps):
+
         v_out[:,step+1,...], a_out[:,step+1,...] = sample_orientations_from_orientations(
                     vertices=v_out[:,step,...],
                     mode=mode, n_values=n_values, low=low, high=high)
@@ -184,6 +185,8 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
     images_out = np.zeros(shape=[*v.shape[:-2],h,w,3])
     # v = v.reshape([-1,*v.shape[-2:]])
     for i in range(v.shape[0]):
+        # if i%10 == 9:
+        print(f'iter {i}/{v.shape[0]}')
         for j in range(v.shape[1]):
             images_out[i,j] = get_image(v[i,j], triangles,
                                         figsize=figsize, dpi=dpi)
@@ -196,16 +199,29 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
 def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      mode='continuous', n_values=None, 
                      action_range=[-np.pi/2,np.pi/2],
-                     n_steps=2, n_samples=10000):
-    vertices, triangles = read_obj(obj_filename)
+                     n_steps=2, n_samples=10000, chunk_size=0, center=True):
+    n_actions=3
+    vertices, triangles = read_obj(obj_filename, center)
     with h5py.File(out_path, "w") as f:
-        dset_img = f.create_dataset('images', 
+        if chunk_size:
+            dset_img = f.create_dataset('images', 
                 shape=(n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
                 maxshape=(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
+                chunks=(chunk_size, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
+                dtype=np.float32,)
+            dset_rot = f.create_dataset('rotations', 
+                shape=(n_samples, n_steps+1, n_actions), 
+                maxshape=(None, n_steps+1, n_actions),
+                chunks=(chunk_size,n_steps+1, n_actions),
                 dtype=np.float32)
-        dset_rot = f.create_dataset('rotations', 
-                shape=(n_samples, n_steps+1, 3), 
-                maxshape=(None, n_steps+1, 3),
+        else:
+            dset_img = f.create_dataset('images', 
+                shape=(n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
+                maxshape=(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
+                dtype=np.float32,)
+            dset_rot = f.create_dataset('rotations', 
+                shape=(n_samples, n_steps+1, n_actions), 
+                maxshape=(None, n_steps+1, n_actions),
                 dtype=np.float32)
 
         n_batches = n_samples//batch_size
@@ -244,4 +260,5 @@ if __name__=='__main__':
                      n_values=config.n_values, 
                      action_range=action_range,
                      n_steps=config.n_steps, 
-                     n_samples=config.n_samples)
+                     n_samples=config.n_samples,
+                     center=config.center)

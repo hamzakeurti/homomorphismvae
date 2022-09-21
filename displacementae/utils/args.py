@@ -82,6 +82,11 @@ def data_gen_args(parser):
                         'dataset.')
     group.add_argument('--obj_filename', type=str,
                         help='obj file path storing the 3D object.')
+    group.add_argument('--center', action='store_true',
+                        help='Center the 3D object by substracting '+
+                             'mean vertex.')
+    group.add_argument('--chunk_size', type=int, default=0,
+                        help='number of samples per chunk, if 0 no chunking')
     group.add_argument('--gen_random_seed', default=42, type=int,
                         help='Specify data gen random seed for '+
                              'reproducibility.')
