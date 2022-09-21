@@ -229,8 +229,11 @@ if __name__=='__main__':
         os.makedirs(os.path.dirname(config.out_path))
     figsize = misc.str_to_ints(config.figsize)
     action_range = misc.str_to_floats(config.action_range)
+
     if config.mode == 'continuous':
         config.n_values = None
+
+    np.random.seed(config.gen_random_seed)
     
     generate_dataset(obj_filename=config.obj_filename, 
                      out_path=config.out_path, 
