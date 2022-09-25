@@ -122,14 +122,14 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
                                       nrows * unit_length))
     kwargs = {'vmin': 0, 'vmax': 1, 'cmap': 'gray'}
     for row in range(nrows):
-        axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
-        if config.reconstruct_first:
-            axes[row,1].imshow(Xi_hat[row,0,0].cpu().numpy(),**kwargs)
-            s = 2
-        else:
+        if not config.reconstruct_first:
+            axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
             s = 1
-        for i in range(n_steps):
-            axes[row,2*i+s].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)
+        else:
+            s = 0
+        
+        for i in range(Xi_hat.shape[1]):
+            axes[row,2*i+s].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)#should be i+1
             axes[row,2*i+s+1].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
         if config.plot_on_black:
             for j in range(ncols):
