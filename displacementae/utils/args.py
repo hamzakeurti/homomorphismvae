@@ -96,9 +96,11 @@ def data_gen_args(parser):
                         help='Figure size in inches. Use jointly with --dpi')
     group.add_argument('--dpi', type=int, default=24, 
                         help='Dots per inch.')
+    group.add_argument('--lim', type=int, default=3, 
+                        help='Axis limit.')
     group.add_argument('--mode', type=str, choices=["continuous","discrete"], 
                         default="continuous", help='Dots per inch.')
-    group.add_argument('--action_range', type=str, default="-0.8,0.8", 
+    group.add_argument('--rots_range', type=str, default="-0.8,0.8", 
                         help='range of small rotations')
     group.add_argument('--n_values', type=int, default=0, 
                         help='Number of values in the angle range for the ' + 
@@ -109,7 +111,15 @@ def data_gen_args(parser):
     group.add_argument('--n_samples', type=int, default=10000, 
                         help='Number of generated  ' + 
                              'discrete sampling.')
-    
+    group.add_argument('--translate', action='store_true', 
+                        help='Whether to also act with translations.')
+    group.add_argument('--translation_grid', type=int, default=3, 
+                        help='Half the number of positions for each axis.')
+    group.add_argument('--translation_stepsize', type=float, default=0.3, 
+                        help='Elementary translation for each direction.')
+    group.add_argument('--translation_range', type=int, default=1, 
+                        help='Half the range of the small displacements.')
+
     
     
 

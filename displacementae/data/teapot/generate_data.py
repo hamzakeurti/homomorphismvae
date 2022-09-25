@@ -103,13 +103,59 @@ def sample_orientations_from_orientations(vertices, mode='continuous',
     v_out = np.einsum('ijb,bvj->bvi',R,vertices)
     return v_out,p
 
+def sample_poses_from_canonical(vertices, batch_size, mode='continuous',n_values=None, translation_grid=5, translation_stepsize=0.5):
+    if mode == 'discrete':
+        p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
+    elif mode == 'continuous':
+        p = np.random.random([batch_size,3])
+    p = 2*np.pi*p
+    R = rotation_matrix(*p.T)
+    v_out = np.einsum('ijb,vj->bvi',R,vertices)
+    t = (np.random.randint(translation_grid*2+1, size=[batch_size,3]) - translation_grid)*translation_stepsize
+    v_out += t[:,None,:]
+    p = np.hstack([p,t])
+    return v_out, p, t
+
+def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.pi, 
+                                          high=np.pi ,translation_grid=5, translation_stepsize=0.5, translation_range=1):
+    batch_size = vertices.shape[0]
+    if mode == 'discrete':
+        p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
+    elif mode == 'continuous':
+        p = np.random.random([batch_size,3])
+    range = high-low
+    p *= range
+    p += low
+
+    R = rotation_matrix(*p.T)
+    
+    g = translation_grid
+    s =translation_stepsize
+    r = translation_range
+    t = (np.random.randint(r*2+1, size=[batch_size,3]) - r)* s
+    
+    # recenter rotate then translate back to new translated pos
+    pos = vertices.mean(axis=1)
+    v_out = vertices - pos[:,None,:]
+    v_out = np.einsum('ijb,bvj->bvi',R,v_out) # rotate
+    
+    # cyclic tranlations
+    new_pos = np.round((pos + t)/s + g) % (2*g+1) # FIX
+    new_pos = (new_pos - g)*s
+    v_out += new_pos[:,None,:]
+    
+    p = np.hstack([p,t])
+    return v_out,p, new_pos/translation_stepsize
+
+
+
 
 
 def sample_n_steps_orientations_from_canonical(
             vertices, batch_size, n_steps=2, mode='continuous',n_values=None,
-            action_range=(-np.pi,np.pi)):
+            rots_range=(-np.pi,np.pi)):
     
-    low, high = action_range
+    low, high = rots_range
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
         dtype=np.float32)
@@ -134,14 +180,53 @@ def sample_n_steps_orientations_from_canonical(
 
     return v_out, a_out
 
-def get_image(vertices, triangles, figsize=(3,3), dpi=36):
+
+def sample_n_steps_poses_from_canonical(
+            vertices, batch_size, n_steps=2, mode='continuous',n_values=None,
+            rots_range=(-np.pi,np.pi),translation_grid=3,translation_stepsize=0.5,translation_range=1):
+    
+    low, high = rots_range
+    v_out = np.zeros(
+        shape=(batch_size, n_steps+1, *vertices.shape),
+        dtype=np.float32)
+    
+    # First action angles corresponds to rotation from the canonical view of 
+    # the first image
+    a_out = np.zeros(
+        shape=(batch_size, n_steps+1, 6),
+        dtype=np.float32)
+    pos_out = np.zeros(
+        shape=(batch_size, n_steps+1, 3),
+        dtype=np.float32)
+    # Sample initial positions
+    v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
+         sample_poses_from_canonical(
+                    vertices, batch_size, mode=mode,
+                    n_values=n_values,
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize)
+    # for step
+    #    sample poses
+    for step in range(n_steps):
+
+        v_out[:,step+1,...], a_out[:,step+1,...], pos_out[:,step+1,...] =\
+             sample_poses_from_poses(
+                    vertices=v_out[:,step,...],
+                    mode=mode, n_values=n_values, low=low, high=high,
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize,
+                    translation_range=translation_range)
+
+
+    return v_out, a_out, pos_out
+
+def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5):
     """
     Plots a 3D view of the object and returns it as a numpy array.
     """
     fig = plt.figure(figsize=figsize,dpi=dpi)   
     ax = plt.axes(projection='3d')
 
-    lim = 1.5
     ax.set_xlim([-lim,lim])
     ax.set_ylim([-lim,lim])
     ax.set_zlim([-lim,lim])
@@ -160,7 +245,7 @@ def get_image(vertices, triangles, figsize=(3,3), dpi=36):
     return image
 
 
-def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
+def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5):
     """
     Converts a batch of vertices arrays to a batch of figures 
 
@@ -175,6 +260,7 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
                         transformed versions of the solid.
         figsize (tuple): in inches, describes the figure size for each plot.
         dpi (int):      dots per inch, number of pixels per inch in the figure, 
+        lim (int):      Extent of the axis displayed is fixed to [-lim,lim]
 
     Returns:
         ndarray: a batch of images.
@@ -189,52 +275,78 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24):
         print(f'iter {i}/{v.shape[0]}')
         for j in range(v.shape[1]):
             images_out[i,j] = get_image(v[i,j], triangles,
-                                        figsize=figsize, dpi=dpi)
+                                        figsize=figsize, dpi=dpi, lim=lim)
     images_out /= 255
     images_out = np.moveaxis(images_out,-1,-3)
     return images_out
 
 
 
-def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
+def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
                      mode='continuous', n_values=None, 
-                     action_range=[-np.pi/2,np.pi/2],
+                     rots_range=[-np.pi/2,np.pi/2],
+                     translate=False,
+                     translation_grid=3,
+                     translation_stepsize=0.5,
+                     translation_range=1,
                      n_steps=2, n_samples=10000, chunk_size=0, center=True):
-    n_actions=3
+    
+    NPOS = 3 #number of dimensions for 3D position
+    if translate:
+        n_actions=6
+    else:
+        n_actions=3
     vertices, triangles = read_obj(obj_filename, center)
     with h5py.File(out_path, "w") as f:
+        kwargs_images = {
+            'dtype':np.float32,
+            'shape' : (n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
+            'maxshape':(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
+            }
+        kwargs_actions = {
+            'dtype':np.float32,
+            'shape':(n_samples, n_steps+1, n_actions), 
+            'maxshape':(None, n_steps+1, n_actions),
+            }
+        kwargs_pos = {
+            'dtype':np.float32,
+            'shape':(n_samples, n_steps+1, NPOS), 
+            'maxshape':(None, n_steps+1, NPOS),
+            }
         if chunk_size:
-            dset_img = f.create_dataset('images', 
-                shape=(n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
-                maxshape=(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
-                chunks=(chunk_size, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
-                dtype=np.float32,)
-            dset_rot = f.create_dataset('rotations', 
-                shape=(n_samples, n_steps+1, n_actions), 
-                maxshape=(None, n_steps+1, n_actions),
-                chunks=(chunk_size,n_steps+1, n_actions),
-                dtype=np.float32)
-        else:
-            dset_img = f.create_dataset('images', 
-                shape=(n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
-                maxshape=(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
-                dtype=np.float32,)
-            dset_rot = f.create_dataset('rotations', 
-                shape=(n_samples, n_steps+1, n_actions), 
-                maxshape=(None, n_steps+1, n_actions),
-                dtype=np.float32)
+            kwargs_images['chunks'] = (chunk_size, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi)
+            kwargs_actions['chunks'] = (chunk_size, n_steps+1, n_actions)
+            kwargs_pos['chunks'] = (chunk_size, n_steps+1, NPOS)
+        
+        dset_img = f.create_dataset('images', **kwargs_images)
+        dset_rot = f.create_dataset('actions', **kwargs_actions)
+        if translate:
+            dset_pos = f.create_dataset('positions', **kwargs_pos)
+
 
         n_batches = n_samples//batch_size
         for i in range(n_batches):
             print(f'Sampling batch {i}/{n_batches}')
-            v, a = sample_n_steps_orientations_from_canonical(
+            if translate:
+                v, a, pos = sample_n_steps_poses_from_canonical(
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
-                    n_values=n_values, action_range=action_range)
+                    n_values=n_values, rots_range=rots_range,
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize,
+                    translation_range=translation_range)
+            else:
+                v, a = sample_n_steps_orientations_from_canonical(
+                    vertices, batch_size=batch_size,
+                    n_steps=n_steps, mode=mode,
+                    n_values=n_values, rots_range=rots_range)
             images = vertices_to_images(
-                    v, triangles, figsize=figsize, dpi=dpi)
+                    v, triangles, figsize=figsize, dpi=dpi, lim=lim)
             dset_img[i*batch_size:(i+1)*batch_size] = images
             dset_rot[i*batch_size:(i+1)*batch_size] = a
+            if translate:
+                dset_pos[i*batch_size:(i+1)*batch_size] = pos
+
     return 
 
 
@@ -244,7 +356,7 @@ if __name__=='__main__':
     if not os.path.exists(os.path.dirname(config.out_path)):
         os.makedirs(os.path.dirname(config.out_path))
     figsize = misc.str_to_ints(config.figsize)
-    action_range = misc.str_to_floats(config.action_range)
+    rots_range = misc.str_to_floats(config.rots_range)
 
     if config.mode == 'continuous':
         config.n_values = None
@@ -256,9 +368,15 @@ if __name__=='__main__':
                      batch_size=config.batch_size, 
                      figsize=figsize, 
                      dpi=config.dpi, 
+                     lim=config.lim,
                      mode=config.mode, 
                      n_values=config.n_values, 
-                     action_range=action_range,
+                     rots_range=rots_range,
                      n_steps=config.n_steps, 
                      n_samples=config.n_samples,
-                     center=config.center)
+                     center=config.center,
+                     translate=config.translate,
+                     translation_grid=config.translation_grid,
+                     translation_stepsize=config.translation_stepsize,
+                     translation_range=config.translation_range
+                     )
