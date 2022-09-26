@@ -81,7 +81,7 @@ class TeapotDataset(trns_dataset.TransitionDataset):
         filepath = os.path.join(self._root)
         self._file = h5py.File(filepath,'r')
         images = self._file['images'][()]
-        transitions = self._file['rotations'][()] 
+        transitions = self._file['actions'][()] 
         # images = self._file['images']
         # transitions = self._file['rotations']
         return images, transitions
