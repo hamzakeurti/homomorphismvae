@@ -96,7 +96,7 @@ def data_gen_args(parser):
                         help='Figure size in inches. Use jointly with --dpi')
     group.add_argument('--dpi', type=int, default=24, 
                         help='Dots per inch.')
-    group.add_argument('--lim', type=int, default=3, 
+    group.add_argument('--lim', type=float, default=3, 
                         help='Axis limit.')
     group.add_argument('--mode', type=str, choices=["continuous","discrete"], 
                         default="continuous", help='Dots per inch.')
