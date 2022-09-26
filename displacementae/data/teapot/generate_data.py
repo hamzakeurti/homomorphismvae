@@ -382,7 +382,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
         
         dset_img = f.create_dataset('images', **kwargs_images)
         dset_rot = f.create_dataset('actions', **kwargs_actions)
-        if translate:
+        if translate or translate_only:
             dset_pos = f.create_dataset('positions', **kwargs_pos)
 
 
@@ -413,7 +413,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                     v, triangles, figsize=figsize, dpi=dpi, lim=lim)
             dset_img[i*batch_size:(i+1)*batch_size] = images
             dset_rot[i*batch_size:(i+1)*batch_size] = a
-            if translate:
+            if translate or translate_only:
                 dset_pos[i*batch_size:(i+1)*batch_size] = pos
 
     return 
