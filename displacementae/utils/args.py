@@ -113,6 +113,8 @@ def data_gen_args(parser):
                              'discrete sampling.')
     group.add_argument('--translate', action='store_true', 
                         help='Whether to also act with translations.')
+    group.add_argument('--translate_only', action='store_true', 
+                        help='Whether to only act with translations.')
     group.add_argument('--translation_grid', type=int, default=3, 
                         help='Half the number of positions for each axis.')
     group.add_argument('--translation_stepsize', type=float, default=0.3, 

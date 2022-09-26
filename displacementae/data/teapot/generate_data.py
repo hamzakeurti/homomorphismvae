@@ -203,6 +203,9 @@ def sample_n_steps_orientations_from_canonical(
     return v_out, a_out
 
 
+
+
+
 def sample_n_steps_poses_from_canonical(
             vertices, batch_size, n_steps=2, mode='continuous',n_values=None,
             rots_range=(-np.pi,np.pi),translation_grid=3,translation_stepsize=0.5,translation_range=1):
@@ -242,42 +245,40 @@ def sample_n_steps_poses_from_canonical(
 
     return v_out, a_out, pos_out
 
-# def sample_n_steps_trans_from_canonical(
-#             vertices, batch_size, n_steps=2, translation_grid=3,translation_stepsize=0.5,translation_range=1):
+def sample_n_steps_trans_from_canonical(
+            vertices, batch_size, n_steps=2, translation_grid=3,translation_stepsize=0.5,translation_range=1):
     
-#     v_out = np.zeros(
-#         shape=(batch_size, n_steps+1, *vertices.shape),
-#         dtype=np.float32)
+    v_out = np.zeros(
+        shape=(batch_size, n_steps+1, *vertices.shape),
+        dtype=np.float32)
     
-#     # First action angles corresponds to rotation from the canonical view of 
-#     # the first image
-#     a_out = np.zeros(
-#         shape=(batch_size, n_steps+1, 3),
-#         dtype=np.float32)
-#     pos_out = np.zeros(
-#         shape=(batch_size, n_steps+1, 3),
-#         dtype=np.float32)
-#     # Sample initial positions
-#     v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
-#          sample_trans_from_canonical(
-#                     vertices, batch_size, mode=mode,
-#                     n_values=n_values,
-#                     translation_grid=translation_grid,
-#                     translation_stepsize=translation_stepsize)
-#     # for step
-#     #    sample poses
-#     for step in range(n_steps):
+    # First action angles corresponds to rotation from the canonical view of 
+    # the first image
+    a_out = np.zeros(
+        shape=(batch_size, n_steps+1, 3),
+        dtype=np.float32)
+    pos_out = np.zeros(
+        shape=(batch_size, n_steps+1, 3),
+        dtype=np.float32)
+    # Sample initial positions
+    v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
+         sample_trans_from_canonical(
+                    vertices, batch_size,
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize,)
+    # for step
+    #    sample poses
+    for step in range(n_steps):
 
-#         v_out[:,step+1,...], a_out[:,step+1,...], pos_out[:,step+1,...] =\
-#              sample_poses_from_poses(
-#                     vertices=v_out[:,step,...],
-#                     mode=mode, n_values=n_values, low=low, high=high,
-#                     translation_grid=translation_grid,
-#                     translation_stepsize=translation_stepsize,
-#                     translation_range=translation_range)
+        v_out[:,step+1,...], a_out[:,step+1,...], pos_out[:,step+1,...] =\
+             sample_trans_from_trans(
+                    vertices=v_out[:,step,...],
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize,
+                    translation_range=translation_range)
 
 
-#     return v_out, a_out, pos_out
+    return v_out, a_out, pos_out
 
 
 def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5):
@@ -346,6 +347,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      mode='continuous', n_values=None, 
                      rots_range=[-np.pi/2,np.pi/2],
                      translate=False,
+                     translate_only=False,
                      translation_grid=3,
                      translation_stepsize=0.5,
                      translation_range=1,
@@ -387,7 +389,14 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
         n_batches = n_samples//batch_size
         for i in range(n_batches):
             print(f'Sampling batch {i}/{n_batches}')
-            if translate:
+            if translate_only:
+                v, a, pos = sample_n_steps_trans_from_canonical(
+                    vertices, batch_size=batch_size,
+                    n_steps=n_steps,
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize,
+                    translation_range=translation_range)
+            elif translate:
                 v, a, pos = sample_n_steps_poses_from_canonical(
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
@@ -436,6 +445,7 @@ if __name__=='__main__':
                      n_samples=config.n_samples,
                      center=config.center,
                      translate=config.translate,
+                     translate_only=config.translate_only,
                      translation_grid=config.translation_grid,
                      translation_stepsize=config.translation_stepsize,
                      translation_range=config.translation_range
