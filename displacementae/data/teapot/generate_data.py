@@ -116,6 +116,11 @@ def sample_poses_from_canonical(vertices, batch_size, mode='continuous',n_values
     p = np.hstack([p,t])
     return v_out, p, t
 
+def sample_trans_from_canonical(vertices, batch_size, translation_grid=5, translation_stepsize=0.5):
+    t = (np.random.randint(translation_grid*2+1, size=[batch_size,3]) - translation_grid)*translation_stepsize
+    v_out = vertices[None,:,:] + t[:,None,:]
+    return v_out, t, t
+
 def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.pi, 
                                           high=np.pi ,translation_grid=5, translation_stepsize=0.5, translation_range=1):
     batch_size = vertices.shape[0]
@@ -147,7 +152,24 @@ def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.p
     p = np.hstack([p,t])
     return v_out,p, new_pos/translation_stepsize
 
+def sample_trans_from_trans(vertices, translation_grid=5, translation_stepsize=0.5, translation_range=1):
+    batch_size = vertices.shape[0]
 
+    g = translation_grid
+    s =translation_stepsize
+    r = translation_range
+    t = (np.random.randint(r*2+1, size=[batch_size,3]) - r)* s
+    
+    # recenter then translate back to new translated pos
+    pos = vertices.mean(axis=1)
+    v_out = vertices - pos[:,None,:]
+    
+    # cyclic tranlations
+    new_pos = np.round((pos + t)/s + g) % (2*g+1) 
+    new_pos = (new_pos - g)*s
+    v_out += new_pos[:,None,:]
+    
+    return v_out,t, new_pos/translation_stepsize
 
 
 
@@ -219,6 +241,44 @@ def sample_n_steps_poses_from_canonical(
 
 
     return v_out, a_out, pos_out
+
+# def sample_n_steps_trans_from_canonical(
+#             vertices, batch_size, n_steps=2, translation_grid=3,translation_stepsize=0.5,translation_range=1):
+    
+#     v_out = np.zeros(
+#         shape=(batch_size, n_steps+1, *vertices.shape),
+#         dtype=np.float32)
+    
+#     # First action angles corresponds to rotation from the canonical view of 
+#     # the first image
+#     a_out = np.zeros(
+#         shape=(batch_size, n_steps+1, 3),
+#         dtype=np.float32)
+#     pos_out = np.zeros(
+#         shape=(batch_size, n_steps+1, 3),
+#         dtype=np.float32)
+#     # Sample initial positions
+#     v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
+#          sample_trans_from_canonical(
+#                     vertices, batch_size, mode=mode,
+#                     n_values=n_values,
+#                     translation_grid=translation_grid,
+#                     translation_stepsize=translation_stepsize)
+#     # for step
+#     #    sample poses
+#     for step in range(n_steps):
+
+#         v_out[:,step+1,...], a_out[:,step+1,...], pos_out[:,step+1,...] =\
+#              sample_poses_from_poses(
+#                     vertices=v_out[:,step,...],
+#                     mode=mode, n_values=n_values, low=low, high=high,
+#                     translation_grid=translation_grid,
+#                     translation_stepsize=translation_stepsize,
+#                     translation_range=translation_range)
+
+
+#     return v_out, a_out, pos_out
+
 
 def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5):
     """
