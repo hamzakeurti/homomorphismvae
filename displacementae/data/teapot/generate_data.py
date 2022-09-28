@@ -73,10 +73,10 @@ def sample_orientations_from_canonical(
     """
     Produce a batch of different orientations from a single starting orientation.
     """
-    if mode == 'discrete':
-        p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
-    elif mode == 'continuous':
-        p = np.random.random([batch_size,3])
+    # if mode == 'discrete':
+    #     p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
+    # elif mode == 'continuous':
+    p = np.random.random([batch_size,3])
     p = 2*np.pi*p
     R = rotation_matrix(*p.T)
     v_out = np.einsum('ijb,vj->bvi',R,vertices)
@@ -104,10 +104,10 @@ def sample_orientations_from_orientations(vertices, mode='continuous',
     return v_out,p
 
 def sample_poses_from_canonical(vertices, batch_size, mode='continuous',n_values=None, translation_grid=5, translation_stepsize=0.5):
-    if mode == 'discrete':
-        p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
-    elif mode == 'continuous':
-        p = np.random.random([batch_size,3])
+    # if mode == 'discrete':
+    #     p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
+    # elif mode == 'continuous':
+    p = np.random.random([batch_size,3])
     p = 2*np.pi*p
     R = rotation_matrix(*p.T)
     v_out = np.einsum('ijb,vj->bvi',R,vertices)
