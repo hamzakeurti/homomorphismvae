@@ -120,17 +120,27 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
     fig, axes = plt.subplots(nrows, ncols,
                              figsize=(ncols * unit_length,
                                       nrows * unit_length))
-    kwargs = {'vmin': 0, 'vmax': 1, 'cmap': 'gray'}
+    kwargs = {'vmin': 0, 'vmax': 1}
+    if imgs.shape[3] == 1:
+        kwargs['cmap'] = 'gray'
+        Xi = Xi[:,:,0].cpu().numpy()
+        Xi_hat = Xi_hat[:,:,0].cpu().numpy()
+        X1 = X1[:,0].cpu().numpy()
+    else:
+        Xi = np.moveaxis(Xi.cpu().numpy(),-3,-1)
+        Xi_hat = np.moveaxis(Xi_hat.cpu().numpy(),-3,-1)
+        X1 = np.moveaxis(X1.cpu().numpy(),-3,-1)
+
     for row in range(nrows):
         if not config.reconstruct_first:
-            axes[row,0].imshow(X1[row,0].cpu().numpy(),**kwargs)
+            axes[row,0].imshow(X1,**kwargs)
             s = 1
         else:
             s = 0
         
         for i in range(Xi_hat.shape[1]):
-            axes[row,2*i+s].imshow(Xi[row,i,0].cpu().numpy(),**kwargs)#should be i+1
-            axes[row,2*i+s+1].imshow(Xi_hat[row,i,0].cpu().numpy(),**kwargs)
+            axes[row,2*i+s].imshow(Xi[row,i],**kwargs)#should be i+1
+            axes[row,2*i+s+1].imshow(Xi_hat[row,i],**kwargs)
         if config.plot_on_black:
             for j in range(ncols):
                 axes[row, j].axes.xaxis.set_visible(False)
