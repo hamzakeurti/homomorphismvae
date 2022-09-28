@@ -92,6 +92,8 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
 
 
 def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
+    # always reonstruct first, even when not considered in loss
+    reconstruct_first = 1
     if config.plot_on_black:
         plt.style.use('dark_background')
 
@@ -99,7 +101,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
 
     imgs, latents, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(imgs[:,0]).to(device)
-    if config.reconstruct_first:
+    if reconstruct_first:
         Xi = torch.FloatTensor(imgs).to(device)
     else:
         Xi = torch.FloatTensor(imgs[:,1:]).to(device)
@@ -110,7 +112,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
     Xi_hat = torch.sigmoid(h)
 
     nrows = 7
-    if config.reconstruct_first:
+    if reconstruct_first :
         ncols = 2 + 2*n_steps
     else:
         ncols = 1 + 2*n_steps
@@ -132,7 +134,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
         X1 = np.moveaxis(X1.cpu().numpy(),-3,-1)
 
     for row in range(nrows):
-        if not config.reconstruct_first:
+        if not reconstruct_first:
             axes[row,0].imshow(X1,**kwargs)
             s = 1
         else:

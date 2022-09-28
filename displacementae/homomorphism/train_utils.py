@@ -95,7 +95,9 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             # All other images to predict
             if config.reconstruct_first:
                 xi = imgs
-            else:
+            elif config.reconstruct_first_only:
+                xi = imgs[:,0]
+            else:    
                 xi = imgs[:,1:]
           
             # =========================
@@ -109,15 +111,26 @@ def evaluate(dhandler:trns_data.TransitionDataset,
             h_hat = nets.act(h, dj)
             xi_hat = torch.sigmoid(nets.decode(h_hat))
             if config.latent_loss:
-                h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
-                h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
+                # h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+                # h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
+
+                h_code, _, _ = nets.encode(imgs.reshape(-1, *imgs.shape[2:]))
+                h_code = h_code.reshape(*imgs.shape[:2], h_code.shape[-1])
+
 
             ### Losses
             # Reconstruction
-            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+            if config.reconstruct_first:
+                bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+            elif config.reconstruct_first_only:
+                bce_loss_elementwise = var_utils.bce_loss(xi_hat[:,0], imgs[:,0], 'none')
+                bce_loss_elementwise = bce_loss_elementwise[:,None]
+            else:
+                bce_loss_elementwise = var_utils.bce_loss(xi_hat[:,1:], imgs[:,1:], 'none')
+            n_img = bce_loss_elementwise.shape[1]
             bce_loss_per_image =\
                 bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
-            bce_loss = bce_loss_per_image.sum()/config.n_steps
+            bce_loss = bce_loss_per_image.sum()/n_img
             total_loss = bce_loss
             # KL
             if config.variational:
@@ -125,7 +138,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                 total_loss += config.beta * kl_loss
             # Latent Loss
             if config.latent_loss:
-                latent_loss = (h_code - h_hat).square().mean()
+                latent_loss = (h_code[:,1:] - h_hat[:,1:]).square().mean()
                 total_loss += config.latent_loss_weight * latent_loss
             # Grp Loss
             if nets.grp_morphism.repr_loss_on:
@@ -285,31 +298,34 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
             h_hat = nets.act(h, dj)
             xi_hat = torch.sigmoid(nets.decode(h_hat))
             if config.latent_loss:
-                h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
-                h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
+                # h_code, _, _ = nets.encode(xi.reshape(-1, *imgs.shape[2:]))
+                # h_code = h_code.reshape(*xi.shape[:2], h_code.shape[-1])
 
+                h_code, _, _ = nets.encode(imgs.reshape(-1, *imgs.shape[2:]))
+                h_code = h_code.reshape(*imgs.shape[:2], h_code.shape[-1])
 
 
             ### Losses
-            # consistency
             # Reconstruction
-            # bce_loss_1 = var_utils.bce_loss(x1_hat, x1, 'none').unsqueeze(1)
-            bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+            if config.reconstruct_first:
+                bce_loss_elementwise = var_utils.bce_loss(xi_hat, xi, 'none')
+            elif config.reconstruct_first_only:
+                bce_loss_elementwise = var_utils.bce_loss(xi_hat[:,0], imgs[:,0], 'none')
+                bce_loss_elementwise = bce_loss_elementwise[:,None]
+            else:
+                bce_loss_elementwise = var_utils.bce_loss(xi_hat[:,1:], imgs[:,1:], 'none')
+            n_img = bce_loss_elementwise.shape[1]
             bce_loss_per_image =\
                 bce_loss_elementwise.sum(dim=[0,2,3,4])/x1.shape[0]
-            bce_loss = bce_loss_per_image.sum()/config.n_steps
+            bce_loss = bce_loss_per_image.sum()/n_img
             total_loss = bce_loss
-
-            # bce_loss = torch.cat([bce_loss_1, bce_loss_n], dim=1).mean()
-            #bce_loss = (bce_loss_1 + bce_loss_n) / (x1.shape[0] * (config.n_steps + 1))
-            #bce_loss = var_utils.bce_loss(xi_hat, xi, 'none').mean()
-            # total_loss = bce_loss
-            if nets.variational:
-                # KL
+            # KL
+            if config.variational:
                 kl_loss = var_utils.kl_loss(mu, logvar)
                 total_loss += config.beta * kl_loss
+            # Latent Loss
             if config.latent_loss:
-                latent_loss = (h_code - h_hat).square().mean()
+                latent_loss = (h_code[:,1:] - h_hat[:,1:]).square().mean()
                 total_loss += config.latent_loss_weight * latent_loss
             # Grp Loss
             if nets.grp_morphism.repr_loss_on:

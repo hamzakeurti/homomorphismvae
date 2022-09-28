@@ -209,6 +209,9 @@ def net_args(parser):
                         help='Reconstructs the input prior to any action, '+
                              'this pathway is equivalent to a classic '+
                              'AutoEncoder.')
+    ngroup.add_argument('--reconstruct_first_only',action='store_true',
+                        help='Reconstructs the input prior to any action, '+
+                             'and not the following steps.')
     ngroup.add_argument('--latent_loss',action='store_true',
                         help='Whether to enforce equivariance '+
                              'at the latents level')
