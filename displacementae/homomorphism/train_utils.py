@@ -256,6 +256,8 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
         #scheduler.toggle_train()
 
         for i, batch in enumerate(dloader):
+            if i==config.n_iter:
+                break
             optim.zero_grad()
             imgs, _, dj = batch 
             imgs, dj = [elem.to(device) for elem in (imgs, dj)]
