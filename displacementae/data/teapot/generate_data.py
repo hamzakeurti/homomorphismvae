@@ -306,7 +306,7 @@ def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5):
     return image
 
 
-def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5):
+def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5,crop=0):
     """
     Converts a batch of vertices arrays to a batch of figures 
 
@@ -339,6 +339,8 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5):
                                         figsize=figsize, dpi=dpi, lim=lim)
     images_out /= 255
     images_out = np.moveaxis(images_out,-1,-3)
+    if crop:
+        images_out = images_out[...,crop:-crop,crop:-crop]
     return images_out
 
 
@@ -351,7 +353,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      translation_grid=3,
                      translation_stepsize=0.5,
                      translation_range=1,
-                     n_steps=2, n_samples=10000, chunk_size=0, center=True):
+                     n_steps=2, n_samples=10000, chunk_size=0, center=True, crop=0):
     
     NPOS = 3 #number of dimensions for 3D position
     if translate:
@@ -362,8 +364,10 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
     with h5py.File(out_path, "w") as f:
         kwargs_images = {
             'dtype':np.float32,
-            'shape' : (n_samples, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi), 
-            'maxshape':(None, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi),
+            'shape' : (n_samples, n_steps+1, 3, figsize[0]*dpi-2*crop, 
+                                                figsize[1]*dpi-2*crop), 
+            'maxshape':(None, n_steps+1, 3, figsize[0]*dpi-2*crop, 
+                                                figsize[1]*dpi-2*crop),
             }
         kwargs_actions = {
             'dtype':np.float32,
@@ -376,7 +380,8 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
             'maxshape':(None, n_steps+1, NPOS),
             }
         if chunk_size:
-            kwargs_images['chunks'] = (chunk_size, n_steps+1, 3, figsize[0]*dpi, figsize[1]*dpi)
+            kwargs_images['chunks'] = (chunk_size, n_steps+1, 3, 
+                                figsize[0]*dpi-2*crop, figsize[1]*dpi-2*crop)
             kwargs_actions['chunks'] = (chunk_size, n_steps+1, n_actions)
             kwargs_pos['chunks'] = (chunk_size, n_steps+1, NPOS)
         
@@ -410,7 +415,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                     n_steps=n_steps, mode=mode,
                     n_values=n_values, rots_range=rots_range)
             images = vertices_to_images(
-                    v, triangles, figsize=figsize, dpi=dpi, lim=lim)
+                    v, triangles, figsize=figsize, dpi=dpi, lim=lim,crop=crop)
             dset_img[i*batch_size:(i+1)*batch_size] = images
             dset_rot[i*batch_size:(i+1)*batch_size] = a
             if translate or translate_only:
@@ -448,5 +453,6 @@ if __name__=='__main__':
                      translate_only=config.translate_only,
                      translation_grid=config.translation_grid,
                      translation_stepsize=config.translation_stepsize,
-                     translation_range=config.translation_range
+                     translation_range=config.translation_range,
+                     crop=config.crop
                      )

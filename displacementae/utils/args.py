@@ -120,7 +120,9 @@ def data_gen_args(parser):
     group.add_argument('--translation_stepsize', type=float, default=0.3, 
                         help='Elementary translation for each direction.')
     group.add_argument('--translation_range', type=int, default=1, 
-                        help='Half the range of the small displacements.')
+                        help='Half the range of the small displacements.')    
+    group.add_argument('--crop', type=int, default=0, 
+                        help='Crop the image by `crop` pixels from each side.')
 
     
     
