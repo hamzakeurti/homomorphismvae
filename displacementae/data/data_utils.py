@@ -72,7 +72,9 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
 def setup_teapot_dataset(config, mode='autoencoder'):    
     dhandler = TeapotDataset(root=config.data_root, 
                              num_train=config.num_train, 
-                             num_val=config.num_val)
+                             num_val=config.num_val,
+                             resample=config.resample,
+                             num_samples=config.num_samples)
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
         shuffle=config.shuffle)

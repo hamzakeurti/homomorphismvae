@@ -245,7 +245,7 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                                             figname=figname)
     nets.train()
 
-def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, 
+def train(dhandler:trns_data.TransitionDataset, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, 
           device, logger, mode):
     params = nets.parameters()
     optim = setup_optimizer(params, config)
@@ -257,6 +257,8 @@ def train(dhandler, dloader, nets:ms_ae.MultistepAutoencoder, config, shared,
                     group2=[nets.encoder, nets.decoder])
     batch_cnt = 0
     for epoch in range(epochs):
+        if epoch % config.resample_every == (config.resample_every -1):
+            dhandler.resample_data()
         with torch.no_grad():
             evaluate(dhandler, nets, device, config, shared, logger, mode,
                      epoch, save_fig=True, plot=not config.no_plots)

@@ -43,28 +43,23 @@ class TeapotDataset(trns_dataset.TransitionDataset):
     def __init__(self, root, rseed=None, transitions_on=True,
                  n_transitions: int = None,
                  num_train=200,
-                 num_val: int = 30):
+                 num_val: int = 30,
+                 resample:bool=False,
+                 num_samples:int=200):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Read Data from file.
         self._root = root
-        self._images, self._transitions = self._process_hdf5()
+        self.resample = resample
+        self.num_samples = num_samples
 
         # Number of samples
         self.num_train = num_train
         self.num_val = num_val
         
-        n = self._images.shape[0]
-        if  n < (num_train+num_val):
-            print(f"Not enough samples {n} for chosen " + 
-                  f"--num_train {num_train} and --num_val {num_val}")
-            self.num_val = 20
-            self.num_train = self._images.shape[0] - self.num_val
-            print(f"Reset num_train to {self.num_train} " + 
-                  f"and num_val to {self.num_val}")
-            
-
-
+        self.load_data()
+        self.sample_val_batch()
+        
 
         data = {}
         data["in_shape"] = self._images.shape[2:]
@@ -74,21 +69,54 @@ class TeapotDataset(trns_dataset.TransitionDataset):
 
 
 
-    def _process_hdf5(self):
+
+    def load_data(self):
         """
-        opens the hdf5 dataset file.
+        Loads samples from an hdf5 dataset.
         """
         filepath = os.path.join(self._root)
-        self._file = h5py.File(filepath,'r')
-        images = self._file['images'][()]
-        transitions = self._file['actions'][()] 
-        # images = self._file['images']
-        # transitions = self._file['rotations']
-        return images, transitions
+        if self.resample:
+            self.resample_data()
+        else:
+            with h5py.File(filepath,'r') as f:
+                self._images = f['images'][()]
+                self._transitions = f['actions'][()] 
+            # images = self._file['images']
+            # transitions = self._file['rotations']
+
+    def resample_data(self):
+        """
+        Replaces new samples in memory.
+        """
+        if self.resample:
+            indices = np.sort(
+                    np.random.choice(
+                        self.num_train,size=self.num_samples, replace=False))
+            filepath = os.path.join(self._root)
+            with h5py.File(filepath,'r') as f:
+                self._images = f['images'][indices]
+                self._transitions = f['actions'][indices]
+        else:
+            pass 
+    
+    def sample_val_batch(self):
+        filepath = os.path.join(self._root)
+        nt = self.num_train
+        nv = self.num_val
+        with h5py.File(filepath,'r') as f:
+            n = f['images'].shape[0]
+            if  n < (nt+nv):
+                raise ValueError(f"Not enough samples {n} for chosen " + 
+                    f"--num_train {nt} and --num_val {nv}")
+            self.val_imgs = f['images'][nt:nt+nv]
+            self.val_actions = f['actions'][nt:nt+nv,1:]
 
 
     def __len__(self):
-        return self.num_train
+        if self.resample:
+            return self.num_samples
+        else:
+            return self.num_train
 
 
     def __getitem__(self, idx):
@@ -127,7 +155,8 @@ class TeapotDataset(trns_dataset.TransitionDataset):
     def get_val_batch(self):
     #     imgs = self._images[self.num_train:self.num_train+self.num_val]
     #     transitions = self._transitions[self.num_train:self.num_train+self.num_val]
-        return self[self.num_train:self.num_train+self.num_val]
+        return self.val_imgs, None, self.val_actions
+
 
 if __name__ == '__main__':
     pass

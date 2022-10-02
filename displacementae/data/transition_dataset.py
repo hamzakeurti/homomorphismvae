@@ -104,7 +104,11 @@ class TransitionDataset(Dataset):
     
     def get_val_batch(self):
         pass
+    
 
+    def resample_data(self):
+        pass
+    
     @property
     def action_shape(self) -> list:
         pass

@@ -66,7 +66,14 @@ def data_args(parser, mode='autoencoder'):
                         help='Training trajectories')
     dgroup.add_argument('--valid_trajs', type=str, default=None,
                         help='Validation trajectories')
-
+    dgroup.add_argument('--resample', action='store_true',
+                        help='Whether to partially load a different ' +
+                             'fraction of the dataset every few epochs')
+    dgroup.add_argument('--resample_every', type=int, default=10,
+                        help='Number of epochs to load a new fraction ' + 
+                             'of the data.')
+    dgroup.add_argument('--num_samples', type=int, default=100,
+                        help='Number of samples to load in memory every resampling.')
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
                             help='Whether to vary joint positions.')
