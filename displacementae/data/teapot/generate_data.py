@@ -92,7 +92,7 @@ def sample_orientations_from_orientations(vertices, mode='continuous',
     """
     batch_size = vertices.shape[0]
     if mode == 'discrete':
-        p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
+        p = np.random.randint(n_values,size=[batch_size,3])/(n_values-1)  
     elif mode == 'continuous':
         p = np.random.random([batch_size,3])
     range = high-low
