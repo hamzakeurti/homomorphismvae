@@ -89,6 +89,9 @@ class TeapotDataset(trns_dataset.TransitionDataset):
         Replaces new samples in memory.
         """
         if self.resample:
+            if hasattr(self,"_images"):
+                del self._images
+                del self._transitions
             indices = np.sort(
                     np.random.choice(
                         self.num_train,size=self.num_samples, replace=False))
