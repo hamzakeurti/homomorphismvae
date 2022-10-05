@@ -25,8 +25,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits import mplot3d
 import h5py
-
-
 import __init__
 import data.obj3d.gen_args as gargs
 import utils.misc as misc
@@ -53,7 +51,6 @@ def read_obj(filename, center=True):
     return vertices, np.array(triangles)
 
 
-
 def rotation_matrix(yaw,pitch,roll):
     cy, sy = np.cos(yaw), np.sin(yaw)
     cp, sp = np.cos(pitch), np.sin(pitch)
@@ -64,7 +61,6 @@ def rotation_matrix(yaw,pitch,roll):
         [-sp    , cp*sr             , cp*cr           ],
     ])
     return R
-
 
 
 def sample_orientations_from_canonical(
@@ -81,7 +77,6 @@ def sample_orientations_from_canonical(
     R = rotation_matrix(*p.T)
     v_out = np.einsum('ijb,vj->bvi',R,vertices)
     return v_out,p
-
 
 
 def sample_orientations_from_orientations(vertices, mode='continuous',
@@ -103,6 +98,7 @@ def sample_orientations_from_orientations(vertices, mode='continuous',
     v_out = np.einsum('ijb,bvj->bvi',R,vertices)
     return v_out,p
 
+
 def sample_poses_from_canonical(vertices, batch_size, mode='continuous',n_values=None, translation_grid=5, translation_stepsize=0.5):
     # if mode == 'discrete':
     #     p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
@@ -116,10 +112,12 @@ def sample_poses_from_canonical(vertices, batch_size, mode='continuous',n_values
     p = np.hstack([p,t])
     return v_out, p, t
 
+
 def sample_trans_from_canonical(vertices, batch_size, translation_grid=5, translation_stepsize=0.5):
     t = (np.random.randint(translation_grid*2+1, size=[batch_size,3]) - translation_grid)*translation_stepsize
     v_out = vertices[None,:,:] + t[:,None,:]
     return v_out, t, t
+
 
 def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.pi, 
                                           high=np.pi ,translation_grid=5, translation_stepsize=0.5, translation_range=1):
@@ -152,6 +150,7 @@ def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.p
     p = np.hstack([p,t])
     return v_out,p, new_pos/translation_stepsize
 
+
 def sample_trans_from_trans(vertices, translation_grid=5, translation_stepsize=0.5, translation_range=1):
     batch_size = vertices.shape[0]
 
@@ -170,7 +169,6 @@ def sample_trans_from_trans(vertices, translation_grid=5, translation_stepsize=0
     v_out += new_pos[:,None,:]
     
     return v_out,t, new_pos/translation_stepsize
-
 
 
 def sample_n_steps_orientations_from_canonical(
@@ -198,12 +196,7 @@ def sample_n_steps_orientations_from_canonical(
         v_out[:,step+1,...], a_out[:,step+1,...] = sample_orientations_from_orientations(
                     vertices=v_out[:,step,...],
                     mode=mode, n_values=n_values, low=low, high=high)
-
-
     return v_out, a_out
-
-
-
 
 
 def sample_n_steps_poses_from_canonical(
@@ -241,9 +234,8 @@ def sample_n_steps_poses_from_canonical(
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
                     translation_range=translation_range)
-
-
     return v_out, a_out, pos_out
+
 
 def sample_n_steps_trans_from_canonical(
             vertices, batch_size, n_steps=2, translation_grid=3,translation_stepsize=0.5,translation_range=1):
@@ -276,8 +268,6 @@ def sample_n_steps_trans_from_canonical(
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
                     translation_range=translation_range)
-
-
     return v_out, a_out, pos_out
 
 
@@ -342,7 +332,6 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5,crop=0):
     if crop:
         images_out = images_out[...,crop:-crop,crop:-crop]
     return images_out
-
 
 
 def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
@@ -446,7 +435,7 @@ def get_attributes_dict(obj_filename,
                     crop):
     d = {
         "obj_filename":obj_filename,  
-        "figsize":figsize, 
+        "figsize":figsize,
         "dpi":dpi, 
         "lim":lim,
         "mode":mode, 
@@ -463,9 +452,6 @@ def get_attributes_dict(obj_filename,
         "crop":crop
     }
     return d
-
-
-
 
 if __name__=='__main__':
 
