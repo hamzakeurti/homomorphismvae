@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/data/teapot_dataset.py
+# @title          :displacementae/data/obj3d_dataset.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :10/09/2022
@@ -23,9 +23,8 @@
 Dataset of a 3D object in different orientations.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The module :mod:`data.teapot` contains a data handler for a dataset 
-generated from the teapot model
-`dsprites dataset <https://github.com/deepmind/dsprites-dataset>`.
+The module :mod:`data.obj3d` contains a data handler for a hdf5 dataset 
+generated from .obj models.
 """
 
 import numpy as np
@@ -39,7 +38,7 @@ import data.transition_dataset as trns_dataset
 
 
 
-class TeapotDataset(trns_dataset.TransitionDataset):
+class Obj3dDataset(trns_dataset.TransitionDataset):
     def __init__(self, root, rseed=None, transitions_on=True,
                  n_transitions: int = None,
                  num_train=200,

@@ -28,7 +28,7 @@ import h5py
 
 
 import __init__
-import data.teapot.gen_args as gargs
+import data.obj3d.gen_args as gargs
 import utils.misc as misc
 
 def read_obj(filename, center=True):

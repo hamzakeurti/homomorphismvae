@@ -23,7 +23,7 @@
 from torch.utils.data import DataLoader
 
 from data.dsprites import DspritesDataset
-from data.teapot_dataset import TeapotDataset 
+from data.obj3d_dataset import Obj3dDataset 
 from data.trajs import TrajectoryDataset
 import utils.misc as misc
 
@@ -33,8 +33,8 @@ def setup_data(config, mode='autoencoder'):
         return setup_trajectory_dataset(config)
     elif config.dataset == 'dsprites':
         return setup_dsprites_dataset(config, mode)
-    elif config.dataset == 'teapot':
-        return setup_teapot_dataset(config, mode)
+    elif config.dataset == 'obj3d':
+        return setup_obj3d_dataset(config, mode)
 
 
 
@@ -69,8 +69,8 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
     return dhandler, dloader
 
 
-def setup_teapot_dataset(config, mode='autoencoder'):    
-    dhandler = TeapotDataset(root=config.data_root, 
+def setup_obj3d_dataset(config, mode='autoencoder'):    
+    dhandler = Obj3dDataset(root=config.data_root, 
                              num_train=config.num_train, 
                              num_val=config.num_val,
                              resample=config.resample,
