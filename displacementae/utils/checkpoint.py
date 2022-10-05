@@ -16,10 +16,11 @@ def save_checkpoint(model,optimizer,losses,epoch,save_path):
             OPTIMIZER_STATE_DICT:optimizer.state_dict()
         },os.path.join(save_path,CKPT_FILENAME))
 
-def load_checkpoint(model,optimizer,save_path):
+def load_checkpoint(model,optimizer=None,save_path=None):
     ckpt = torch.load(os.path.join(save_path,CKPT_FILENAME))
     model.load_state_dict(ckpt[MODEL_STATE_DICT])
-    optimizer.load_state_dict(ckpt[OPTIMIZER_STATE_DICT])
+    if optimizer is not None:
+        optimizer.load_state_dict(ckpt[OPTIMIZER_STATE_DICT])
     losses = ckpt[LOSSES]
     epoch = ckpt[EPOCH]
     return model,optimizer,losses,epoch

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/data/teapot_dataset.py
+# @title          :displacementae/data/obj3d_dataset.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :10/09/2022
@@ -23,9 +23,8 @@
 Dataset of a 3D object in different orientations.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The module :mod:`data.teapot` contains a data handler for a dataset 
-generated from the teapot model
-`dsprites dataset <https://github.com/deepmind/dsprites-dataset>`.
+The module :mod:`data.obj3d` contains a data handler for a hdf5 dataset 
+generated from .obj models.
 """
 
 import numpy as np
@@ -39,7 +38,7 @@ import data.transition_dataset as trns_dataset
 
 
 
-class TeapotDataset(trns_dataset.TransitionDataset):
+class Obj3dDataset(trns_dataset.TransitionDataset):
     def __init__(self, root, rseed=None, transitions_on=True,
                  n_transitions: int = None,
                  num_train=200,
@@ -58,6 +57,7 @@ class TeapotDataset(trns_dataset.TransitionDataset):
         self.num_val = num_val
         
         self.load_data()
+        self.load_attributes()
         self.sample_val_batch()
         
 
@@ -102,6 +102,43 @@ class TeapotDataset(trns_dataset.TransitionDataset):
         else:
             pass 
     
+    def load_attributes(self):
+        """
+        Loads the atributes of the dataset
+        """
+        with h5py.File(self._root,'r') as f:
+            self.attributes_dict = dict(f['images'].attrs)
+        #         "obj_filename":obj_filename,  
+        # "figsize":figsize,
+        # "dpi":dpi, 
+        # "lim":lim,
+        self.mode = self.attributes_dict["mode"] 
+        self.translate=self.attributes_dict["translate"]
+        self.translate_only=self.attributes_dict["translate_only"]
+        self.rots_n_values=self.attributes_dict["n_values"] 
+        self.rots_range=self.attributes_dict["rots_range"]
+        self.n_steps=self.attributes_dict["n_steps"] 
+        self.n_samples=self.attributes_dict["n_samples"]
+        self.trans_grid=self.attributes_dict["translation_grid"]
+        self.trans_stepsize=self.attributes_dict["translation_stepsize"]
+        self.trans_range=self.attributes_dict["translation_range"]
+        self.rots_idx = np.array([])
+        self.trans_dx = np.array([])
+        if (not self.translate_only):
+            self.rots_idx = np.arange(3)
+        
+        if self.translate:
+            self.trans_idx = np.arange(start=3,stop=6)
+        if self.translate_only:
+            self.trans_idx = np.arange(3)
+        
+        rng = self.rots_range[1] - self.rots_range[0]
+        if self.mode=='continuous':
+            self.rots_stepsize=rng/4
+        else:
+            self.rots_stepsize=rng/(self.rots_n_values-1)
+        
+
     def sample_val_batch(self):
         filepath = os.path.join(self._root)
         nt = self.num_train
@@ -110,7 +147,7 @@ class TeapotDataset(trns_dataset.TransitionDataset):
             n = f['images'].shape[0]
             if  n < (nt+nv):
                 raise ValueError(f"Not enough samples {n} for chosen " + 
-                    f"--num_train {nt} and --num_val {nv}")
+                    f"--num_train={nt} and --num_val={nv}")
             self.val_imgs = f['images'][nt:nt+nv]
             self.val_actions = f['actions'][nt:nt+nv,1:]
 
@@ -138,13 +175,10 @@ class TeapotDataset(trns_dataset.TransitionDataset):
     def get_example_actions(self):
         a = np.zeros((self.action_dim*2+1,self.action_dim))
         for i in range(self.action_dim):
-            a[1+2*i:3+2*i,i] = np.array([1,-1])
-        
-        # if self.rotate_actions:
-        #     rot_a = a.copy()
-        #     rot_a[...,:2] = rot_a[...,:2] @ self._rot_mat
-        #     return rot_a, a
-        # else:
+            if i in self.rots_idx:
+                a[1+2*i:3+2*i,i] = np.array([1,-1])*self.rots_stepsize
+            elif i in self.trans_idx:
+                a[1+2*i:3+2*i,i] = np.array([1,-1])*self.trans_stepsize
         return a, a
 
     @property

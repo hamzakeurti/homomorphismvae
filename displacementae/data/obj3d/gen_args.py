@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# @title          :displacementae/data/teapot/gen_args.py
+# @title          :displacementae/data/obj3d/gen_args.py
 # @author         :Hamza Keurti
 # @contact        :hkeurti@ethz.ch
 # @created        :01/09/2022

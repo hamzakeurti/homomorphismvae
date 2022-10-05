@@ -53,7 +53,7 @@ grid = {
     ### ALL COMMAND-LINE OPTIONS ACCESSIBLE TO THE HPSEARCH GO HERE ###
     ###################################################################
     ### Dataset options ###
-    'dataset': ['teapot'],
+    'dataset': ['obj3d'],
     'data_root': ['/lustre/home/hkeurti/datasets/obj3d/teapot_rots_300k.hdf5'],
     'n_steps': [2],
     'rotate_actions':[0],
