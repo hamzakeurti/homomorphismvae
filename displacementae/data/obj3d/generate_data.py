@@ -353,7 +353,12 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      translation_grid=3,
                      translation_stepsize=0.5,
                      translation_range=1,
-                     n_steps=2, n_samples=10000, chunk_size=0, center=True, crop=0):
+                     n_steps=2, 
+                     n_samples=10000, 
+                     chunk_size=0, 
+                     center=True, 
+                     crop=0,
+                     attributes_dict={}):
     
     NPOS = 3 #number of dimensions for 3D position
     if translate:
@@ -420,8 +425,46 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
             dset_rot[i*batch_size:(i+1)*batch_size] = a
             if translate or translate_only:
                 dset_pos[i*batch_size:(i+1)*batch_size] = pos
-
+        dset_img.attrs.update(attributes_dict)
     return 
+
+def get_attributes_dict(obj_filename,  
+                    figsize, 
+                    dpi, 
+                    lim,
+                    mode, 
+                    n_values, 
+                    rots_range,
+                    n_steps, 
+                    n_samples,
+                    center,
+                    translate,
+                    translate_only,
+                    translation_grid,
+                    translation_stepsize,
+                    translation_range,
+                    crop):
+    d = {
+        "obj_filename":obj_filename,  
+        "figsize":figsize, 
+        "dpi":dpi, 
+        "lim":lim,
+        "mode":mode, 
+        "n_values":n_values, 
+        "rots_range":rots_range,
+        "n_steps":n_steps, 
+        "n_samples":n_samples,
+        "center":center,
+        "translate":translate,
+        "translate_only":translate_only,
+        "translation_grid":translation_grid,
+        "translation_stepsize":translation_stepsize,
+        "translation_range":translation_range,
+        "crop":crop
+    }
+    return d
+
+
 
 
 if __name__=='__main__':
@@ -436,6 +479,24 @@ if __name__=='__main__':
         config.n_values = None
 
     np.random.seed(config.gen_random_seed)
+
+    attrs = get_attributes_dict(
+                     obj_filename=config.obj_filename, 
+                     figsize=figsize, 
+                     dpi=config.dpi, 
+                     lim=config.lim,
+                     mode=config.mode, 
+                     n_values=config.n_values, 
+                     rots_range=rots_range,
+                     n_steps=config.n_steps, 
+                     n_samples=config.n_samples,
+                     center=config.center,
+                     translate=config.translate,
+                     translate_only=config.translate_only,
+                     translation_grid=config.translation_grid,
+                     translation_stepsize=config.translation_stepsize,
+                     translation_range=config.translation_range,
+                     crop=config.crop)
     
     generate_dataset(obj_filename=config.obj_filename, 
                      out_path=config.out_path, 
@@ -454,5 +515,6 @@ if __name__=='__main__':
                      translation_grid=config.translation_grid,
                      translation_stepsize=config.translation_stepsize,
                      translation_range=config.translation_range,
-                     crop=config.crop
+                     crop=config.crop,
+                     attributes_dict=attrs
                      )
