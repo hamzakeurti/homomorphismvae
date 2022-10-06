@@ -60,6 +60,26 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
         self.load_attributes()
         self.sample_val_batch()
         
+        self.rots_idx = np.array([])
+        self.trans_idx = np.array([])
+        self.col_idx = np.array([])
+        
+        if (not self.translate_only):
+            self.rots_idx = np.arange(3)
+        
+        if self.translate:
+            self.trans_idx = np.arange(start=3,stop=6)
+        if self.translate_only:
+            self.trans_idx = np.arange(3)
+        if self.color:
+            self.col_idx = np.array(self._transitions.shape[-1]-1)        
+        
+        rng = self.rots_range[1] - self.rots_range[0]
+        if self.mode=='continuous':
+            self.rots_stepsize=rng/4
+        else:
+            self.rots_stepsize=rng/(self.rots_n_values-1)
+        
 
         data = {}
         data["in_shape"] = self._images.shape[2:]
@@ -122,21 +142,8 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
         self.trans_grid=self.attributes_dict["translation_grid"]
         self.trans_stepsize=self.attributes_dict["translation_stepsize"]
         self.trans_range=self.attributes_dict["translation_range"]
-        self.rots_idx = np.array([])
-        self.trans_dx = np.array([])
-        if (not self.translate_only):
-            self.rots_idx = np.arange(3)
-        
-        if self.translate:
-            self.trans_idx = np.arange(start=3,stop=6)
-        if self.translate_only:
-            self.trans_idx = np.arange(3)
-        
-        rng = self.rots_range[1] - self.rots_range[0]
-        if self.mode=='continuous':
-            self.rots_stepsize=rng/4
-        else:
-            self.rots_stepsize=rng/(self.rots_n_values-1)
+        self.color= self.attributes_dict["color"]
+
         
 
     def sample_val_batch(self):
@@ -179,6 +186,8 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
                 a[1+2*i:3+2*i,i] = np.array([1,-1])*self.rots_stepsize
             elif i in self.trans_idx:
                 a[1+2*i:3+2*i,i] = np.array([1,-1])*self.trans_stepsize
+            else:
+                a[1+2*i:3+2*i,i] = np.array([1,-1])
         return a, a
 
     @property
