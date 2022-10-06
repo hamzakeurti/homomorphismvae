@@ -130,7 +130,13 @@ def data_gen_args(parser):
                         help='Half the range of the small displacements.')    
     group.add_argument('--crop', type=int, default=0, 
                         help='Crop the image by `crop` pixels from each side.')
-
+    group.add_argument('--color', action='store_true', 
+                        help='Whether to also act with color shifts.')
+    group.add_argument('--n_colors', type=int, default=0, 
+                        help='Number of colors equally spaced on the hue wheel.')
+    group.add_argument('--max_color_shift', type=int, default=0, 
+                        help='Range of the random displacement of the color.')
+        
     
     
 

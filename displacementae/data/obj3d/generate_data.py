@@ -22,6 +22,7 @@
 
 import os
 import matplotlib.pyplot as plt
+import matplotlib.colors as clr
 import numpy as np
 from mpl_toolkits import mplot3d
 import h5py
@@ -270,8 +271,23 @@ def sample_n_steps_trans_from_canonical(
                     translation_range=translation_range)
     return v_out, a_out, pos_out
 
+def sample_n_steps_colors(
+                        batch_size,
+                        n_steps=2,
+                        n_colors=10,
+                        max_color_shift=2):
+    a_out = np.zeros([batch_size,n_steps+1,1],dtype=int)
+    # Sample initial colors:
+    a_out[:,0,0] = np.random.randint(n_colors,size=[batch_size])
 
-def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5):
+    # Sample other steps
+    a_out[:,1:,0] = np.random.randint(
+        max_color_shift*2+1,size=[batch_size,n_steps]) - max_color_shift
+    pos_out = np.cumsum(a_out,axis=1)%n_colors
+    return a_out, pos_out
+
+
+def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5, col='white'):
     """
     Plots a 3D view of the object and returns it as a numpy array.
     """
@@ -285,7 +301,7 @@ def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5):
     ax.set_axis_off()
 
     x,y,z = vertices[:,0], vertices[:,1], vertices[:,2]
-    ax.plot_trisurf(x,z,triangles,y,shade=True,color='white') 
+    ax.plot_trisurf(x,z,triangles,y,shade=True,color=col) 
 
     fig.canvas.draw()
     image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
@@ -333,6 +349,46 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5,crop=0):
         images_out = images_out[...,crop:-crop,crop:-crop]
     return images_out
 
+def vertices_to_colored_images(
+                    v, triangles, color_idx, figsize=(3,3), dpi=24, lim=1.5,crop=0,n_colors=0):
+    """
+    Converts a batch of vertices arrays to a batch of figures 
+
+    Args:
+        v (ndarray): a 2D array of actions with type `int` in the form of a 
+                        batch of displacement of properties 
+                        (\generating factors).
+                        Expects values to be in :math:`-1,0,1` with only one 
+                        active.
+        triangles (ndarray): Describes the faces of the solid. 
+                        The same triangles array is used for all 
+                        transformed versions of the solid.
+        figsize (tuple): in inches, describes the figure size for each plot.
+        dpi (int):      dots per inch, number of pixels per inch in the figure, 
+        lim (int):      Extent of the axis displayed is fixed to [-lim,lim]
+
+    Returns:
+        ndarray: a batch of images.
+
+    """
+    colors_hsv = np.ones([n_colors,3])
+    colors_hsv[:,0] = np.arange(n_colors)/n_colors
+    colors_rgb = clr.hsv_to_rgb(colors_hsv)
+    # v is of shape [batch, n_steps, n_vertices, 3]
+    h,w = figsize[0]*dpi,  figsize[1]*dpi
+    images_out = np.zeros(shape=[*v.shape[:-2],h,w,3])
+    # v = v.reshape([-1,*v.shape[-2:]])
+    for i in range(v.shape[0]):
+        # if i%10 == 9:
+        print(f'iter {i}/{v.shape[0]}')
+        for j in range(v.shape[1]):
+            images_out[i,j] = get_image(v[i,j], triangles,
+                                        figsize=figsize, dpi=dpi, lim=lim,col=colors_rgb[color_idx[i,j,0]])
+    images_out /= 255
+    images_out = np.moveaxis(images_out,-1,-3)
+    if crop:
+        images_out = images_out[...,crop:-crop,crop:-crop]
+    return images_out    
 
 def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
                      mode='continuous', n_values=None, 
@@ -347,6 +403,9 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      chunk_size=0, 
                      center=True, 
                      crop=0,
+                     color=False,
+                     n_colors=0,
+                     max_color_shift=0,
                      attributes_dict={}):
     
     NPOS = 3 #number of dimensions for 3D position
@@ -354,6 +413,8 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
         n_actions=6
     else:
         n_actions=3
+    if color:
+        n_actions+=1
     vertices, triangles = read_obj(obj_filename, center)
     with h5py.File(out_path, "w") as f:
         kwargs_images = {
@@ -408,7 +469,22 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
                     n_values=n_values, rots_range=rots_range)
-            images = vertices_to_images(
+            if color:
+                a_cols, pos_cols = sample_n_steps_colors(
+                        batch_size=batch_size,
+                        n_steps=n_steps,
+                        n_colors=n_colors,
+                        max_color_shift=max_color_shift)
+                a = np.concatenate([a,a_cols],axis=-1)
+                if translate or translate_only:
+                    pos = np.concatenate([pos,pos_cols],axis=-1)
+                else:
+                    pos = pos_cols
+                images = vertices_to_colored_images(
+                    v, triangles, color_idx=pos_cols, figsize=figsize, 
+                    dpi=dpi, lim=lim,crop=crop, n_colors=n_colors)
+            else:
+                images = vertices_to_images(
                     v, triangles, figsize=figsize, dpi=dpi, lim=lim,crop=crop)
             dset_img[i*batch_size:(i+1)*batch_size] = images
             dset_rot[i*batch_size:(i+1)*batch_size] = a
@@ -432,7 +508,10 @@ def get_attributes_dict(obj_filename,
                     translation_grid,
                     translation_stepsize,
                     translation_range,
-                    crop):
+                    crop,
+                    color,
+                    n_colors,
+                    max_color_shift):
     d = {
         "obj_filename":obj_filename,  
         "figsize":figsize,
@@ -449,7 +528,10 @@ def get_attributes_dict(obj_filename,
         "translation_grid":translation_grid,
         "translation_stepsize":translation_stepsize,
         "translation_range":translation_range,
-        "crop":crop
+        "crop":crop,
+        "color":color,
+        "n_colors":n_colors,
+        "max_color_shift":max_color_shift
     }
     return d
 
@@ -482,7 +564,11 @@ if __name__=='__main__':
                      translation_grid=config.translation_grid,
                      translation_stepsize=config.translation_stepsize,
                      translation_range=config.translation_range,
-                     crop=config.crop)
+                     crop=config.crop,
+                     color=config.color,
+                     n_colors=config.n_colors,
+                     max_color_shift=config.max_color_shift,
+                     )
     
     generate_dataset(obj_filename=config.obj_filename, 
                      out_path=config.out_path, 
@@ -502,5 +588,8 @@ if __name__=='__main__':
                      translation_stepsize=config.translation_stepsize,
                      translation_range=config.translation_range,
                      crop=config.crop,
-                     attributes_dict=attrs
+                     attributes_dict=attrs,
+                     color=config.color,
+                     n_colors=config.n_colors,
+                     max_color_shift=config.max_color_shift,
                      )
