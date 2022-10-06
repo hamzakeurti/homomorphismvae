@@ -335,7 +335,7 @@ def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5,crop=0):
 
 
 def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
-                     mode='continuous', n_values=None, 
+                     mode='continuous', n_values=0, 
                      rots_range=[-np.pi/2,np.pi/2],
                      translate=False,
                      translate_only=False,
@@ -460,9 +460,6 @@ if __name__=='__main__':
         os.makedirs(os.path.dirname(config.out_path))
     figsize = misc.str_to_ints(config.figsize)
     rots_range = misc.str_to_floats(config.rots_range)
-
-    if config.mode == 'continuous':
-        config.n_values = None
 
     np.random.seed(config.gen_random_seed)
 
