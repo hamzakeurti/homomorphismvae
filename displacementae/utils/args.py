@@ -374,7 +374,7 @@ def group_repr_args(parser, representation):
                             action='store_true',
                             help='Whether the matrix exponential is applied ' +
                                  'to the parametrized matrix.')
-        ggroup.add_argument('--grp_loss_on', type=bool, default='True',
+        ggroup.add_argument('--grp_loss_on', action='store_true',
                             help='whether to add group representation loss.')
         ggroup.add_argument('--grp_loss_weight', type=float, default=1e-2,
                             help='Factor of the grp loss in the total loss.')
