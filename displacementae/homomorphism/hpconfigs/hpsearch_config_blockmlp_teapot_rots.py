@@ -61,23 +61,29 @@ grid = {
 
 
     ### Training options ###
-    'num_train': [299900],
-    'num_val': [100],
+    'num_train': [299800],
+    'num_val': [200],
     'batch_size': [200],
-    'epochs' : [501],
-    'lr' : [1e-4, 1e-3, 1e-2],
+    'epochs' : [2501],
+    'lr' : [1e-4, 1e-3],
     # 'toggle_training_every': ['"6,4"', '"2,2"'],
     'shuffle':[1],
     'use_adam':[True],
     'use_cuda':[True],
+    'n_iter':[200],
 
 
     ### Model options ###
 
     ### network options ###
-    'conv_channels': ['"64,64,64,64"','"128,128,128,128"','"128,128"','"128,128,128"'],
-    'kernel_sizes': ['"6,4,4,4"','"6,4,4"','"6,4"'],
-    'strides': ['"2,2,1,1"','"2,2,2"', '"2,2"'],
+    'conv_channels': ['"128,256,512,512"','"64,128,256,256,512,512"','"128,128,256,256,256,256"','"256,512,512,1024"'],
+    'kernel_sizes': ['"6,4,4,4"','"6,4,4"','"6,4"','"6,4,4,4,4,4"'],
+    'strides': ['"2,2,1,1,1,1"','"1,1,1,1"','"2,2,1,1"','"2,2,2"', '"2,2"'],
+    'lin_channels': ['"512"','"1024"','"256"','"256,256"'],
+    # 'conv_channels': ['"256,256,256,256"','"256,256"','"128,128"','"128,128"','"128,128,128,128"'],
+    # 'kernel_sizes': ['"6,4,4,4"','"6,4,4"','"6,4"'],
+    # 'strides': ['"2,2,1,1"','"2,2,2"', '"2,2"'],
+    # 'lin_channels': ['"512"','"1024"','"256"','"256,256"'],
     # 'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
     # 'kernel_sizes': ['"6,4,4,4"'],
     # 'strides': ['"2,2,1,1"'],
@@ -85,24 +91,23 @@ grid = {
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
 
-    'lin_channels': ['"128,64,32"','"1024"'],
     'variational': [False],
     'beta': [0],
     # 'normalize_post_action':[False,True],
 
     ### Group ###
     'dims' : ['"4"','"5"','"3,3"','"3,3,3"'],
-    'group_hidden_units':['"1024"','"128,128"','"128,128,128"',],
+    'group_hidden_units':['"1024"','"256,256"'],
     'normalize_post_action':[False],
     'latent_loss_weight':[1000,500,100,50,10],
     'latent_loss':[True],
     
-    'reconstruct_first':[True],
+    'reconstruct_first_only':[True],
     
 
     ### Evaluation options ###
     'val_epoch' : [10],
-    'wandb_project_name' : ['morphism_block_mlp_teapot_rots_'],
+    'wandb_project_name' : ['morphism_block_mlp_teapot_rots_l'],
     'log_wandb':[True],
 
     ### Plot options ###
@@ -134,9 +139,10 @@ conditions = [
     ### Add your conditions here ###
     #({'clip_grad_value': [1.]}, {'clip_grad_norm': [-1]}),
     #({'clip_grad_norm': [1.]}, {'clip_grad_value': [-1]}),
-    ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"','"128,128"']}),
+    ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"','"128,128"','"64,64"']}),
     ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"','"128,128,128"']}),
-    ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"','"128,128,128,128"']}),
+    ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"64,64,64,64"','"32,32,32,32"','"128,128,128,128"','"128,256,512,512"','"64,128,256,256,512,512"','"128,128,256,256,256,256"','"256,512,512,1024"']}),
+    ({'strides': ['"2,2,1,1,1,1"','"1,1,1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4,4,4"'],'conv_channels': ['"64,128,256,256,512,512"','"128,128,256,256,256,256"']}),
     ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
 ]
 

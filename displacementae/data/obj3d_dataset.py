@@ -135,15 +135,15 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
         self.mode = self.attributes_dict["mode"] 
         self.translate=self.attributes_dict["translate"]
         self.translate_only=self.attributes_dict["translate_only"]
-        self.rots_n_values=self.attributes_dict["n_values"] 
         self.rots_range=self.attributes_dict["rots_range"]
         self.n_steps=self.attributes_dict["n_steps"] 
         self.n_samples=self.attributes_dict["n_samples"]
-        self.trans_grid=self.attributes_dict["translation_grid"]
-        self.trans_stepsize=self.attributes_dict["translation_stepsize"]
-        self.trans_range=self.attributes_dict["translation_range"]
         self.color= self.attributes_dict["color"]
-
+        self.rots_n_values=self.attributes_dict["n_values"] 
+        if self.translate or self.translate_only:
+            self.trans_grid=self.attributes_dict["translation_grid"]
+            self.trans_stepsize=self.attributes_dict["translation_stepsize"]
+            self.trans_range=self.attributes_dict["translation_range"]
         
 
     def sample_val_batch(self):
