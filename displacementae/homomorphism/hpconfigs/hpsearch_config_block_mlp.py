@@ -54,7 +54,7 @@ grid = {
     ###################################################################
     ### Dataset options ###
     'dataset': ['dsprites'],
-    'data_root': ['/home/hamza/datasets/dsprites/'],
+    'data_root': ['/lustre/home/hkeurti/datasets/dsprites/'],
     'cyclic_trans' : [True],
     'fixed_in_intervention': ['"0,1,2,3"'],
     'fixed_in_sampling': ['"0,1,2,3"'],
@@ -81,7 +81,7 @@ grid = {
     ### Model options ###
 
     ### network options ###
-    'conv_channels': ['"64,64,64"','"32,32,32,32"'],
+    'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
     'kernel_sizes': ['"6,4,4,4"','"6,4,4"'],
     'strides': ['"2,2,1,1"','"2,2,2"'],
     # 'conv_channels': ['"64,64,64,64"','"32,32,32,32"'],
@@ -91,7 +91,7 @@ grid = {
     # 'kernel_sizes': ['"6,4"'],
     # 'strides': ['"2,2"','"1,1"'],
 
-    'lin_channels': ['"128,64,32"','"1024"'],
+    'lin_channels': ['"1024"'],
     'variational': [False],
     'beta': [0],
     'net_act' : ['relu'],
@@ -102,13 +102,20 @@ grid = {
     ### Group ###
     'dims' : ['"2,2"'],
     'normalize_post_action':[False],
-    'latent_loss_weight':[1000,800,600,500,400,300,200],
-    
+    'latent_loss_weight':[800,400],
+    'latent_loss':[True],
+    'reconstruct_first_only':[False],
+    'reconstruct_first':[True],
+
+
+    ### VarPhi ###
+    'varphi_units':['"200,100,20"'],
+    'varphi_random_seed':[10],    
 
     ### Evaluation options ###
     'val_epoch' : [10],
     'num_val' : [500],
-    'wandb_project_name' : ['morphism_block_mlp_'],
+    'wandb_project_name' : ['morphism_block_mlp_varphi'],
     'log_wandb':[True],
 
     ### Plot options ###
@@ -117,6 +124,9 @@ grid = {
     'plot_manifold_latent': ['"[0,1]"'],
     'plot_on_black': [False],
     'plot_pca': [True],
+    'plot_manifold': [True],
+    'plot_matrices': [True],
+    'plot_reconstruction': [True],
     'plot_vary_latents': ['"[4,5]"'],
 }
 

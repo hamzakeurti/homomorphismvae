@@ -362,8 +362,9 @@ def plot_matrix(example_R,a, config, logger, figname=None):
         R = np.around(example_R[i],decimals=2)
             
         fig, ax = plt.subplots(figsize=(4,4))
-        # kwargs={'vmin':-2,'vmax':2,'cmap':'gray'}
-        M = np.abs(R).max()
+        # kwargs={'vmin':-1,'vmax':1,'cmap':'gray'}
+        # M = np.abs(R).max()
+        M = 1
         # norm = mcolors.TwoSlopeNorm(vcenter=0,vmin=-M,vmax=M)
         # im = ax.imshow(R,cmap='bwr',norm=norm)
         im = ax.imshow(R,cmap='bwr',vmin=-M,vmax=M)
