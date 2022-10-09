@@ -38,12 +38,16 @@ class BlockMLPRepresentation(GroupRepresentation):
     """
     def __init__(self, n_action_units:int, dim_representation:int, 
                  dims:list, hidden_units:list=[],
-                 activation: nn.Module = torch.nn.ReLU, device: str = 'cpu',
+                 activation = torch.nn.ReLU(), device: str = 'cpu',
                  normalize_subrepresentations = False,
                  normalize_post_action:bool=False,
-                 exponential_map:bool=False) -> None:
+                 exponential_map:bool=False,
+                 varphi_units:list=[],
+                 varphi_seed:int=0) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
-                         normalize_post_action=normalize_post_action)
+                         normalize_post_action=normalize_post_action,
+                         varphi_units=varphi_units,
+                         varphi_seed=varphi_seed)
         self.dims = dims
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
@@ -51,7 +55,7 @@ class BlockMLPRepresentation(GroupRepresentation):
         for dim in dims:
             self.subreps.append(
                     MLPRepresentation(
-                            n_action_units,
+                            self.varphi_out,
                             dim,
                             hidden_units=hidden_units,
                             activation=activation, 
@@ -62,6 +66,7 @@ class BlockMLPRepresentation(GroupRepresentation):
                             exponential_map=exponential_map))
             
     def forward(self, a: torch.Tensor) -> torch.Tensor:
+        a = self.varphi(a)
         d = self.dim_representation
         R = torch.zeros(*a.shape[:-1],d,d,device=a.device)
         for i in range(self.n_subreps):
@@ -70,6 +75,7 @@ class BlockMLPRepresentation(GroupRepresentation):
         return R
 
     def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        a = self.varphi(a)
         z_out = torch.zeros_like(z, device=a.device)
         for i in range(self.n_subreps):
             z_out[..., self.cumdims[i]:self.cumdims[i+1]] =\

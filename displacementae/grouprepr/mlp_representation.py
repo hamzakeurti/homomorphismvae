@@ -36,16 +36,20 @@ class MLPRepresentation(GroupRepresentation):
     """
     def __init__(self, n_action_units: int, dim_representation: int, 
                  hidden_units=[], 
-                 activation=nn.ReLU,
+                 activation=nn.ReLU(),
                  normalize=False, 
                  device='cpu',
                  layer_norm=False, 
                  normalize_post_action:bool=False,
-                 exponential_map:bool=False) -> None:
+                 exponential_map:bool=False,
+                 varphi_units:list=[],
+                 varphi_seed:int=0) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
                          normalize=normalize, 
-                         normalize_post_action=normalize_post_action)
-        self.net = MLP(in_features=n_action_units,
+                         normalize_post_action=normalize_post_action,
+                         varphi_units=varphi_units,
+                         varphi_seed=varphi_seed)
+        self.net = MLP(in_features=self.varphi_out,
                        out_features=dim_representation ** 2,
                        hidden_units=hidden_units,
                        activation=activation,
@@ -59,6 +63,7 @@ class MLPRepresentation(GroupRepresentation):
         Forwards input transitions through an MLP network and reshapes
         the outputs to form matrices.
         """
+        a = self.varphi(a)
         R = self.net(a)
         R = R.view(-1, self.dim_representation, self.dim_representation)
         if self.exponential_map:

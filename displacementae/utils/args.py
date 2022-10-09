@@ -281,6 +281,12 @@ def misc_args(parser, dout_dir=None):
 
 def group_repr_args(parser, representation):
     ggroup = parser.add_argument_group('Group Representation options')
+    ggroup.add_argument('--varphi_units', type=str, default='',
+                        help='List of layer units in the for the varphi ' +
+                             'network. This is a fixed random mlp ' +
+                             'network transforming action vectors.')
+    ggroup.add_argument('--varphi_random_seed', type=int, default=1,
+                        help='random seed for generating the varphi network.')
     if representation == Representation.BLOCK_MLP:
         ggroup.add_argument('--dims', type=str, default='',
                             help='List of dimensions of the subreps. ' +

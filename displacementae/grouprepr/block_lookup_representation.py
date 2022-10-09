@@ -43,10 +43,12 @@ class BlockLookupRepresentation(GroupRepresentation):
                  device: str = 'cpu',
                  normalize_subrepresentations: bool = False,
                  normalize_post_action: bool = False,
-                 exponential_map: bool = False) -> None:
+                 exponential_map: bool = False,
+                 varphi_units:list=[]) -> None:
         super().__init__(n_action_units=1,
                          dim_representation=dim_representation, device=device,
-                         normalize_post_action=normalize_post_action)
+                         normalize_post_action=normalize_post_action,
+                         varphi_units=varphi_units)
         self.dims = dims
         self.n_actions = n_actions
         self.n_subreps = len(dims)
@@ -63,6 +65,7 @@ class BlockLookupRepresentation(GroupRepresentation):
                             exponential_map=exponential_map))
 
     def forward(self, a: torch.Tensor) -> torch.Tensor:
+        a = self.varphi(a)
         R = torch.zeros(*a.shape, self.dim_representation,
                         self.dim_representation, device=a.device)
         for i in range(self.n_subreps):

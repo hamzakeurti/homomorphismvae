@@ -32,15 +32,18 @@ class TrivialRepresentation(GroupRepresentation):
     Maps all group elements to identity transformation.
     """
     def __init__(self, dim_representation: int,
-                 device='cpu') -> None:
+                 device:torch.DeviceObjType='cpu',
+                 varphi_units:list=[]) -> None:
         super().__init__(n_action_units=1, 
-                         dim_representation=dim_representation, device=device)
+                         dim_representation=dim_representation, device=device,
+                         varphi_units=varphi_units)
     
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """
         Returns identity representation for any action.
         """
         d = self.dim_representation
+        a = self.varphi(a)
         n = a.shape[:-1]
         return torch.eye(d).repeat([*n,1,1])
 

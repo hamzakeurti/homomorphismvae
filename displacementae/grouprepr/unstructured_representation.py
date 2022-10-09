@@ -19,11 +19,15 @@ class UnstructuredRepresentation(GroupRepresentation):
                  n_action_units: int,
                  dim_representation: int,
                  hidden_units: List[int] = [50, 50],
-                 activation=nn.ReLU,
+                 activation=nn.ReLU(),
                  layer_norm=False,
-                 device='cpu') -> None:
-        super().__init__(n_action_units, dim_representation, device=device)
-        self.net = MLP(in_features=dim_representation + n_action_units,
+                 device='cpu',
+                 varphi_units:list=[]) -> None:
+
+        super().__init__(n_action_units, dim_representation, device=device,
+                         varphi_units=varphi_units)
+
+        self.net = MLP(in_features=dim_representation + self.varphi_out,
                        out_features=dim_representation,
                        hidden_units=hidden_units,
                        activation=activation,
@@ -52,6 +56,7 @@ class UnstructuredRepresentation(GroupRepresentation):
             torch.Tensor: Transformed representation vectors.
                         shape: `[batch_size,n_repr_units]`
         """
+        a = self.varphi(a)
         a_embed = nn.functional.one_hot(a.long(), self.n_action_units) if len(a.shape) == 1 else a
         return self.net(torch.cat([z, a_embed], dim=1))
 
