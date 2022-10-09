@@ -51,7 +51,8 @@ class VarPhi(nn.Module):
             self.net = MLP(in_features=n_action_units,
                               out_features=self.out_units,
                               hidden_units=self.linear_units[:-1],
-                              activation=nn.LeakyReLU(negative_slope=0.2),seed=seed,bias=False)
+                              activation=nn.LeakyReLU(negative_slope=0.2),
+                              seed=seed,bias=False)
 
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
