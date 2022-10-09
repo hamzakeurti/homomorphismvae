@@ -408,13 +408,16 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      max_color_shift=0,
                      attributes_dict={}):
     
-    NPOS = 3 #number of dimensions for 3D position
+    n_pos = 0 #number of dimensions for 3D position
     if translate:
         n_actions=6
     else:
         n_actions=3
+    if translate or translate_only:
+        n_pos = 3
     if color:
         n_actions+=1
+        n_pos+=1
     vertices, triangles = read_obj(obj_filename, center)
     with h5py.File(out_path, "w") as f:
         kwargs_images = {
@@ -431,18 +434,18 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
             }
         kwargs_pos = {
             'dtype':np.float32,
-            'shape':(n_samples, n_steps+1, NPOS), 
-            'maxshape':(None, n_steps+1, NPOS),
+            'shape':(n_samples, n_steps+1, n_pos), 
+            'maxshape':(None, n_steps+1, n_pos),
             }
         if chunk_size:
             kwargs_images['chunks'] = (chunk_size, n_steps+1, 3, 
                                 figsize[0]*dpi-2*crop, figsize[1]*dpi-2*crop)
             kwargs_actions['chunks'] = (chunk_size, n_steps+1, n_actions)
-            kwargs_pos['chunks'] = (chunk_size, n_steps+1, NPOS)
+            kwargs_pos['chunks'] = (chunk_size, n_steps+1, n_pos)
         
         dset_img = f.create_dataset('images', **kwargs_images)
         dset_rot = f.create_dataset('actions', **kwargs_actions)
-        if translate or translate_only:
+        if translate or translate_only or color:
             dset_pos = f.create_dataset('positions', **kwargs_pos)
 
 
