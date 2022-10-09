@@ -26,6 +26,9 @@ import torch.nn.functional as F
 
 import numpy as np
 
+from networks.mlp import MLP
+from grouprepr.varphi import VarPhi
+
 
 class GroupRepresentation(nn.Module):
     """
@@ -41,15 +44,24 @@ class GroupRepresentation(nn.Module):
     """
     def __init__(self, n_action_units:int, dim_representation:int, device='cpu',
                  repr_loss_on = False, repr_loss_weight = 0., 
-                 normalize= False, normalize_post_action=False) -> None:
+                 normalize= False, normalize_post_action=False, 
+                 varphi_units:list=[],
+                 varphi_seed:int=1) -> None:
         super().__init__()
         self.device = device
         self.n_action_units = n_action_units
+        self.varphi_units = varphi_units
         self.dim_representation = dim_representation
         self.repr_loss_on = repr_loss_on
         self.repr_loss_weight = repr_loss_weight
         self.normalize = normalize
         self.normalize_post_action = normalize_post_action
+        
+
+        self.varphi = VarPhi(n_action_units=n_action_units,
+                             device=device, linear_units=varphi_units,
+                             seed=varphi_seed).to(device)
+        self.varphi_out = self.varphi.out_units
 
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """

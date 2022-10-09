@@ -21,6 +21,7 @@
 # @python_version :3.7.4
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from networks.autoencoder import AutoEncoder

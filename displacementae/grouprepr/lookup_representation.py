@@ -38,11 +38,13 @@ class LookupRepresentation(GroupRepresentation):
                  device: str = 'cpu',
                  normalize: bool = False,
                  normalize_post_action: bool = False,
-                 exponential_map: bool = False) -> None:
+                 exponential_map: bool = False,
+                 varphi_units:list=[]) -> None:
         super().__init__(n_action_units=1,
                          dim_representation=dim_representation, device=device,
                          normalize=normalize,
-                         normalize_post_action=normalize_post_action)
+                         normalize_post_action=normalize_post_action,
+                         varphi_units=varphi_units)
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
                  scale * torch.randn(size=(dim_representation, dim_representation)))
@@ -54,6 +56,7 @@ class LookupRepresentation(GroupRepresentation):
         """
         Looks up representation matrices for each input action.
         """
+        a = self.varphi(a)
         a = a.int()
         R = [self.action_reps[a[i]] for i in range(a.shape[0])]
         R = torch.stack(R, dim=0)

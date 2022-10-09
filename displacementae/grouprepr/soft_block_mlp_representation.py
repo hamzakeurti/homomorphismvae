@@ -37,12 +37,14 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
     """
     def __init__(self, n_action_units: int, dim_representation: int, 
                  hidden_units=[], 
-                 activation=nn.ReLU,
+                 activation=nn.ReLU(),
                  normalize=False, 
                  device='cpu',
                  layer_norm=False, 
                  normalize_post_action:bool=False,
-                 exponential_map:bool=False) -> None:
+                 exponential_map:bool=False,
+                 varphi_units:list=[],
+                 varphi_seed:int=0) -> None:
         super().__init__(
                  n_action_units=n_action_units, 
                  dim_representation=dim_representation, 
@@ -52,7 +54,10 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
                  device=device,
                  layer_norm=layer_norm, 
                  normalize_post_action=normalize_post_action,
-                 exponential_map=exponential_map)
+                 exponential_map=exponential_map,
+                 varphi_units=varphi_units,
+                 varphi_seed=varphi_seed
+                 )
         self.masks = self._get_masks().to(device)
         self.repr_loss_on = True
         

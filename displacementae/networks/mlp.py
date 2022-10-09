@@ -33,8 +33,14 @@ class MLP(nn.Module):
     """
 
     def __init__(self, in_features, out_features, hidden_units,
-                 activation=nn.ReLU, dropout_rate=0, bias=True, layer_norm=False):
+                 activation=nn.ReLU(), dropout_rate=0, bias=True, 
+                 layer_norm=False,
+                 seed=None):
         super().__init__()
+
+        if seed is not None:
+            self.rng = torch.Generator().manual_seed(seed)
+
         layers = []
 
         units = [in_features] + hidden_units
@@ -42,12 +48,17 @@ class MLP(nn.Module):
             n_in = units[l]
             n_out = units[l + 1]
             layers.append(
-                nn.Linear(in_features=n_in, out_features=n_out, bias=bias))
+                nn.Linear(in_features=n_in, out_features=n_out, bias=bias,))
+            if seed is not None:
+                with torch.no_grad():
+                    layers[-1].weight.normal_(std=1/np.sqrt(n_in),generator=self.rng)
+                    if bias:
+                        layers[-1].bias.normal_(1,generator=self.rng)
             if dropout_rate > 0:
                 layers.append(nn.Dropout(p=dropout_rate))
             if layer_norm:
                 layers.append(nn.LayerNorm(n_out))
-            layers.append(activation())
+            layers.append(activation)
 
         layers.append(nn.Linear(n_out, out_features))
 
@@ -64,3 +75,5 @@ class MLP(nn.Module):
         """
 
         return self.seq(x)
+
+
