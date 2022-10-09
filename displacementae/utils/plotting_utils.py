@@ -123,7 +123,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
                              figsize=(ncols * unit_length,
                                       nrows * unit_length))
     kwargs = {'vmin': 0, 'vmax': 1}
-    if imgs.shape[3] == 1:
+    if imgs.shape[2] == 1:
         kwargs['cmap'] = 'gray'
         Xi = Xi[:,:,0].cpu().numpy()
         Xi_hat = Xi_hat[:,:,0].cpu().numpy()
