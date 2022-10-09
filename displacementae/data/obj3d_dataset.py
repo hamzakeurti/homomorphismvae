@@ -44,13 +44,15 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
                  num_train=200,
                  num_val: int = 30,
                  resample:bool=False,
-                 num_samples:int=200):
+                 num_samples:int=200,
+                 normalize_actions:bool=True):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Read Data from file.
         self._root = root
         self.resample = resample
         self.num_samples = num_samples
+        self.normalize_actions = normalize_actions
 
         # Number of samples
         self.num_train = num_train
@@ -101,6 +103,9 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
             with h5py.File(filepath,'r') as f:
                 self._images = f['images'][()]
                 self._transitions = f['actions'][()] 
+                if self.normalize_actions:
+                    self.M = np.abs(self._transitions).max(axis=(0,1))
+                    self._transitions /= self.M
             # images = self._file['images']
             # transitions = self._file['rotations']
 
@@ -119,6 +124,9 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
             with h5py.File(filepath,'r') as f:
                 self._images = f['images'][indices]
                 self._transitions = f['actions'][indices]
+                if self.normalize_actions:
+                    self.M = np.abs(self._transitions).max(axis=(0,1))
+                    self._transitions /= self.M
         else:
             pass 
     
@@ -188,7 +196,10 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
                 a[1+2*i:3+2*i,i] = np.array([1,-1])*self.trans_stepsize
             else:
                 a[1+2*i:3+2*i,i] = np.array([1,-1])
-        return a, a
+            if self.normalize_actions:
+                a_in = a.copy()
+                a_in /= self.M
+        return a_in, a
 
     @property
     def in_shape(self):

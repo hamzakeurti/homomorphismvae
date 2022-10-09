@@ -61,7 +61,8 @@ class DspritesDataset(trns_dataset.TransitionDataset):
                  num_val: int = 30, cyclic_trans: bool = False,
                  dist: str = 'uniform',
                  return_integer_actions: bool = False,
-                 rotate_actions: float = 0):
+                 rotate_actions: float = 0,
+                 normalize_actions:bool=True):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Distribution
@@ -72,7 +73,9 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         self.num_train = num_train
         self.num_val = num_val
 
+
         # latents config
+        self.normalize_actions = normalize_actions
         self.transitions_on = transitions_on
         self.n_latents = 6
         self.latents = np.arange(self.n_latents)
@@ -135,6 +138,11 @@ class DspritesDataset(trns_dataset.TransitionDataset):
                                                size=num_val, replace=False)
         self.val_idx, self.val_dj = self.observe_n_transitions(
                                                self.val_start_idx)
+
+        if self.normalize_actions:
+            self.M = np.abs(self.train_dj).max(axis=(0,1))
+            self.train_dj /= self.M
+            self.val_dj /= self.M
         
         if self.action_shape[0]>=2:
             self.rotate_actions = rotate_actions
@@ -358,14 +366,15 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             a[1+2*i:3+2*i,i] = np.array([1,-1])
         
         if self.return_integer_actions:
-            idx = self.transition_to_index(a)
-            return idx, a
+            a_in = self.transition_to_index(a)
         elif self.rotate_actions:
-            rot_a = a.copy()
-            rot_a[...,:2] = rot_a[...,:2] @ self._rot_mat
-            return rot_a, a
+            a_in = a.copy()
+            a_in[...,:2] = a_in[...,:2] @ self._rot_mat
         else:
-            return a, a
+            a_in = a.copy()
+        if self.normalize_actions:
+            a_in /=self.M
+        return a_in, a
 
     @property
     def allowed_indices(self):
