@@ -45,7 +45,7 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
                  num_val: int = 30,
                  resample:bool=False,
                  num_samples:int=200,
-                 normalize_actions:bool=True):
+                 normalize_actions:bool=False):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Read Data from file.
@@ -101,8 +101,8 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
             self.resample_data()
         else:
             with h5py.File(filepath,'r') as f:
-                self._images = f['images'][()]
-                self._transitions = f['actions'][()] 
+                self._images = f['images'][:self.num_train]
+                self._transitions = f['actions'][:self.num_train,1:] 
                 if self.normalize_actions:
                     self.M = np.abs(self._transitions).max(axis=(0,1))
                     self._transitions /= self.M
@@ -123,7 +123,7 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
             filepath = os.path.join(self._root)
             with h5py.File(filepath,'r') as f:
                 self._images = f['images'][indices]
-                self._transitions = f['actions'][indices]
+                self._transitions = f['actions'][indices,1:]
                 if self.normalize_actions:
                     self.M = np.abs(self._transitions).max(axis=(0,1))
                     self._transitions /= self.M
@@ -165,6 +165,8 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
                     f"--num_train={nt} and --num_val={nv}")
             self.val_imgs = f['images'][nt:nt+nv]
             self.val_actions = f['actions'][nt:nt+nv,1:]
+            if self.normalize_actions:
+                self.val_actions /= self.M
 
 
     def __len__(self):
@@ -176,7 +178,7 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
 
     def __getitem__(self, idx):
         images = self._images[idx]
-        dj = self._transitions[idx,1:]
+        dj = self._transitions[idx]
         return images, [], dj
 
 
@@ -196,8 +198,8 @@ class Obj3dDataset(trns_dataset.TransitionDataset):
                 a[1+2*i:3+2*i,i] = np.array([1,-1])*self.trans_stepsize
             else:
                 a[1+2*i:3+2*i,i] = np.array([1,-1])
+            a_in = a.copy()
             if self.normalize_actions:
-                a_in = a.copy()
                 a_in /= self.M
         return a_in, a
 

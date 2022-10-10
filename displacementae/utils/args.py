@@ -74,6 +74,9 @@ def data_args(parser, mode='autoencoder'):
                              'of the data.')
     dgroup.add_argument('--num_samples', type=int, default=100,
                         help='Number of samples to load in memory every resampling.')
+    dgroup.add_argument('--normalize_actions',action='store_true',
+                         help='Divide the input transition signals by their ' +
+                              'max values.')
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
                             help='Whether to vary joint positions.')
