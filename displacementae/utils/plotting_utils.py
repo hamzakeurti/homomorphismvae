@@ -27,6 +27,7 @@ import torch
 from argparse import Namespace
 import wandb
 
+from data.dsprites import DspritesDataset
 import networks.autoencoder_prodrep as aeprod
 import utils.misc as misc
 import utils.data_utils as udutils
@@ -406,6 +407,9 @@ def plot_step_recon_loss(step_losses, config, figname=None):
 
 def plot_thetas(dhandler, nets: aeprod.AutoencoderProdrep, config, logger,
                 figname=None):
+    
+    if not isinstance(nets,aeprod.AutoencoderProdrep):
+        raise NotImplementedError("--plot_thetas is specific to the prodrepr ")
     if config.plot_on_black:
         plt.style.use('dark_background')
 
