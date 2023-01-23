@@ -58,17 +58,28 @@ class MLPRepresentation(GroupRepresentation):
                        layer_norm=layer_norm).to(device)
         self.exponential_map = exponential_map
     
-    def forward(self, a: torch.Tensor) -> torch.Tensor:
+    def forward(self, a: torch.Tensor, use_exponential:bool=None) -> torch.Tensor:
         """
         Forwards input transitions through an MLP network and reshapes
         the outputs to form matrices.
         """
+        if use_exponential is None:
+            use_exponential = self.exponential_map
         a = self.varphi(a)
         R = self.net(a)
         R = R.view(-1, self.dim_representation, self.dim_representation)
-        if self.exponential_map:
+        if use_exponential:
             R = torch.matrix_exp(R) 
         return R
+    
+    def forward_algebra(self,a: torch.Tensor) -> torch.Tensor:
+        """
+        Forwards input transitions through an MLP network and reshapes
+        the outputs to form matrices. No exponential.
+        """
+        a = self.varphi(a)
+        R = self.net(a)
+        R = R.view(-1, self.dim_representation, self.dim_representation)
 
 
 if __name__ == '__main__':

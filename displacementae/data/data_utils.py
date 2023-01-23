@@ -74,7 +74,8 @@ def setup_obj3d_dataset(config, mode='autoencoder'):
                              num_train=config.num_train, 
                              num_val=config.num_val,
                              resample=config.resample,
-                             num_samples=config.num_samples)
+                             num_samples=config.num_samples,
+                             normalize_actions=config.normalize_actions)
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
         shuffle=config.shuffle)
