@@ -23,6 +23,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from grouprepr.varphi import VarPhi
 
 
 from grouprepr.group_representation import GroupRepresentation
@@ -42,13 +43,12 @@ class MLPRepresentation(GroupRepresentation):
                  layer_norm=False, 
                  normalize_post_action:bool=False,
                  exponential_map:bool=False,
-                 varphi_units:list=[],
-                 varphi_seed:int=0) -> None:
+                 varphi:VarPhi= None
+                 ) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
                          normalize=normalize, 
                          normalize_post_action=normalize_post_action,
-                         varphi_units=varphi_units,
-                         varphi_seed=varphi_seed)
+                         varphi=varphi)
         self.net = MLP(in_features=self.varphi_out,
                        out_features=dim_representation ** 2,
                        hidden_units=hidden_units,

@@ -27,7 +27,7 @@ import torch.nn as nn
 
 from grouprepr.group_representation import GroupRepresentation
 from grouprepr.lookup_representation import LookupRepresentation
-
+from grouprepr.varphi import VarPhi
 
 class BlockLookupRepresentation(GroupRepresentation):
     """
@@ -44,11 +44,12 @@ class BlockLookupRepresentation(GroupRepresentation):
                  normalize_subrepresentations: bool = False,
                  normalize_post_action: bool = False,
                  exponential_map: bool = False,
-                 varphi_units:list=[]) -> None:
+                 varphi: VarPhi = None,
+                 ) -> None:
         super().__init__(n_action_units=1,
                          dim_representation=dim_representation, device=device,
                          normalize_post_action=normalize_post_action,
-                         varphi_units=varphi_units)
+                         varphi=varphi)
         self.dims = dims
         self.n_actions = n_actions
         self.n_subreps = len(dims)
@@ -62,7 +63,8 @@ class BlockLookupRepresentation(GroupRepresentation):
                             device=device,
                             normalize=normalize_subrepresentations,
                             normalize_post_action=normalize_post_action,
-                            exponential_map=exponential_map))
+                            exponential_map=exponential_map,
+                            ))
 
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         a = self.varphi(a)

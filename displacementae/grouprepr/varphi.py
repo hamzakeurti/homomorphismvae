@@ -35,28 +35,42 @@ class VarPhi(nn.Module):
 
     """
     def __init__(self, n_action_units:int, device='cpu',
-                 linear_units:list=[], seed:int=1) -> None:
+                 linear_units:list=[], activation:str='relu', 
+                 seed:int=1) -> None:
         super().__init__()
-        self.device = device
-        self.n_action_units = n_action_units
-        self.linear_units = linear_units
+        self._device = device
+        self._n_action_units = n_action_units
+        self._linear_units = linear_units
+        self._activation = activation
         
-        if self.linear_units==[0]:
-            self.linear_units=[]
-        if self.linear_units==[]:
-            self.net = nn.Identity()
-            self.out_units = self.n_action_units
+
+        if self._linear_units==[0]:
+            self._linear_units=[]
+        
+        if self._linear_units==[]:
+            self._net = nn.Identity()
+            self._out_units = self._n_action_units
         else:
-            self.out_units = self.linear_units[-1]
-            self.net = MLP(in_features=n_action_units,
-                              out_features=self.out_units,
-                              hidden_units=self.linear_units[:-1],
-                              activation=nn.LeakyReLU(negative_slope=0.2),
+            if activation == 'none':
+                act = nn.Identity()
+            elif activation == 'relu':
+                act = nn.Relu()
+            elif activation == 'leaky_relu':
+                act = nn.LeakyReLU(negative_slope=0.2)
+            elif activation == 'softplus':
+                act = nn.Softplus()
+            self._out_units = self._linear_units[-1]
+            self._net = MLP(in_features=n_action_units,
+                              out_features=self._out_units,
+                              hidden_units=self._linear_units[:-1],
+                              activation=act,
                               seed=seed,bias=False)
 
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             self.eval()
-            return self.net(a) 
+            return self._net(a) 
     
-
+    @property
+    def out_units(self)->int:
+        return self._out_units

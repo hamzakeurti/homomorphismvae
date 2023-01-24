@@ -28,6 +28,7 @@ import torch.nn.functional as F
 from grouprepr.group_representation import GroupRepresentation
 from grouprepr.mlp_representation import MLPRepresentation
 from networks.mlp import MLP
+from grouprepr.varphi import VarPhi
 
 
 class SoftBlockMLPRepresentation(MLPRepresentation):
@@ -43,8 +44,8 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
                  layer_norm=False, 
                  normalize_post_action:bool=False,
                  exponential_map:bool=False,
-                 varphi_units:list=[],
-                 varphi_seed:int=0) -> None:
+                 varphi: VarPhi = None,
+                 ) -> None:
         super().__init__(
                  n_action_units=n_action_units, 
                  dim_representation=dim_representation, 
@@ -55,8 +56,7 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
                  layer_norm=layer_norm, 
                  normalize_post_action=normalize_post_action,
                  exponential_map=exponential_map,
-                 varphi_units=varphi_units,
-                 varphi_seed=varphi_seed
+                 varphi=varphi,
                  )
         self.masks = self._get_masks().to(device)
         self.repr_loss_on = True
@@ -73,7 +73,7 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
         return M
 
     def representation_loss(self, dj):
-        R = self(dj)
+        R = self(dj) # Calls the underlying MLPRepresentation forward.
         l = self.masks.unsqueeze(0)*R.unsqueeze(1)
         l = l.square().sum((2,3)).sqrt().sum(1).square().sum().sqrt()
         return l

@@ -24,6 +24,8 @@ import torch
 import torch.nn as nn
 
 from grouprepr.group_representation import GroupRepresentation
+from grouprepr.varphi import VarPhi
+
 
 class TrivialRepresentation(GroupRepresentation):
     """
@@ -33,10 +35,11 @@ class TrivialRepresentation(GroupRepresentation):
     """
     def __init__(self, dim_representation: int,
                  device:torch.DeviceObjType='cpu',
-                 varphi_units:list=[]) -> None:
+                 varphi: VarPhi = None,
+                 ) -> None:
         super().__init__(n_action_units=1, 
                          dim_representation=dim_representation, device=device,
-                         varphi_units=varphi_units)
+                         varphi=varphi)
     
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         """

@@ -24,6 +24,7 @@ import torch
 import torch.nn as nn
 
 from grouprepr.group_representation import GroupRepresentation
+from grouprepr.varphi import VarPhi
 
 
 class LookupRepresentation(GroupRepresentation):
@@ -39,12 +40,14 @@ class LookupRepresentation(GroupRepresentation):
                  normalize: bool = False,
                  normalize_post_action: bool = False,
                  exponential_map: bool = False,
-                 varphi_units:list=[]) -> None:
+                 varphi: VarPhi = None,
+                 ) -> None:
         super().__init__(n_action_units=1,
                          dim_representation=dim_representation, device=device,
                          normalize=normalize,
                          normalize_post_action=normalize_post_action,
-                         varphi_units=varphi_units)
+                         varphi=varphi,
+                         )
         self.action_reps = nn.ParameterList([
             nn.parameter.Parameter(
                  scale * torch.randn(size=(dim_representation, dim_representation)))

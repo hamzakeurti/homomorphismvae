@@ -27,6 +27,7 @@ import torch.nn as nn
 
 from grouprepr.group_representation import GroupRepresentation
 from grouprepr.mlp_representation import MLPRepresentation
+from grouprepr.varphi import VarPhi
 
 
 class BlockMLPRepresentation(GroupRepresentation):
@@ -42,12 +43,11 @@ class BlockMLPRepresentation(GroupRepresentation):
                  normalize_subrepresentations = False,
                  normalize_post_action:bool=False,
                  exponential_map:bool=False,
-                 varphi_units:list=[],
-                 varphi_seed:int=0) -> None:
+                 varphi: VarPhi = None,
+                 ) -> None:
         super().__init__(n_action_units, dim_representation, device=device, 
                          normalize_post_action=normalize_post_action,
-                         varphi_units=varphi_units,
-                         varphi_seed=varphi_seed)
+                         varphi=varphi)
         self.exponential_map = exponential_map
         self.dims = dims
         self.n_subreps = len(dims)
@@ -64,7 +64,8 @@ class BlockMLPRepresentation(GroupRepresentation):
                             layer_norm=True,
                             normalize=normalize_subrepresentations, 
                             normalize_post_action=normalize_post_action,
-                            exponential_map=exponential_map))
+                            exponential_map=exponential_map,
+                            ))
             
     def forward(self, a: torch.Tensor, use_exponential:bool=None) -> torch.Tensor:
         if use_exponential is None:

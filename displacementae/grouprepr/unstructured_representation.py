@@ -6,7 +6,7 @@ import numpy as np
 
 from grouprepr.group_representation import GroupRepresentation
 from networks.mlp import MLP
-
+from grouprepr.varphi import VarPhi
 
 class UnstructuredRepresentation(GroupRepresentation):
     """
@@ -22,10 +22,11 @@ class UnstructuredRepresentation(GroupRepresentation):
                  activation=nn.ReLU(),
                  layer_norm=False,
                  device='cpu',
-                 varphi_units:list=[]) -> None:
+                 varphi: VarPhi = None,
+                 ) -> None:
 
         super().__init__(n_action_units, dim_representation, device=device,
-                         varphi_units=varphi_units)
+                         varphi=varphi)
 
         self.net = MLP(in_features=dim_representation + self.varphi_out,
                        out_features=dim_representation,
