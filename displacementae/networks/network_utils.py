@@ -138,7 +138,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 specified_step = specified_step[0]
 
         grp_morphism = orth.OrthogonalMatrix(
-            dim_representation=dhandler.action_shape[0] * 2, device=device,
+            dim_representation=dhandler.action_units * 2, device=device,
             learn_params=config.learn_geometry,
             specified_step=specified_step,
             varphi=varphi,).to(device)
@@ -146,7 +146,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
     elif representation == Representation.MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = MLPRepresentation(
-                n_action_units=dhandler.action_shape[0],
+                n_action_units=dhandler.action_units,
                 dim_representation=config.dim,
                 hidden_units=hidden_units,device=device, 
                 normalize=config.normalize,
@@ -159,7 +159,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
         dims = misc.str_to_ints(config.dims)
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = BlockMLPRepresentation(
-                n_action_units=dhandler.action_shape[0],
+                n_action_units=dhandler.action_units,
                 dim_representation=sum(dims),
                 dims=dims,
                 hidden_units=hidden_units,
@@ -218,7 +218,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
     elif representation == Representation.SOFT_BLOCK_MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = SoftBlockMLPRepresentation(
-                n_action_units=dhandler.action_shape[0],
+                n_action_units=dhandler.action_units,
                 dim_representation=config.dim,
                 hidden_units=hidden_units,device=device, 
                 normalize=config.normalize,

@@ -32,8 +32,10 @@ import torch.nn as nn
 from torch.utils.data import Dataset, Sampler
 import os
 import h5py
+from typing import Tuple, List
 
-import data.transition_dataset as trns_dataset
+
+from data.transition_dataset import TransitionDataset
 
 IMGS = "imgs"
 LATENTS = "latents"
@@ -53,30 +55,35 @@ class LatentIdx:
 LATENT_NAMES = ['color', 'shape', 'scale', 'orientation', 'pos_x', 'pos_y']
 
 
-class DspritesDataset(trns_dataset.TransitionDataset):
-    def __init__(self, root, rseed=None, fixed_in_sampling=[],
-                 fixed_values=[], fixed_in_action=[], transitions_on=True,
-                 n_transitions: int = None, action_range: list = [-1, 1],
-                 num_train=200,
-                 num_val: int = 30, cyclic_trans: bool = False,
-                 dist: str = 'uniform',
-                 return_integer_actions: bool = False,
-                 rotate_actions: float = 0,
-                 normalize_actions:bool=True):
-        super().__init__(rseed, transitions_on, n_transitions)
+class DspritesDataset(TransitionDataset):
+    def __init__(self, 
+            root:str, 
+            rseed:int=None, 
+            fixed_in_sampling:List[int]=[],
+            fixed_values:List[int]=[], 
+            fixed_in_action:List[int]=[], 
+            n_transitions: int = None, 
+            action_range: list = [-1, 1],
+            num_train=200,
+            num_val: int = 30, 
+            cyclic_trans: bool = False,
+            dist: str = 'uniform',
+            return_integer_actions: bool = False,
+            rotate_actions: float = 0,
+            normalize_actions:bool=True):
+        super().__init__(rseed, n_transitions)
 
         # Distribution
         self.dist = dist
         self.return_integer_actions = return_integer_actions
 
         # Number of samples
-        self.num_train = num_train
-        self.num_val = num_val
+        self._num_train = num_train
+        self._num_val = num_val
 
 
         # latents config
         self.normalize_actions = normalize_actions
-        self.transitions_on = transitions_on
         self.n_latents = 6
         self.latents = np.arange(self.n_latents)
 
@@ -87,9 +94,6 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         self.fixed_in_action = fixed_in_action
         self.varied_in_action = np.array([i for i in self.latents
                                           if i not in self.fixed_in_action])
-        if not self.transitions_on:
-            self.varied_in_action = np.array([])
-            self.fixed_in_action = self.latents
         self.transition_range = action_range
         # Types of latents
         if not cyclic_trans:
@@ -105,20 +109,21 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         
         # Number of values for each latent
         self.num_latents = self._classes[-1] + 1 
-        self.setup_latents_bases()
+        self._setup_latents_bases()
 
         #number of unit actions
         if len(self.fixed_in_action)>0:
-            self.action_dim = self.n_latents - len(self.fixed_in_action)
+            self.n_varied = self.n_latents - len(self.fixed_in_action)
         else:
-            self.action_dim  = self.n_latents
+            self.n_varied = self.n_latents
 
         data = {}
         data["in_shape"] = [1,64,64]
         if self.return_integer_actions:
-            data["action_shape"] = [1]
+            data["action_units"] = 1
         else:
-            data["action_shape"] = [len(self.varied_in_action)]
+            data["action_units"] = len(self.varied_in_action)
+        data["action_dim"] = len(self.varied_in_action)
 
         self._data = data
 
@@ -144,7 +149,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             self.train_dj /= self.M
             self.val_dj /= self.M
         
-        if self.action_shape[0]>=2:
+        if self.action_units>=2:
             self.rotate_actions = rotate_actions
         else:
             self.rotate_actions = 0
@@ -159,6 +164,62 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             self.train_dj[...,:2] = self.train_dj[...,:2] @ self._rot_mat
             self.val_dj[...,:2] = self.val_dj[...,:2] @ self._rot_mat
             
+    def __len__(self):
+        return self._num_train
+
+    def __getitem__(self, idx):
+        indices = self.train_idx[idx]
+        images = self.images[indices]
+        latents = self.latents[indices]
+        dj = self.train_dj[idx]
+        return images, latents, dj
+
+    @property
+    def n_actions(self):
+        """
+        Number of all possible discrete actions.
+        """
+        if self.dist == 'uniform':
+            return (self.transition_range[1] - self.transition_range[0]+1)\
+                    ** self.action_dim
+        if self.dist == 'disentangled':
+            return (self.transition_range[1] - self.transition_range[0]+1)\
+                    * self.action_dim
+
+    @property
+    def in_shape(self):
+        return self._data["in_shape"]
+
+    
+    @property
+    def action_units(self) -> int:
+        return self._data["action_units"]
+    
+
+    @property
+    def action_dim(self) -> int:
+        return self._data["action_dim"]
+
+
+    def _latents_2_index(self,latents:np.ndarray)->np.ndarray:
+        """
+        Converts a vector of latents values to its index in the subdataset.
+        """
+        return np.dot(
+            latents[...,self.varied_in_sampling],self.latent_bases_varied)
+
+    def _setup_latents_bases(self):
+        """
+        Computes the latents bases vector for converting latents vectors to indices.
+        """
+        self.num_latents_varied = self.num_latents[self.varied_in_sampling]
+        self.latent_bases = np.concatenate([
+            np.cumprod(self.num_latents[::-1])[::-1][1:],[1]])
+        self.latent_bases_varied = np.concatenate([
+            np.cumprod(self.num_latents_varied[::-1])[::-1][1:],[1]])    
+        self.dataset_size = np.prod(self.num_latents_varied)
+
+
 
     def _process_hdf5(self):
         """
@@ -188,33 +249,23 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         indices = np.dot(all_latents,self.latent_bases)
         return indices
 
-    def __len__(self):
-        return self.num_train
-
-    def __getitem__(self, idx):
-        indices = self.train_idx[idx]
-        images = self.images[indices]
-        latents = self.latents[indices]
-        dj = self.train_dj[idx]
-        return images, latents, dj
-
-    @property
-    def n_actions(self):
-        """
-        Number of all possible discrete actions.
-        """
-        if self.dist == 'uniform':
-            return (self.transition_range[1] - self.transition_range[0]+1)\
-                    ** self.action_dim
-        if self.dist == 'disentangled':
-            return (self.transition_range[1] - self.transition_range[0]+1)\
-                    * self.action_dim
 
     def get_latent_name(self,id):
         """
         Returns the name of the latent corresponding to the input id.
         """
         return LATENT_NAMES[id]
+
+    def observe_n_transitions(self, idx):
+        indices = np.empty(shape=(idx.shape[-1], self.n_transitions+1), dtype=int)
+        transitions = []
+        indices[:, 0] = idx
+        for i in range(self.n_transitions):
+            idx2, dj = self._transition(indices[:,i])
+            indices[:,i+1]= idx2
+            transitions.append(dj)
+        transitions = np.stack(transitions,axis=1)
+        return indices,transitions
 
     def get_images_batch(self, indices):
         """
@@ -224,14 +275,21 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         imgs = np.expand_dims(imgs,axis=1)
         return imgs, labels
 
-    def get_val_batch(self):
+
+    def get_val_batch(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Get a batch of evaluation samples.
+
+        :return: a tuple of a batch of observation evaluation samples and 
+                 transition evaluation samples. 
+        :rtype: Tuple[np.ndarray, , np.ndarray, np.ndarray]
+        """
         indices = self.val_idx
         images = self.images[indices]
         latents = self.latents[indices]
         dj = self.val_dj
         return images, latents, dj
 
-    def transition(self, index):
+    def _transition(self, index):
         """"""
         latents = self.latents[index]
         if len(self.varied_in_action)==0:
@@ -243,7 +301,7 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             dist=self.dist)
         new_latents, dj = self._transition_linear(latents, dj)
         new_latents, dj = self._transition_circular(new_latents, dj)
-        indices2 = self.latents_2_index(new_latents)
+        indices2 = self._latents_2_index(new_latents)
         dj = dj[..., self.varied_in_action]
         if self.return_integer_actions:
             dj = self.transition_to_index(dj)
@@ -295,17 +353,14 @@ class DspritesDataset(trns_dataset.TransitionDataset):
              % num_latents
         return new_joints, dj
 
-    def joints_to_index(self,joints):
-        index = 0
-        base = 1
-        for j,joint in reversed(list(enumerate(joints))):
-            index += joint * base
-            base *= self.num_latents[j]
-        return index
+    # def joints_to_index(self,joints):
+    #     index = 0
+    #     base = 1
+    #     for j,joint in reversed(list(enumerate(joints))):
+    #         index += joint * base
+    #         base *= self.num_latents[j]
+    #     return index
 
-    # def latents_2_index(self,joints):
-    #     return np.dot(
-    #         joints[...,self.varied_in_sampling],self.latent_bases_varied)
 
     def get_index(self, i):
         """
@@ -360,7 +415,9 @@ class DspritesDataset(trns_dataset.TransitionDataset):
     def index_to_transition(self,idx):
         pass
 
-    def get_example_actions(self):
+    
+
+    def get_example_actions(self) -> Tuple[np.ndarray, np.ndarray]:
         a = np.zeros((self.action_dim*2+1,self.action_dim))
         for i in range(self.action_dim):
             a[1+2*i:3+2*i,i] = np.array([1,-1])
@@ -376,24 +433,45 @@ class DspritesDataset(trns_dataset.TransitionDataset):
             a_in /=self.M
         return a_in, a
 
-    @property
-    def allowed_indices(self):
-        if hasattr(self, '_allowed_indices'):
-            pass
-        else:
-            self._allowed_indices = [self.get_index(i) for i in range(self.n_samples)]
-        return self._allowed_indices
-
-    @property
-    def in_shape(self):
-        return self._data["in_shape"]
-
-    @property
-    def action_shape(self):
-        return self._data["action_shape"]
+    # @property
+    # def allowed_indices(self):
+    #     if hasattr(self, '_allowed_indices'):
+    #         pass
+    #     else:
+    #         self._allowed_indices = [self.get_index(i) for i in range(self.n_samples)]
+    #     return self._allowed_indices
 
 
 if __name__ == '__main__':
+    import os,sys
+
+    curr_dir = os.path.basename(os.path.abspath(os.curdir))
+    # See __init__.py in folder "toy_example" for an explanation.
+    if curr_dir == 'data' and '..' not in sys.path:
+        sys.path.insert(0, '..')
+
+
+
+    import __init__
+
+    import h5py
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    from data.dsprites import DspritesDataset
+
+
+    root = "D:\\Projects\\PhD\\datasets\\dsprites"
+
+    dhandler = DspritesDataset(root, rseed=None, fixed_in_sampling=[],
+                 fixed_values=[], fixed_in_action=[],
+                 n_transitions= 1, action_range = [-1, 1],
+                 num_train=200,
+                 num_val= 30, cyclic_trans = False,
+                 dist= 'uniform',
+                 return_integer_actions= False,
+                 rotate_actions= 0,
+                 normalize_actions=True)
     pass
     # dataset = DspritesDataset(root = '/home/hamza/datasets/dsprites')
     # print(dataset.train_idx)

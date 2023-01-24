@@ -26,7 +26,7 @@ class ArmEyeDataset(Dataset):
             rand = np.random
 
         self.num_train = num_train
-        self.num_val = num_val
+        self.__num_val = num_val
         
         self.root = root
         self.labels_file = os.path.join(root,"labels.npy")

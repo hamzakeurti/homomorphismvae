@@ -55,7 +55,6 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
         fixed_in_sampling=fixed_in_sampling,
         fixed_values=fixed_values,
         fixed_in_action=fixed_in_action,
-        transitions_on=config.intervene,
         n_transitions=config.n_steps,
         action_range=action_range,
         cyclic_trans=config.cyclic_trans,
