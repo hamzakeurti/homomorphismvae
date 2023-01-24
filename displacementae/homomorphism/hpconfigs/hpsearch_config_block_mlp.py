@@ -101,11 +101,13 @@ grid = {
 
     ### Group ###
     'dims' : ['"2,2"'],
+    'group_hidden_units':['"128,128"','"1024"','"256,256"'],
     'normalize_post_action':[False],
     'latent_loss_weight':[800,400],
     'latent_loss':[True],
     'reconstruct_first_only':[False],
     'reconstruct_first':[True],
+    'exponential_map':[True],
 
 
     ### VarPhi ###
@@ -153,7 +155,7 @@ conditions = [
     #({'clip_grad_norm': [1.]}, {'clip_grad_value': [-1]}),
     ({'strides': ['"2,2"','"1,1"']},{'kernel_sizes': ['"6,4"'],'conv_channels': ['"32,32"']}),
     ({'strides': ['"2,2,1"','"1,1,1"']},{'kernel_sizes': ['"6,4,4"'],'conv_channels': ['"32,32,32"','"64,64,64"']}),
-    ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"']}),
+    ({'strides': ['"2,2,1,1"','"1,1,1,1"']},{'kernel_sizes': ['"6,4,4,4"'],'conv_channels': ['"32,32,32,32"','"64,64,64,64"']}),
     ({'exponential_map':[True]},{'spherical':[False],'normalize_subrepresentations':[False], 'normalize_post_action':[False]})
 ]
 

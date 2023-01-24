@@ -48,6 +48,7 @@ class BlockMLPRepresentation(GroupRepresentation):
                          normalize_post_action=normalize_post_action,
                          varphi_units=varphi_units,
                          varphi_seed=varphi_seed)
+        self.exponential_map = exponential_map
         self.dims = dims
         self.n_subreps = len(dims)
         self.cumdims = [0, *np.cumsum(self.dims)]
@@ -65,13 +66,28 @@ class BlockMLPRepresentation(GroupRepresentation):
                             normalize_post_action=normalize_post_action,
                             exponential_map=exponential_map))
             
-    def forward(self, a: torch.Tensor) -> torch.Tensor:
+    def forward(self, a: torch.Tensor, use_exponential:bool=None) -> torch.Tensor:
+        if use_exponential is None:
+            use_exponential = self.exponential_map
         a = self.varphi(a)
         d = self.dim_representation
         R = torch.zeros(*a.shape[:-1],d,d,device=a.device)
         for i in range(self.n_subreps):
             R[..., self.cumdims[i]:self.cumdims[i+1],
-              self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a)
+              self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i](a,use_exponential=use_exponential)
+        return R
+
+    def forward_algebra(self,a: torch.Tensor) -> torch.Tensor:
+        """
+        Forwards input transitions through an MLP network and reshapes
+        the outputs to form matrices. No exponential.
+        """
+        a = self.varphi(a)
+        d = self.dim_representation
+        R = torch.zeros(*a.shape[:-1],d,d,device=a.device)
+        for i in range(self.n_subreps):
+            R[..., self.cumdims[i]:self.cumdims[i+1],
+              self.cumdims[i]:self.cumdims[i+1]] = self.subreps[i].forward_algebra(a)
         return R
 
     def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
