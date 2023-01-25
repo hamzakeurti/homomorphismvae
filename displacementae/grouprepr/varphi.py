@@ -54,7 +54,7 @@ class VarPhi(nn.Module):
             if activation == 'none':
                 act = nn.Identity()
             elif activation == 'relu':
-                act = nn.Relu()
+                act = nn.ReLU()
             elif activation == 'leaky_relu':
                 act = nn.LeakyReLU(negative_slope=0.2)
             elif activation == 'softplus':

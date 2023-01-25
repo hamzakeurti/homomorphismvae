@@ -119,7 +119,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
     """
 
     varphi_units = misc.str_to_ints(config.varphi_units)
-    varphi = VarPhi(n_action_units=dhandler.action_shape[0],
+    varphi = VarPhi(n_action_units=dhandler.action_units,
            device=device, 
            linear_units=varphi_units,
            activation=config.varphi_act,

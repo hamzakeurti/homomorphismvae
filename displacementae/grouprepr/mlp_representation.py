@@ -80,6 +80,7 @@ class MLPRepresentation(GroupRepresentation):
         a = self.varphi(a)
         R = self.net(a)
         R = R.view(-1, self.dim_representation, self.dim_representation)
+        return R
 
 
 if __name__ == '__main__':
