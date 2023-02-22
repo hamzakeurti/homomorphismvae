@@ -141,14 +141,7 @@ def data_gen_args(parser):
     group.add_argument('--n_colors', type=int, default=0, 
                         help='Number of colors equally spaced on the hue wheel.')
     group.add_argument('--max_color_shift', type=int, default=0, 
-                        help='Range of the random displacement of the color.')
-    group.add_argument('--rotation_matrix', action='store_true', 
-                        help='Whether to store rotation matrices.')
-    group.add_argument('--rotation_matrix_action', action='store_true', 
-                        help='Whether the action vector for rotation is ' +
-                             'flattened rotation matrices.')
-    
-    
+                        help='Range of the random displacement of the color.') 
     
 
 
