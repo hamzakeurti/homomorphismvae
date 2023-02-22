@@ -334,9 +334,9 @@ def sample_n_steps_colors(
         a_out[:,1:,0] = np.random.randint(
             max_color_shift*2+1,size=[batch_size,n_steps]) - max_color_shift
         pos_out = np.cumsum(a_out,axis=1)%n_colors
-    # else:
+    else:
         # a_out = a_out[:,0]
-        # pos_out = a_out
+        pos_out = a_out
     return a_out, pos_out
 
 
@@ -465,7 +465,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
     n_pos = 0 #number of dimensions for 3D position
     n_actions = 0
     if rotate:
-        n_pos+=3
+        n_pos+=9
         if rotation_matrix_action:
             n_actions+=9 # flattened rotation matrix
         else:
