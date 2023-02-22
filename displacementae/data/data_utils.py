@@ -75,8 +75,7 @@ def setup_obj3d_dataset(config, mode='autoencoder'):
     if mode == 'supervised':
         dhandler = Obj3dSupervisedDataset(root=config.data_root, 
                              num_train=config.num_train, 
-                             num_val=config.num_val,
-                             use_rotation_matrix=config.use_rotation_matrix)
+                             num_val=config.num_val)
         dloader = DataLoader(
                             dataset=dhandler, batch_size=config.batch_size,
                             shuffle=config.shuffle)

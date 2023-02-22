@@ -421,7 +421,3 @@ def supervised_args(parser):
     sgroup.add_argument('--net_mode',type=str,choices=['encoder','decoder'],
                         help='Whether we train a supervised encoder ' +
                              'or decoder')
-    sgroup.add_argument('--use_rotation_matrix', action='store_true',
-                        help='If True, labels for orientation are the ' +
-                             'flattened rotation matrices from an '+ 
-                             'arbitrary canonical view.')

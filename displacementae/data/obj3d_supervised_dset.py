@@ -45,7 +45,6 @@ class Obj3dSupervisedDataset(Dataset):
                  rseed:int=None,
                  num_train:int=200,
                  num_val:int=30,
-                 use_rotation_matrix:bool=True,
                  ):
         super().__init__()
         # Random generator
@@ -70,15 +69,19 @@ class Obj3dSupervisedDataset(Dataset):
         self._trans_idx = np.array([])
         self._col_idx = np.array([])
         
-        if (not self._translate_only):
-            self._rots_idx = np.arange(3)
+        nrots = 9 if self._rotation_matrix_action else 3
+        ntrans = 3
+        ncols = 1
+        n = 0
+        if self._rotate:
+            self._rots_idx = np.arange(nrots)
+            n += nrots
         
         if self._translate:
-            self._trans_idx = np.arange(start=3,stop=6)
-        if self._translate_only:
-            self._trans_idx = np.arange(3)
+            self._trans_idx = np.arange(start=n,stop=n+ntrans)
+            n+= ntrans
         if self._color:
-            self._col_idx = np.array(self._transitions.shape[-1]-1)        
+            self._col_idx = np.array(n-1)        
         
         rng = self._rots_range[1] - self._rots_range[0]
         if self._mode=='continuous':
@@ -86,16 +89,9 @@ class Obj3dSupervisedDataset(Dataset):
         else:
             self._rots_stepsize=rng/(self._rots_n_values-1)
         
-        if use_rotation_matrix:
-            self._labels = np.concatenate(
-                [self._rot_mats.reshape(self._num_train,-1),
-                self._actions[:,3:]], axis=1)
-            self._val_labels = np.concatenate(
-                [self._val_rot_mats.reshape(self._num_val,-1),
-                self._val_actions[:,3:]], axis=1)
-        else:
-            self._labels = self._actions
-            self._val_labels = self._val_actions
+
+        self._labels = self._actions
+        self._val_labels = self._val_actions
 
         data = {}
         data["in_shape"] = self._imgs.shape[2:]
@@ -137,7 +133,7 @@ class Obj3dSupervisedDataset(Dataset):
         with h5py.File(filepath,'r') as f:
             self._imgs = f['images'][:nt]
             self._actions = f['actions'][:nt]
-            self._rot_mats = f['rot_mats'][:nt]
+            self._rot_mats = f['positions'][:nt]
             
             n = f['images'].shape[0]
             if  n < (nt+nv):
@@ -146,7 +142,7 @@ class Obj3dSupervisedDataset(Dataset):
             
             self._val_imgs = f['images'][nt:nt+nv]
             self._val_actions = f['actions'][nt:nt+nv]
-            self._val_rots_mats = f['rot_mats'][nt:nt+nv]
+            self._val_rots_mats = f['positions'][nt:nt+nv]
 
 
     def _load_attributes(self):
@@ -161,13 +157,14 @@ class Obj3dSupervisedDataset(Dataset):
         # "lim":lim,
         self._mode = self._attributes_dict["mode"] 
         self._translate=self._attributes_dict["translate"]
-        self._translate_only=self._attributes_dict["translate_only"]
+        self._rotate=self._attributes_dict["rotate"]
+        self._rotation_matrix_action = self._attributes_dict["rotation_matrix_action"]
         self._rots_range=self._attributes_dict["rots_range"]
         self._n_steps=self._attributes_dict["n_steps"] 
         self._n_samples=self._attributes_dict["n_samples"]
         self._color= self._attributes_dict["color"]
         self._rots_n_values=self._attributes_dict["n_values"] 
-        if self._translate or self._translate_only:
+        if self._translate:
             self._trans_grid=self._attributes_dict["translation_grid"]
             self._trans_stepsize=self._attributes_dict["translation_stepsize"]
             self._trans_range=self._attributes_dict["translation_range"]
@@ -185,4 +182,11 @@ class Obj3dSupervisedDataset(Dataset):
 
 
 if __name__ == '__main__':
-    pass
+    # pass
+
+    from data.obj3d_supervised_dset import Obj3dSupervisedDataset
+
+    root = 'C:/Users/hamza/datasets/obj3d/collect/bunny1.hdf5'
+    dataset = Obj3dSupervisedDataset(root=root,rseed=5,use_rotation_matrix=True,num_train=1,num_val=0)
+    x = dataset[0]
+    print(x.shape)
