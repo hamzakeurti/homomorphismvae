@@ -94,16 +94,13 @@ class Obj3dSupervisedDataset(Dataset):
         self._val_labels = self._val_actions
 
         data = {}
-        data["in_shape"] = self._imgs.shape[2:]
+        data["in_shape"] = self._imgs.shape[1:]
         data["action_units"] = self._labels.shape[-1]
         self._data = data
 
 
     def __len__(self):
-        if self._resample:
-            return self._num_samples
-        else:
-            return self._num_train
+        return self._num_train
 
 
     def __getitem__(self, idx):
@@ -131,18 +128,18 @@ class Obj3dSupervisedDataset(Dataset):
         nt = self._num_train
         nv = self._num_val
         with h5py.File(filepath,'r') as f:
-            self._imgs = f['images'][:nt]
-            self._actions = f['actions'][:nt]
-            self._rot_mats = f['positions'][:nt]
+            self._imgs = np.squeeze(f['images'][:nt],1)
+            self._actions = np.squeeze(f['actions'][:nt],1)
+            self._rot_mats = np.squeeze(f['positions'][:nt],1)
             
             n = f['images'].shape[0]
             if  n < (nt+nv):
                 raise ValueError(f"Not enough samples {n} for chosen " + 
                     f"--num_train={nt} and --num_val={nv}")
             
-            self._val_imgs = f['images'][nt:nt+nv]
-            self._val_actions = f['actions'][nt:nt+nv]
-            self._val_rots_mats = f['positions'][nt:nt+nv]
+            self._val_imgs = np.squeeze(f['images'][nt:nt+nv],1)
+            self._val_actions = np.squeeze(f['actions'][nt:nt+nv],1)
+            self._val_rots_mats = np.squeeze(f['positions'][nt:nt+nv],1)
 
 
     def _load_attributes(self):

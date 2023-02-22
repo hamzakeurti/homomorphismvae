@@ -40,8 +40,8 @@ def str_to_ints(str_arg:str) -> List:
         args = [int(a.strip()) for a in args]
         ret.append(args)
     
-    # if len(ret) == 1:
-    #     ret = ret[0]
+    if len(ret) == 1:
+        ret = ret[0]
     return ret
 
 def ints_to_str(args:Union[List[int],int]) -> str:
