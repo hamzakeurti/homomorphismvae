@@ -605,7 +605,7 @@ if __name__=='__main__':
     config = gargs.parse_cmd_arguments()
     if not os.path.exists(os.path.dirname(config.out_path)):
         os.makedirs(os.path.dirname(config.out_path))
-    figsize = misc.str_to_ints(config.figsize)[0] # str_to_ints returns nested
+    figsize = misc.str_to_ints(config.figsize)
     rots_range = misc.str_to_floats(config.rots_range)
 
     np.random.seed(config.gen_random_seed)

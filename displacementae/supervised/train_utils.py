@@ -117,7 +117,7 @@ def evaluate(dhandler:Dataset,
 
         with torch.no_grad():
             batch = dhandler.get_val_batch()
-            x, z = [elem.to(device) for elem in batch]
+            x, z = [torch.tensor(elem).to(device) for elem in batch]
             # x is of shape [batch_size, channels, height, width]
             # z is of shape [batch_size, n_labels]
 
