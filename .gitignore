@@ -16,3 +16,5 @@ displacementae/*/out/*
 */out/*
 */*/wandb
 wandb/*
+displacementae/homomorphism/hpconfigs/*
+*.ipynb
