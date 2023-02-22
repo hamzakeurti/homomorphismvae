@@ -465,7 +465,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
     n_pos = 0 #number of dimensions for 3D position
     n_actions = 0
     if rotate:
-        n_pos+=9
+        n_pos+=9 # flattened rotation matrix
         if rotation_matrix_action:
             n_actions+=9 # flattened rotation matrix
         else:
