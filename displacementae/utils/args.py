@@ -123,8 +123,11 @@ def data_gen_args(parser):
                              'discrete sampling.')
     group.add_argument('--translate', action='store_true', 
                         help='Whether to also act with translations.')
-    group.add_argument('--translate_only', action='store_true', 
-                        help='Whether to only act with translations.')
+    group.add_argument('--rotate', action='store_true', 
+                        help='Whether to act with rotations.')
+    group.add_argument('--rotation_matrix_action', action='store_true', 
+                        help='Whether to use rotation matrices ' + 
+                             'as action signals.')     
     group.add_argument('--translation_grid', type=int, default=3, 
                         help='Half the number of positions for each axis.')
     group.add_argument('--translation_stepsize', type=float, default=0.3, 
@@ -139,7 +142,12 @@ def data_gen_args(parser):
                         help='Number of colors equally spaced on the hue wheel.')
     group.add_argument('--max_color_shift', type=int, default=0, 
                         help='Range of the random displacement of the color.')
-        
+    group.add_argument('--rotation_matrix', action='store_true', 
+                        help='Whether to store rotation matrices.')
+    group.add_argument('--rotation_matrix_action', action='store_true', 
+                        help='Whether the action vector for rotation is ' +
+                             'flattened rotation matrices.')
+    
     
     
 
@@ -196,13 +204,22 @@ def net_args(parser):
                         help='Training batch size')
     ngroup.add_argument('--conv_channels', type=str, default='',
                         help='Channels per layer. '+
-                        'Input channels must be included')
+                        'Input channels must not be included')
     ngroup.add_argument('--lin_channels', type=str, default='',
                         help='linear channels.')
     ngroup.add_argument('--kernel_sizes', type=str, default='5',
                         help='kernel sizes of convolution layers.')
     ngroup.add_argument('--strides', type=str, default='1',
                         help='strides of convlution layers.')
+    ngroup.add_argument('--decoder_conv_channels', type=str, default='-1',
+                        help='Channels per layer. '+
+                        'Input channels must be included')
+    ngroup.add_argument('--decoder_lin_channels', type=str, default='-1',
+                        help='linear channels.')
+    ngroup.add_argument('--decoder_kernel_sizes', type=str, default='-1',
+                        help='kernel sizes of convolution layers.')
+    ngroup.add_argument('--decoder_strides', type=str, default='-1',
+                        help='strides of transposed convolution layers.')
     ngroup.add_argument('--variational', action='store_true',
                         help='Whether the network outputs ' +
                         'should be considered as mean and var of a gaussian.')
@@ -405,3 +422,13 @@ def group_repr_args(parser, representation):
                         help='If True, the representation vector is ' + 
                              'normalized after each group action')
 
+
+def supervised_args(parser):
+    sgroup = parser.add_argument_group('Supervised options')
+    sgroup.add_argument('--net_mode',type=str,choices=['encoder','decoder'],
+                        help='Whether we train a supervised encoder ' +
+                             'or decoder')
+    sgroup.add_argument('--use_rotation_matrix', action='store_true',
+                        help='If True, labels for orientation are the ' +
+                             'flattened rotation matrices from an '+ 
+                             'arbitrary canonical view.')

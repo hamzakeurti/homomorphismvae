@@ -27,6 +27,8 @@ import torch.nn as nn
 import wandb
 import numpy as np
 
+from data.transition_dataset import TransitionDataset
+from networks.multistep_autoencoder import MultistepAutoencoder
 import data.data_utils as data_utils
 import data.transition_dataset as trns_data
 import networks.network_utils as net_utils
@@ -58,8 +60,8 @@ def setup_optimizer(params, config):
     return optimizer
 
 
-def evaluate(dhandler:trns_data.TransitionDataset,
-             nets:ms_ae.MultistepAutoencoder,
+def evaluate(dhandler:TransitionDataset,
+             nets:MultistepAutoencoder,
              device, config, shared, logger, mode, epoch,
              save_fig=False, plot=False, plot_reconstruction:bool=False, 
              plot_manifold:bool=False, plot_matrices:bool=False):
@@ -245,8 +247,8 @@ def evaluate(dhandler:trns_data.TransitionDataset,
                                             figname=figname)
     nets.train()
 
-def train(dhandler:trns_data.TransitionDataset, dloader, nets:ms_ae.MultistepAutoencoder, config, shared, 
-          device, logger, mode):
+def train(dhandler:TransitionDataset, dloader, nets:MultistepAutoencoder, 
+          config, shared, device, logger, mode):
     params = nets.parameters()
     optim = setup_optimizer(params, config)
     epochs = config.epochs

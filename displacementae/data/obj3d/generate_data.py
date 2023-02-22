@@ -26,6 +26,8 @@ import matplotlib.colors as clr
 import numpy as np
 from mpl_toolkits import mplot3d
 import h5py
+from typing import List
+
 import __init__
 import data.obj3d.gen_args as gargs
 import utils.misc as misc
@@ -61,12 +63,12 @@ def rotation_matrix(yaw,pitch,roll):
         [sy*cp  , sy*sp*sr + cy*cr  , sy*sp*cr - cy*sr],
         [-sp    , cp*sr             , cp*cr           ],
     ])
-    return R
+    return np.moveaxis(R,-1,0)
 
 
 def sample_orientations_from_canonical(
                     vertices, batch_size, mode='continuous',
-                    n_values=None):
+                    n_values=None, rotation_matrix_action:bool=False):
     """
     Produce a batch of different orientations from a single starting orientation.
     """
@@ -76,13 +78,18 @@ def sample_orientations_from_canonical(
     p = np.random.random([batch_size,3])
     p = 2*np.pi*p
     R = rotation_matrix(*p.T)
-    v_out = np.einsum('ijb,vj->bvi',R,vertices)
-    return v_out,p
+    v_out = np.einsum('bij,vj->bvi',R,vertices)
+    if rotation_matrix_action:
+        return v_out, R.reshape(-1,9), R.reshape(-1,9)
+    else:
+        return v_out, p, R.reshape(-1,9)
+        
 
 
-def sample_orientations_from_orientations(vertices, mode='continuous',
+def sample_orientations_from_orientations(vertices, pos_in, mode='continuous',
                                           n_values=None, low=-np.pi, 
-                                          high=np.pi):
+                                          high=np.pi,
+                                          rotation_matrix_action:bool=False):
     """
     Produce a batch of orientations by rotating a batch of orientations.
     """
@@ -96,22 +103,36 @@ def sample_orientations_from_orientations(vertices, mode='continuous',
     p += low
 
     R = rotation_matrix(*p.T)
-    v_out = np.einsum('ijb,bvj->bvi',R,vertices)
-    return v_out,p
+    v_out = np.einsum('bij,bvj->bvi',R,vertices)
+
+    R_in = pos_in[:,:9].reshape(-1,3,3)
+    R_out = (R@R_in).reshape(-1,9) 
+
+    if rotation_matrix_action:
+        return v_out, R.reshape(-1,9), R_out
+    else:
+        return v_out, p, R_out
 
 
-def sample_poses_from_canonical(vertices, batch_size, mode='continuous',n_values=None, translation_grid=5, translation_stepsize=0.5):
+def sample_poses_from_canonical(
+            vertices, batch_size, mode='continuous', n_values=None, 
+            translation_grid=5, translation_stepsize=0.5,
+            rotation_matrix_action:bool=False):
     # if mode == 'discrete':
     #     p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
     # elif mode == 'continuous':
     p = np.random.random([batch_size,3])
     p = 2*np.pi*p
     R = rotation_matrix(*p.T)
-    v_out = np.einsum('ijb,vj->bvi',R,vertices)
+    v_out = np.einsum('bij,vj->bvi',R,vertices)
     t = (np.random.randint(translation_grid*2+1, size=[batch_size,3]) - translation_grid)*translation_stepsize
     v_out += t[:,None,:]
-    p = np.hstack([p,t])
-    return v_out, p, t
+    if rotation_matrix_action:
+        p_out = np.hstack([R.reshape(-1,9),t])
+    else:
+        p_out = np.hstack([p,t])
+    pos_out = np.hstack([R.reshape(-1,9),t])
+    return v_out, p_out, pos_out
 
 
 def sample_trans_from_canonical(vertices, batch_size, translation_grid=5, translation_stepsize=0.5):
@@ -120,8 +141,11 @@ def sample_trans_from_canonical(vertices, batch_size, translation_grid=5, transl
     return v_out, t, t
 
 
-def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.pi, 
-                                          high=np.pi ,translation_grid=5, translation_stepsize=0.5, translation_range=1):
+def sample_poses_from_poses(vertices, pos_in, mode='continuous',n_values=None, 
+                            low=-np.pi, high=np.pi ,translation_grid=5, 
+                            translation_stepsize=0.5, 
+                            translation_range=1, 
+                            rotation_matrix_action:bool=False):
     batch_size = vertices.shape[0]
     if mode == 'discrete':
         p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
@@ -141,15 +165,21 @@ def sample_poses_from_poses(vertices, mode='continuous',n_values=None, low=-np.p
     # recenter rotate then translate back to new translated pos
     pos = vertices.mean(axis=1)
     v_out = vertices - pos[:,None,:]
-    v_out = np.einsum('ijb,bvj->bvi',R,v_out) # rotate
+    v_out = np.einsum('bij,bvj->bvi',R,v_out) # rotate
     
     # cyclic tranlations
     new_pos = np.round((pos + t)/s + g) % (2*g+1) # FIX
     new_pos = (new_pos - g)*s
     v_out += new_pos[:,None,:]
     
-    p = np.hstack([p,t])
-    return v_out,p, new_pos/translation_stepsize
+    R_in = pos_in[:,:9].reshape(-1,3,3)
+    R_out = (R@R_in).reshape(-1,9) 
+    pos_out = np.hstack([R_out, new_pos/translation_stepsize]) 
+    if rotation_matrix_action:
+        p_out = np.hstack([R.reshape(-1,9),t])
+    else:
+        p_out = np.hstack([p,t])
+    return v_out, p_out, pos_out
 
 
 def sample_trans_from_trans(vertices, translation_grid=5, translation_stepsize=0.5, translation_range=1):
@@ -173,10 +203,13 @@ def sample_trans_from_trans(vertices, translation_grid=5, translation_stepsize=0
 
 
 def sample_n_steps_orientations_from_canonical(
-            vertices, batch_size, n_steps=2, mode='continuous',n_values=None,
-            rots_range=(-np.pi,np.pi)):
+            vertices, batch_size:int, n_steps:int=2, mode:str='continuous',
+            n_values:int=None, rots_range:List=(-np.pi,np.pi), 
+            rotation_matrix_action:List=False):
     
     low, high = rots_range
+    n_actions = 9 if rotation_matrix_action else 3
+
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
         dtype=np.float32)
@@ -184,27 +217,41 @@ def sample_n_steps_orientations_from_canonical(
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
-        shape=(batch_size, n_steps+1, 3),
+        shape=(batch_size, n_steps+1, n_actions),
         dtype=np.float32)
+
+    pos_out = np.zeros(
+        shape=(batch_size, n_steps+1, 9),
+        dtype=np.float32)
+    
     # Sample initial positions
-    v_out[:,0,...], a_out[:,0,...] = sample_orientations_from_canonical(
+    v_out[:,0,...], a_out[:,0,...],pos_out[:,0,...] = \
+            sample_orientations_from_canonical(
                     vertices, batch_size, mode=mode,
-                    n_values=n_values)
+                    n_values=n_values, 
+                    rotation_matrix_action=rotation_matrix_action)
     # for step
     #    sample orientations
     for step in range(n_steps):
 
-        v_out[:,step+1,...], a_out[:,step+1,...] = sample_orientations_from_orientations(
-                    vertices=v_out[:,step,...],
-                    mode=mode, n_values=n_values, low=low, high=high)
-    return v_out, a_out
+        v_out[:,step+1,...], a_out[:,step+1,...], pos_out[:,step+1,...] = \
+                sample_orientations_from_orientations(
+                    vertices=v_out[:,step], pos_in=pos_out[:,step],
+                    mode=mode, n_values=n_values, low=low, high=high,
+                    rotation_matrix_action=rotation_matrix_action)
+    return v_out, a_out, pos_out
 
 
 def sample_n_steps_poses_from_canonical(
-            vertices, batch_size, n_steps=2, mode='continuous',n_values=None,
-            rots_range=(-np.pi,np.pi),translation_grid=3,translation_stepsize=0.5,translation_range=1):
+            vertices, batch_size, n_steps=2, mode='continuous', n_values=None,
+            rots_range=(-np.pi,np.pi), translation_grid=3,
+            translation_stepsize=0.5, translation_range=1, 
+            rotation_matrix_action:bool=False):
     
     low, high = rots_range
+    n_actions = 3 # 3D translation
+    n_actions += 9 if rotation_matrix_action else 3
+
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
         dtype=np.float32)
@@ -212,10 +259,10 @@ def sample_n_steps_poses_from_canonical(
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
-        shape=(batch_size, n_steps+1, 6),
+        shape=(batch_size, n_steps+1, n_actions),
         dtype=np.float32)
     pos_out = np.zeros(
-        shape=(batch_size, n_steps+1, 3),
+        shape=(batch_size, n_steps+1, 12), # always returns rotation matrix
         dtype=np.float32)
     # Sample initial positions
     v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
@@ -223,14 +270,15 @@ def sample_n_steps_poses_from_canonical(
                     vertices, batch_size, mode=mode,
                     n_values=n_values,
                     translation_grid=translation_grid,
-                    translation_stepsize=translation_stepsize)
+                    translation_stepsize=translation_stepsize,
+                    rotation_matrix_action=rotation_matrix_action)
     # for step
     #    sample poses
     for step in range(n_steps):
 
         v_out[:,step+1,...], a_out[:,step+1,...], pos_out[:,step+1,...] =\
              sample_poses_from_poses(
-                    vertices=v_out[:,step,...],
+                    vertices=v_out[:,step], pos_in=pos_out[:,step],
                     mode=mode, n_values=n_values, low=low, high=high,
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
@@ -269,6 +317,7 @@ def sample_n_steps_trans_from_canonical(
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
                     translation_range=translation_range)
+
     return v_out, a_out, pos_out
 
 def sample_n_steps_colors(
@@ -280,10 +329,14 @@ def sample_n_steps_colors(
     # Sample initial colors:
     a_out[:,0,0] = np.random.randint(n_colors,size=[batch_size])
 
-    # Sample other steps
-    a_out[:,1:,0] = np.random.randint(
-        max_color_shift*2+1,size=[batch_size,n_steps]) - max_color_shift
-    pos_out = np.cumsum(a_out,axis=1)%n_colors
+    if n_steps >= 1:
+        # Sample other steps
+        a_out[:,1:,0] = np.random.randint(
+            max_color_shift*2+1,size=[batch_size,n_steps]) - max_color_shift
+        pos_out = np.cumsum(a_out,axis=1)%n_colors
+    # else:
+        # a_out = a_out[:,0]
+        # pos_out = a_out
     return a_out, pos_out
 
 
@@ -393,8 +446,9 @@ def vertices_to_colored_images(
 def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
                      mode='continuous', n_values=0, 
                      rots_range=[-np.pi/2,np.pi/2],
+                     rotate=False,
+                     rotation_matrix_action=False,
                      translate=False,
-                     translate_only=False,
                      translation_grid=3,
                      translation_stepsize=0.5,
                      translation_range=1,
@@ -409,16 +463,24 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                      attributes_dict={}):
     
     n_pos = 0 #number of dimensions for 3D position
+    n_actions = 0
+    if rotate:
+        n_pos+=3
+        if rotation_matrix_action:
+            n_actions+=9 # flattened rotation matrix
+        else:
+            n_actions+=3 # rotation angles roll yaw pitch
+    
     if translate:
-        n_actions=6
-    else:
-        n_actions=3
-    if translate or translate_only:
-        n_pos = 3
+        n_actions+=3
+        n_pos+=3
+    
     if color:
         n_actions+=1
         n_pos+=1
+    
     vertices, triangles = read_obj(obj_filename, center)
+    
     with h5py.File(out_path, "w") as f:
         kwargs_images = {
             'dtype':np.float32,
@@ -445,33 +507,35 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
         
         dset_img = f.create_dataset('images', **kwargs_images)
         dset_rot = f.create_dataset('actions', **kwargs_actions)
-        if translate or translate_only or color:
-            dset_pos = f.create_dataset('positions', **kwargs_pos)
+        dset_pos = f.create_dataset('positions', **kwargs_pos)
 
 
         n_batches = n_samples//batch_size
         for i in range(n_batches):
             print(f'Sampling batch {i}/{n_batches}')
-            if translate_only:
-                v, a, pos = sample_n_steps_trans_from_canonical(
-                    vertices, batch_size=batch_size,
-                    n_steps=n_steps,
-                    translation_grid=translation_grid,
-                    translation_stepsize=translation_stepsize,
-                    translation_range=translation_range)
-            elif translate:
+            if translate and rotate:
                 v, a, pos = sample_n_steps_poses_from_canonical(
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
                     n_values=n_values, rots_range=rots_range,
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
+                    translation_range=translation_range,
+                    rotation_matrix_action=rotation_matrix_action)
+            elif translate and not rotate:
+                v, a, pos = sample_n_steps_trans_from_canonical(
+                    vertices, batch_size=batch_size,
+                    n_steps=n_steps,
+                    translation_grid=translation_grid,
+                    translation_stepsize=translation_stepsize,
                     translation_range=translation_range)
-            else:
-                v, a = sample_n_steps_orientations_from_canonical(
+            elif rotate and not translate:
+                v, a, pos = sample_n_steps_orientations_from_canonical(
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
-                    n_values=n_values, rots_range=rots_range)
+                    n_values=n_values, rots_range=rots_range, 
+                    rotation_matrix_action=rotation_matrix_action)
+            
             if color:
                 a_cols, pos_cols = sample_n_steps_colors(
                         batch_size=batch_size,
@@ -479,10 +543,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                         n_colors=n_colors,
                         max_color_shift=max_color_shift)
                 a = np.concatenate([a,a_cols],axis=-1)
-                if translate or translate_only:
-                    pos = np.concatenate([pos,pos_cols],axis=-1)
-                else:
-                    pos = pos_cols
+                pos = np.concatenate([pos,pos_cols],axis=-1)
                 images = vertices_to_colored_images(
                     v, triangles, color_idx=pos_cols, figsize=figsize, 
                     dpi=dpi, lim=lim,crop=crop, n_colors=n_colors)
@@ -491,8 +552,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                     v, triangles, figsize=figsize, dpi=dpi, lim=lim,crop=crop)
             dset_img[i*batch_size:(i+1)*batch_size] = images
             dset_rot[i*batch_size:(i+1)*batch_size] = a
-            if translate or translate_only:
-                dset_pos[i*batch_size:(i+1)*batch_size] = pos
+            dset_pos[i*batch_size:(i+1)*batch_size] = pos
         dset_img.attrs.update(attributes_dict)
     return 
 
@@ -506,8 +566,9 @@ def get_attributes_dict(obj_filename,
                     n_steps, 
                     n_samples,
                     center,
+                    rotate,
+                    rotation_matrix_action,
                     translate,
-                    translate_only,
                     translation_grid,
                     translation_stepsize,
                     translation_range,
@@ -527,7 +588,8 @@ def get_attributes_dict(obj_filename,
         "n_samples":n_samples,
         "center":center,
         "translate":translate,
-        "translate_only":translate_only,
+        "rotate":rotate,
+        "rotation_matrix_action":rotation_matrix_action,
         "translation_grid":translation_grid,
         "translation_stepsize":translation_stepsize,
         "translation_range":translation_range,
@@ -560,7 +622,8 @@ if __name__=='__main__':
                      n_samples=config.n_samples,
                      center=config.center,
                      translate=config.translate,
-                     translate_only=config.translate_only,
+                     rotate=config.rotate,
+                     rotation_matrix_action=config.rotation_matrix_action,
                      translation_grid=config.translation_grid,
                      translation_stepsize=config.translation_stepsize,
                      translation_range=config.translation_range,
@@ -582,8 +645,9 @@ if __name__=='__main__':
                      n_steps=config.n_steps, 
                      n_samples=config.n_samples,
                      center=config.center,
+                     rotate=config.rotate,
+                     rotation_matrix_action=config.rotation_matrix_action,
                      translate=config.translate,
-                     translate_only=config.translate_only,
                      translation_grid=config.translation_grid,
                      translation_stepsize=config.translation_stepsize,
                      translation_range=config.translation_range,

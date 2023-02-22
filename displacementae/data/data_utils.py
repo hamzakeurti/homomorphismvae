@@ -23,7 +23,8 @@
 from torch.utils.data import DataLoader
 
 from data.dsprites import DspritesDataset
-from data.obj3d_dataset import Obj3dDataset 
+from data.obj3d_dataset import Obj3dDataset
+from data.obj3d_supervised_dset import Obj3dSupervisedDataset 
 from data.trajs import TrajectoryDataset
 import utils.misc as misc
 
@@ -47,6 +48,8 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
         config.intervene = True
     if mode == 'autoencoder':
         config.n_steps = 1
+    if mode == 'supervised':
+        raise NotImplementedError
     dhandler = DspritesDataset(
         root=config.data_root,
         num_train=config.num_train,
@@ -69,15 +72,25 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
 
 
 def setup_obj3d_dataset(config, mode='autoencoder'):    
-    dhandler = Obj3dDataset(root=config.data_root, 
+    if mode == 'supervised':
+        dhandler = Obj3dSupervisedDataset(root=config.data_root, 
+                             num_train=config.num_train, 
+                             num_val=config.num_val,
+                             use_rotation_matrix=config.use_rotation_matrix)
+        dloader = DataLoader(
+                            dataset=dhandler, batch_size=config.batch_size,
+                            shuffle=config.shuffle)
+        # TODO
+    else:
+        dhandler = Obj3dDataset(root=config.data_root, 
                              num_train=config.num_train, 
                              num_val=config.num_val,
                              resample=config.resample,
                              num_samples=config.num_samples,
                              normalize_actions=config.normalize_actions)
-    dloader = DataLoader(
-        dataset=dhandler, batch_size=config.batch_size,
-        shuffle=config.shuffle)
+        dloader = DataLoader(
+                            dataset=dhandler, batch_size=config.batch_size,
+                            shuffle=config.shuffle)
     return dhandler, dloader
 
 

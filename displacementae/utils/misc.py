@@ -39,17 +39,18 @@ def str_to_ints(str_arg:str) -> List:
         args = [int(a.strip()) for a in args]
         ret.append(args)
     
-    if len(ret) == 1:
-        ret = ret[0]
+    # if len(ret) == 1:
+    #     ret = ret[0]
     return ret
 
 def ints_to_str(args:Union[List[int],int]) -> str:
     assert isinstance(args,list) or isinstance(args, int)
     if isinstance(args, int):
         return str(args)
-    str_ret = ''
-    str_ret += ','.join([str(arg) for arg in args])
-    return str_ret
+    else:
+        str_ret = ''
+        str_ret += ','.join([str(arg) for arg in args])
+        return str_ret
 
 def str_to_floats(str_arg:str) -> List:
     """
@@ -58,7 +59,8 @@ def str_to_floats(str_arg:str) -> List:
     assert isinstance(str_arg,str)
     if str_arg == '':
         return []
-    args = str_arg.replace('[','').replace(']','').replace('"','').split(",")
-    args = [float(a.strip()) for a in args]
-    return args
+    else:
+        args = str_arg.replace('[','').replace(']','').replace('"','').split(",")
+        args = [float(a.strip()) for a in args]
+        return args
 

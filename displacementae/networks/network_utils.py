@@ -57,11 +57,18 @@ def setup_network(config, dhandler, device, mode=AUTOENCODER,
     elif mode == 'trajectory':
         return setup_multistep_autoencoder(config, dhandler[0], device,
                                            representation)
+    elif mode == 'supervised':
+        repr_units = dhandler.action_units
+        if config.net_mode == 'encoder':
+            return setup_encoder(config,dhandler,device,repr_units)
+        elif config.net_mode == 'decoder':
+            return setup_decoder(config,dhandler,device,repr_units)
     else:
         raise NotImplementedError
 
 
-def setup_encoder_decoder(config, dhandler, device, repr_units):
+
+def setup_encoder(config,dhandler,device,repr_units):
     in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
     conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
 
@@ -72,15 +79,6 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
     if len(strides) == 1:
         strides = strides[0]
 
-    if isinstance(strides, list):
-        trans_strides = strides[::-1]
-    else:
-        trans_strides = strides
-
-    if isinstance(kernel_sizes, list):
-        trans_kernel = kernel_sizes[::-1]
-    else:
-        trans_kernel = kernel_sizes
 
     lin_channels = misc.str_to_ints(config.lin_channels)
     if config.net_act == 'relu':
@@ -103,10 +101,97 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
         linear_channels=lin_channels+[encoder_outputs],
         use_bias=True, activation_fn=act_fn).to(device)
 
-    decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,
-        strides=trans_strides, conv_channels=conv_channels[::-1],
-        linear_channels=[repr_units]+lin_channels[::-1],
-        use_bias=True, activation_fn=act_fn).to(device)
+    return encoder
+
+def setup_decoder(config,dhandler,device,repr_units):
+    in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
+    
+    lin_channels = [repr_units]
+    if config.decoder_conv_channels == "-1":
+        conv_channels = misc.str_to_ints(config.conv_channels)[::-1]
+        lin_channels += misc.str_to_ints(config.lin_channels)[::-1]
+        kernel_sizes = misc.str_to_ints(config.kernel_sizes)[::-1]
+        strides = misc.str_to_ints(config.strides)[::-1]
+    else:
+        conv_channels = misc.str_to_ints(config.decoder_conv_channels)
+        lin_channels += misc.str_to_ints(config.decoder_lin_channels)
+        kernel_sizes = misc.str_to_ints(config.decoder_kernel_sizes)
+        strides = misc.str_to_ints(config.decoder_strides)
+    conv_channels += [in_channels]
+    
+    if len(kernel_sizes) == 1:
+        kernel_sizes = kernel_sizes[0]
+    if len(strides) == 1:
+        strides = strides[0]
+
+
+    if config.net_act == 'relu':
+        act_fn = torch.relu
+    elif config.net_act == 'sigmoid':
+        act_fn = torch.sigmoid
+    elif config.net_act == 'tanh':
+        act_fn = torch.tanh
+    else:
+        act_fn = None
+
+    variational = config.variational
+    if variational and config.beta is None:
+        config.beta = 1.
+    
+    decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=kernel_sizes,
+                        strides=strides, conv_channels=conv_channels,
+                        linear_channels=lin_channels,
+                        use_bias=True, activation_fn=act_fn).to(device)
+    return decoder
+
+def setup_encoder_decoder(config, dhandler, device, repr_units):
+    # in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]
+    # conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)
+
+    # kernel_sizes = misc.str_to_ints(config.kernel_sizes)
+    # strides = misc.str_to_ints(config.strides)
+    # if len(kernel_sizes) == 1:
+    #     kernel_sizes = kernel_sizes[0]
+    # if len(strides) == 1:
+    #     strides = strides[0]
+
+    # if isinstance(strides, list):
+    #     trans_strides = strides[::-1]
+    # else:
+    #     trans_strides = strides
+
+    # if isinstance(kernel_sizes, list):
+    #     trans_kernel = kernel_sizes[::-1]
+    # else:
+    #     trans_kernel = kernel_sizes
+
+    # lin_channels = misc.str_to_ints(config.lin_channels)
+    # if config.net_act == 'relu':
+    #     act_fn = torch.relu
+    # elif config.net_act == 'sigmoid':
+    #     act_fn = torch.sigmoid
+    # elif config.net_act == 'tanh':
+    #     act_fn = torch.tanh
+    # else:
+    #     act_fn = None
+
+    # variational = config.variational
+    # if variational and config.beta is None:
+    #     config.beta = 1.
+
+    # # if variational, encoder outputs mean and logvar
+    # encoder_outputs = (1 + variational) * repr_units
+    # encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes,
+    #                 strides=strides, conv_channels=conv_channels,
+    #                 linear_channels=lin_channels+[encoder_outputs],
+    #                 use_bias=True, activation_fn=act_fn).to(device)
+
+    # decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,
+    #     strides=trans_strides, conv_channels=conv_channels[::-1],
+    #     linear_channels=[repr_units]+lin_channels[::-1],
+    #     use_bias=True, activation_fn=act_fn).to(device)
+    encoder = setup_encoder(config, dhandler, device, repr_units)
+    decoder = setup_decoder(config, dhandler, device, repr_units)
 
     return encoder, decoder
 

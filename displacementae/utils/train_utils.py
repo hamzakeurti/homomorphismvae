@@ -31,11 +31,11 @@ import networks.network_utils as net_utils
 from grouprepr.representation_utils import Representation
 
 
-def run(mode='autoencoder', representation=Representation.BLOCK_ROTS):
+def run(mode='autoencoder', representation=None):
     """Script for setting up and launching the training of the models.
 
     Args:
-        mode (str): architecture type, supports 'autoencoder', defaults to
+        mode (str): run type, supports 'autoencoder', defaults to
             'autoencoder'
         representation (str): group representation, defaults to 'Representation.BLOCK_ROTS'.
             'Representation.BLOCK_ROTS': actions are represented by block diagonal matrices of
@@ -51,6 +51,9 @@ def run(mode='autoencoder', representation=Representation.BLOCK_ROTS):
     elif mode == 'trajectory':
         import trajectory.train_args as train_args
         import trajectory.train_utils as tutils
+    elif mode == 'supervised':
+        import supervised.train_args as train_args
+        import supervised.train_utils as tutils
 
     # parse commands
     config = train_args.parse_cmd_arguments(representation)

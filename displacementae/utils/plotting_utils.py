@@ -161,6 +161,59 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
         wandb.log({'plot/reconstructions':wandb.Image(plt)})
     plt.close(fig)
 
+def plot_supervised_reconstruction(dhandler, nets, config, device, logger, figname):
+
+    if config.plot_on_black:
+        plt.style.use('dark_background')
+
+
+    nrows = 5
+    ncols = 2
+
+    x, z = [torch.FloatTensor(elem).to(device) for elem in dhandler.get_val_batch()]
+    x, z = x[:nrows], z[:nrows]
+
+    x_hat = torch.sigmoid(nets(z))
+
+    nrows = 5
+    ncols = 2
+
+    unit_length = 1.5
+
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=(ncols * unit_length,
+                                      nrows * unit_length))
+    kwargs = {'vmin': 0, 'vmax': 1}
+    if x.shape[1] == 1:
+        kwargs['cmap'] = 'gray'
+        x = x[:,0].cpu().numpy()
+        x_hat = x_hat[:,0].cpu().numpy()
+    else:
+        x = np.moveaxis(x.cpu().numpy(),-3,-1)
+        x_hat = np.moveaxis(x_hat.cpu().numpy(),-3,-1)
+
+    for row in range(nrows):  
+        axes[row,0].imshow(x[row],**kwargs)
+        axes[row,1].imshow(x_hat[row],**kwargs)
+        
+        if config.plot_on_black:
+            for j in range(ncols):
+                axes[row, j].axes.xaxis.set_visible(False)
+                axes[row, j].axes.yaxis.set_visible(False)
+        else:
+            for j in range(ncols):
+                axes[row, j].axis('off')
+    plt.subplots_adjust(wspace=0, hspace=0.1)
+
+    if figname is not None:
+        figname += 'reconstructions.pdf'
+        plt.savefig(figname, bbox_inches='tight')
+        logger.info(f'Figure saved {figname}')
+    if config.log_wandb:
+        wandb.log({'plot/reconstructions':wandb.Image(plt)})
+    plt.close(fig)
+
+
 
 def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
                   epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
