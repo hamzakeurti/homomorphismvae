@@ -6,8 +6,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--collect_dir', type=str, help='Name of directory containing batch images.')
 parser.add_argument('--out', type=str, help='Output hdf5 file name with extension.')
 parser.add_argument('--store_pos', action='store_true', help='Whether datasets also contain position data.' )
-parser.add_argument('--n_acts', type=int, default=3, help='Number of action elemnts.')
-parser.add_argument('--n_pos', type=int, default=3, help='Number of position elemnts.')
+# parser.add_argument('--n_acts', type=int, default=3, help='Number of action elemnts.')
+# parser.add_argument('--n_pos', type=int, default=3, help='Number of position elemnts.')
 parser.add_argument('--batch_size', type=int, default=300, help='Number of samples per batch.')
 parser.add_argument('--n_batches', type=int, default=1000, help='Number of batches.')
 parser.add_argument('--prefix', type=str, default='bunny', help='prefix of batch files. This is followed by the batch index.')
@@ -20,8 +20,8 @@ IMGS = 'images'
 ACTS = 'actions'
 POS = 'positions'
 
-N_ACTS = config.n_acts
-N_POS = config.n_pos
+# N_ACTS = config.n_acts
+# N_POS = config.n_pos
 
 
 BATCH = config.batch_size
@@ -36,10 +36,14 @@ suffix = '.hdf5'
 
 with h5py.File(config.out,'w') as fw:
     print('Created File to write')
-    dset_imgs = fw.create_dataset(IMGS,shape=(N_SAMPLES,3,3,72,72),dtype=np.float32)
-    dset_acts = fw.create_dataset(ACTS,shape=(N_SAMPLES,3,N_ACTS),dtype=np.float32)
+    with h5py.File(os.path.join(clct_dir,prfix+str(0)+suffix),'r') as fr:
+        imgs_shape = fr[IMGS].shape[1:]
+        acts_shape = fr[ACTS].shape[1:]
+        pos_shape = fr[POS].shape[1:]
+    dset_imgs = fw.create_dataset(IMGS,shape=(N_SAMPLES,*imgs_shape),dtype=np.float32)
+    dset_acts = fw.create_dataset(ACTS,shape=(N_SAMPLES,*acts_shape),dtype=np.float32)
     if config.store_pos:
-        dset_pos = fw.create_dataset(POS,shape=(N_SAMPLES,3,N_POS),dtype=np.float32)
+        dset_pos = fw.create_dataset(POS,shape=(N_SAMPLES,*pos_shape),dtype=np.float32)
     print('Created datasets')
     for i in range(N_BATCHES):
         with h5py.File(os.path.join(clct_dir,prfix+str(i)+suffix),'r') as fr:

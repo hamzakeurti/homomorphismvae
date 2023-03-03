@@ -53,6 +53,7 @@ def train(dhandler:Dataset, dloader, nets:Module, config, shared,
     optim = setup_optimizer(params, config)
     epochs = config.epochs
     interrupted_training = False
+    batch_cnt = 0
     for epoch in range(epochs):
         with torch.no_grad():
             evaluate(dhandler, nets, device, config, shared, logger, mode,
@@ -143,8 +144,7 @@ def evaluate(dhandler:Dataset,
             ### WandB Logging
             if config.log_wandb:
                 log_dict = {'val/epoch':epoch,'val/loss':loss.item()}
-                wandb.log(log_dict,step=batch_cnt,commit=False)
-                batch_cnt += 1
+                wandb.log(log_dict)
 
             # Save Losses
             shared.loss.append(loss.item())

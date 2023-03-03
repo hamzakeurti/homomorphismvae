@@ -30,7 +30,7 @@ def str_to_ints(str_arg:str) -> List:
     assert isinstance(str_arg,str)
     str_arg = str_arg.strip()
     str_arg = str_arg.replace(" ","")
-    if str_arg == '':
+    if str_arg in ['','[]'] :
         return []
     # Nested list if ']' not in last position.
     args_list = str_arg.split("],[")
