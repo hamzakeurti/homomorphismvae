@@ -23,9 +23,10 @@
 from datetime import datetime
 
 from grouprepr.representation_utils import Representation
+from argparse import ArgumentParser
 
 
-def data_args(parser, mode='autoencoder'):
+def data_args(parser:ArgumentParser, mode='autoencoder'):
     dgroup = parser.add_argument_group('Data options')
     dgroup.add_argument('--dataset', type=str, default='armeye',
                         help='Name of dataset', choices=['armeye', 'dsprites', 'obj3d'])
@@ -85,7 +86,7 @@ def data_args(parser, mode='autoencoder'):
                             help='Number of observed transitions per example.')
 
 
-def data_gen_args(parser):
+def data_gen_args(parser:ArgumentParser):
     group = parser.add_argument_group("Data Generation Options")
     group.add_argument('--out_path', type=str,
                         help='Root directory for saving the generated '+
@@ -112,6 +113,9 @@ def data_gen_args(parser):
                         default="continuous", help='Dots per inch.')
     group.add_argument('--rots_range', type=str, default="-0.8,0.8", 
                         help='range of small rotations')
+    group.add_argument('--rots_range_canonical', type=str, default="-3.14,3.14", 
+                       help='range of rotations for the initial observation ' +
+                            'from the canonical view.')
     group.add_argument('--n_values', type=int, default=0, 
                         help='Number of values in the angle range for the ' + 
                              'discrete sampling.')                              
@@ -145,7 +149,7 @@ def data_gen_args(parser):
     
 
 
-def train_args(parser):
+def train_args(parser:ArgumentParser):
     """
     Arguments specified in this function:
             - `batch_size`
@@ -177,7 +181,7 @@ def train_args(parser):
                         help='Use Adam optimizer instead of SGD.')
 
 
-def net_args(parser):
+def net_args(parser:ArgumentParser):
     """
     Arguments specified in this function:
             - `net_act`
@@ -247,7 +251,7 @@ def net_args(parser):
                         help='Weight of the latent equivariance loss.')    
 
 
-def misc_args(parser, dout_dir=None):
+def misc_args(parser:ArgumentParser, dout_dir=None):
     if dout_dir is None:
         dout_dir = './out/run_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mgroup = parser.add_argument_group('Miscellaneous options')
@@ -292,7 +296,7 @@ def misc_args(parser, dout_dir=None):
                         help='Name of the WandB project to log this run.')
 
 
-def group_repr_args(parser, representation):
+def group_repr_args(parser:ArgumentParser):
     ggroup = parser.add_argument_group('Group Representation options')
     ggroup.add_argument('--varphi_units', type=str, default='',
                         help='List of layer units in the for the varphi ' +
@@ -306,118 +310,145 @@ def group_repr_args(parser, representation):
                         choices=['none','relu','softplus','leakyrelu','sigmoid'],
                         help='activation function for each layer of varphi, '+
                              'if any.')
-    if representation == Representation.BLOCK_MLP:
-        ggroup.add_argument('--dims', type=str, default='',
-                            help='List of dimensions of the subreps. ' +
-                                 'The resulting representation is of dim ' +
-                                 'the sum of provided dims and it maps to ' +
-                                 'block diagonal matrices.')
-        ggroup.add_argument('--group_hidden_units', type=str, default='',
-                            help='Hidden units list for all subreps\' MLP')
-        ggroup.add_argument('--normalize_subrepresentations', 
-                            action='store_true',
-                            help='Whether the group action on each ' +
-                                 'subrepresentation normalizes the ' +
-                                 'representation post action')
-        ggroup.add_argument('--exponential_map', 
-                            action='store_true',
-                            help='Whether the matrix exponential is applied ' +
-                                 'to the parametrized matrix.')
-    elif representation == Representation.MLP:
-        ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space ' +
-                                 'acted on.')
-        ggroup.add_argument('--group_hidden_units', type=str, default='',
-                            help='Hidden units list of the rep\'s MLP')
-        ggroup.add_argument('--normalize', 
-                            action='store_true',
-                            help='Whether the group action normalizes the ' +
-                                 'representation post action')
-        ggroup.add_argument('--exponential_map', 
-                            action='store_true',
-                            help='Whether the matrix exponential is applied ' +
-                                 'to the parametrized matrix.')
-
-    elif representation == Representation.BLOCK_ROTS:
-        ggroup.add_argument('--learn_geometry', action='store_true',
-                            help='Whether to learn the grp action parameters. ' +
-                            'If not, these should be provided in arg ' +
-                            '--specified_grp_step')
-        ggroup.add_argument('--specified_grp_step', type=str, default='0',
-                            help='specified grp action parameters')
-    elif representation == Representation.PROD_ROTS_LOOKUP:
-        ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space ' +
-                                 'acted on.')
-        ggroup.add_argument('--grp_loss_on', action='store_true',
-                            help='whether to add group representation loss.')
-        ggroup.add_argument('--grp_loss_weight', type=float, default=1e-2,
-                            help='Factor of the grp loss in the total loss.')
-        ggroup.add_argument('--plot_thetas', action='store_true',
-                            help='Plots learned thetas')
-    elif representation == Representation.BLOCK_LOOKUP:
-        ggroup.add_argument('--dims', type=str, default='',
-                            help='List of dimensions of the subreps. ' +
-                            'The resulting representation is of dim ' +
-                            'the sum of provided dims and it maps to ' +
-                            'block diagonal matrices.')
-        ggroup.add_argument('--normalize_subrepresentations', 
-                            action='store_true',
-                            help='Whether the group action on each ' +
-                                 'subrepresentation normalizes the ' +
-                                 'representation post action')
-        ggroup.add_argument('--exponential_map', 
-                            action='store_true',
-                            help='Whether the matrix exponential is applied ' +
-                                 'to the parametrized matrix.')
-    elif representation == Representation.LOOKUP:
-        ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space '+
-                                 'acted on.')
-        ggroup.add_argument('--normalize', action='store_true',
-                            help='Whether the group action normalizes the ' +
-                                    'representation post action')
-        ggroup.add_argument('--exponential_map', 
-                            action='store_true',
-                            help='Whether the matrix exponential is applied ' +
-                                 'to the parametrized matrix.')
-    elif representation == Representation.TRIVIAL:
-        ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space '+
-                                 'acted on.')
-    elif representation == Representation.UNSTRUCTURED:
-        ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space ' +
-                                 'acted on.')
-        ggroup.add_argument('--group_hidden_units', type=int, nargs='+',
-                            help='Hidden units list for all subreps\' MLP')
-    elif representation == Representation.SOFT_BLOCK_MLP:
-        ggroup.add_argument('--dim', type=int, default=2,
-                            help='Dimension of the representation space ' +
-                                 'acted on.')
-        ggroup.add_argument('--group_hidden_units', type=str, default='',
-                            help='Hidden units list of the rep\'s MLP')
-        ggroup.add_argument('--normalize', 
-                            action='store_true',
-                            help='Whether the group action normalizes the ' +
-                                 'representation post action')
-        ggroup.add_argument('--exponential_map', 
-                            action='store_true',
-                            help='Whether the matrix exponential is applied ' +
-                                 'to the parametrized matrix.')
-        ggroup.add_argument('--grp_loss_on', action='store_true',
-                            help='whether to add group representation loss.')
-        ggroup.add_argument('--grp_loss_weight', type=float, default=1e-2,
-                            help='Factor of the grp loss in the total loss.')
-
-
     ggroup.add_argument('--normalize_post_action',action='store_true', 
                         help='If True, the representation vector is ' + 
                              'normalized after each group action')
 
 
-def supervised_args(parser):
+    grprepr_subparsers = parser.add_subparsers(
+                        required=False,
+                        title='group_representation_subparsers',
+                        help='Multiple group representations are available ' + 
+                             'with different arguments.')
+    
+    # BLOCK_MLP
+    block_mlp_parser = grprepr_subparsers.add_parser('block_mlp')
+    block_mlp_parser.add_argument('--dims', type=str, default='',
+                        help='List of dimensions of the subreps. ' +
+                                'The resulting representation is of dim ' +
+                                'the sum of provided dims and it maps to ' +
+                                'block diagonal matrices.')
+    block_mlp_parser.add_argument('--group_hidden_units', type=str, default='',
+                        help='Hidden units list for all subreps\' MLP')
+    block_mlp_parser.add_argument('--normalize_subrepresentations', 
+                        action='store_true',
+                        help='Whether the group action on each ' +
+                                'subrepresentation normalizes the ' +
+                                'representation post action')
+    block_mlp_parser.add_argument('--exponential_map', 
+                        action='store_true',
+                        help='Whether the matrix exponential is applied ' +
+                                'to the parametrized matrix.')
+
+    # MLP
+    mlp_parser = grprepr_subparsers.add_parser('mlp')
+    mlp_parser.add_argument('--dim', type=int, default=2,
+                        help='Dimension of the representation space ' +
+                                'acted on.')
+    mlp_parser.add_argument('--group_hidden_units', type=str, default='',
+                        help='Hidden units list of the rep\'s MLP')
+    mlp_parser.add_argument('--normalize', 
+                        action='store_true',
+                        help='Whether the group action normalizes the ' +
+                                'representation post action')
+    mlp_parser.add_argument('--exponential_map', 
+                        action='store_true',
+                        help='Whether the matrix exponential is applied ' +
+                                'to the parametrized matrix.')
+
+    # BLOCK ROTS
+    block_rots_parser = grprepr_subparsers.add_parser('block_rots')
+    block_rots_parser.add_argument('--learn_geometry', action='store_true',
+                        help='Whether to learn the grp action parameters. ' +
+                        'If not, these should be provided in arg ' +
+                        '--specified_grp_step')
+    block_rots_parser.add_argument('--specified_grp_step', type=str, default='0',
+                        help='specified grp action parameters')
+    
+    
+    # PROD ROTS LOOKUP (Quessard et al. 2020)
+    prod_rots_parser = grprepr_subparsers.add_parser('prod_rots')
+    prod_rots_parser.add_argument('--dim', type=int, default=2,
+                        help='Dimension of the representation space ' +
+                                'acted on.')
+    prod_rots_parser.add_argument('--grp_loss_on', action='store_true',
+                        help='whether to add group representation loss.')
+    prod_rots_parser.add_argument('--grp_loss_weight', type=float, default=1e-2,
+                        help='Factor of the grp loss in the total loss.')
+    prod_rots_parser.add_argument('--plot_thetas', action='store_true',
+                        help='Plots learned thetas')
+
+    # BLOCK MLP LOOKUP
+    block_lookup_parser = grprepr_subparsers.add_parser('block_lookup') # FIX
+    block_lookup_parser.add_argument('--dims', type=str, default='',
+                        help='List of dimensions of the subreps. ' +
+                        'The resulting representation is of dim ' +
+                        'the sum of provided dims and it maps to ' +
+                        'block diagonal matrices.')
+    block_lookup_parser.add_argument('--normalize_subrepresentations', 
+                        action='store_true',
+                        help='Whether the group action on each ' +
+                                'subrepresentation normalizes the ' +
+                                'representation post action')
+    block_lookup_parser.add_argument('--exponential_map', 
+                        action='store_true',
+                        help='Whether the matrix exponential is applied ' +
+                                'to the parametrized matrix.')
+
+    # MLP LOOKUP
+    lookup_parser = grprepr_subparsers.add_parser('lookup')
+    lookup_parser.add_argument('--dim', type=int, default=2,
+                        help='Dimension of the representation space '+
+                                'acted on.')
+    lookup_parser.add_argument('--normalize', action='store_true',
+                        help='Whether the group action normalizes the ' +
+                                'representation post action')
+    lookup_parser.add_argument('--exponential_map', 
+                        action='store_true',
+                        help='Whether the matrix exponential is applied ' +
+                                'to the parametrized matrix.')
+    
+
+    # TRIVIAL
+    trivial_parser = grprepr_subparsers.add_parser('trivial')
+    trivial_parser.add_argument('--dim', type=int, default=2,
+                        help='Dimension of the representation space '+
+                                'acted on.')
+    
+    # UNSTRUCTURED
+    unstructured_parser = grprepr_subparsers.add_parser('unstructured')
+    unstructured_parser.add_argument('--dim', type=int, default=2,
+                        help='Dimension of the representation space ' +
+                                'acted on.')
+    unstructured_parser.add_argument('--group_hidden_units', type=int, nargs='+',
+                        help='Hidden units list for all subreps\' MLP')
+
+    # SOFT BLOCK MLP
+    soft_block_mlp_parser = grprepr_subparsers.add_parser('soft_block_mlp')
+
+    soft_block_mlp_parser.add_argument('--dim', type=int, default=2,
+                        help='Dimension of the representation space ' +
+                                'acted on.')
+    soft_block_mlp_parser.add_argument('--group_hidden_units', type=str, default='',
+                        help='Hidden units list of the rep\'s MLP')
+    soft_block_mlp_parser.add_argument('--normalize', 
+                        action='store_true',
+                        help='Whether the group action normalizes the ' +
+                                'representation post action')
+    soft_block_mlp_parser.add_argument('--exponential_map', 
+                        action='store_true',
+                        help='Whether the matrix exponential is applied ' +
+                                'to the parametrized matrix.')
+    soft_block_mlp_parser.add_argument('--grp_loss_on', action='store_true',
+                        help='whether to add group representation loss.')
+    soft_block_mlp_parser.add_argument('--grp_loss_weight', type=float, default=1e-2,
+                        help='Factor of the grp loss in the total loss.')
+
+
+
+
+def supervised_args(parser:ArgumentParser):
     sgroup = parser.add_argument_group('Supervised options')
-    sgroup.add_argument('--net_mode',type=str,choices=['encoder','decoder'],
+    sgroup.add_argument('--net_mode',type=str,choices=['encoder','decoder','grouprepr'],
                         help='Whether we train a supervised encoder ' +
-                             'or decoder')
+                             'or decoder or grouprepr')
