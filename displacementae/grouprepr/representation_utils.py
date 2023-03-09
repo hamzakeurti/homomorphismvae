@@ -33,3 +33,16 @@ class Representation(Enum):
     BLOCK_LOOKUP = 6
     UNSTRUCTURED = 7
     SOFT_BLOCK_MLP = 8
+
+
+str_to_enum = {
+    "trivial":Representation.TRIVIAL,
+    "block_mlp":Representation.BLOCK_MLP,
+    "mlp":Representation.MLP,
+    "block_rots":Representation.BLOCK_ROTS,
+    "prod_rots":Representation.PROD_ROTS_LOOKUP,
+    "block_lookup":Representation.BLOCK_LOOKUP,
+    "lookup":Representation.LOOKUP,
+    "unstructured":Representation.UNSTRUCTURED,
+    "soft_block_mlp":Representation.SOFT_BLOCK_MLP,
+}

@@ -39,6 +39,7 @@ def parse_cmd_arguments(representation=None,description='', argv=None):
     args.net_args(parser)
     args.misc_args(parser,dout_dir)
     args.supervised_args(parser)
+    args.group_repr_args(parser)
 
     config = parser.parse_args(args=argv)
 

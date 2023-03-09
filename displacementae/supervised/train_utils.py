@@ -83,6 +83,11 @@ def train(dhandler:Dataset, dloader, nets:Module, config, shared,
                 x_hat = torch.sigmoid(nets(z))
                 loss = bce_loss(x_hat,x,reduction='none')
                 loss = loss.sum()/x.shape[0]
+
+            elif config.net_mode=='grouprepr':
+                z_hat = nets(z)
+                loss = (z_hat - z).square().mean()
+            
             
             ### Step
             loss.backward()
@@ -134,7 +139,11 @@ def evaluate(dhandler:Dataset,
                 loss = bce_loss(x_hat,x,reduction='none')
                 loss = loss.sum()/x.shape[0]
             
+            elif config.net_mode=='grouprepr':
+                z_hat = nets(z)
+                loss = (z_hat - z).square().mean()
 
+                
             ### Logging
             logger.info(f'EVALUATION prior to epoch [{epoch}]...')
 

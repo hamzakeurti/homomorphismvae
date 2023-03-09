@@ -63,6 +63,8 @@ def setup_network(config, dhandler, device, mode=AUTOENCODER,
             return setup_encoder(config,dhandler,device,repr_units)
         elif config.net_mode == 'decoder':
             return setup_decoder(config,dhandler,device,repr_units)
+        elif config.net_mode == 'grouprepr':
+            return setup_grp_morphism(config, dhandler, device, representation)
     else:
         raise NotImplementedError
 
