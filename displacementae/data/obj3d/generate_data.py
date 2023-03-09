@@ -68,7 +68,8 @@ def rotation_matrix(yaw,pitch,roll):
 
 def sample_orientations_from_canonical(
                     vertices, batch_size, mode='continuous',
-                    n_values=None, rotation_matrix_action:bool=False):
+                    n_values=None, rotation_matrix_action:bool=False,
+                    rots_range:List=(-np.pi,np.pi)):
     """
     Produce a batch of different orientations from a single starting orientation.
     """
@@ -76,7 +77,8 @@ def sample_orientations_from_canonical(
     #     p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
     # elif mode == 'continuous':
     p = np.random.random([batch_size,3])
-    p = 2*np.pi*p
+    m,M = rots_range
+    p = (M-m)*p + m
     R = rotation_matrix(*p.T)
     v_out = np.einsum('bij,vj->bvi',R,vertices)
     if rotation_matrix_action:
@@ -116,13 +118,15 @@ def sample_orientations_from_orientations(vertices, pos_in, mode='continuous',
 
 def sample_poses_from_canonical(
             vertices, batch_size, mode='continuous', n_values=None, 
+            rots_range=(-np.pi,np.pi), 
             translation_grid=5, translation_stepsize=0.5,
             rotation_matrix_action:bool=False):
     # if mode == 'discrete':
     #     p = np.random.randint(n_values,size=[batch_size,3],dtype=float)/(n_values-1)  
     # elif mode == 'continuous':
     p = np.random.random([batch_size,3])
-    p = 2*np.pi*p
+    m,M = rots_range
+    p = (M-m)*p + m
     R = rotation_matrix(*p.T)
     v_out = np.einsum('bij,vj->bvi',R,vertices)
     t = (np.random.randint(translation_grid*2+1, size=[batch_size,3]) - translation_grid)*translation_stepsize
@@ -203,8 +207,11 @@ def sample_trans_from_trans(vertices, translation_grid=5, translation_stepsize=0
 
 
 def sample_n_steps_orientations_from_canonical(
-            vertices, batch_size:int, n_steps:int=2, mode:str='continuous',
-            n_values:int=None, rots_range:List=(-np.pi,np.pi), 
+            vertices, batch_size:int, n_steps:int=2, 
+            mode:str='continuous',
+            n_values:int=None, 
+            rots_range:List=(-np.pi,np.pi), 
+            rots_range_canonical:List=(-np.pi,np.pi), 
             rotation_matrix_action:List=False):
     
     low, high = rots_range
@@ -229,7 +236,8 @@ def sample_n_steps_orientations_from_canonical(
             sample_orientations_from_canonical(
                     vertices, batch_size, mode=mode,
                     n_values=n_values, 
-                    rotation_matrix_action=rotation_matrix_action)
+                    rotation_matrix_action=rotation_matrix_action, 
+                    rots_range=rots_range_canonical)
     # for step
     #    sample orientations
     for step in range(n_steps):
@@ -244,7 +252,9 @@ def sample_n_steps_orientations_from_canonical(
 
 def sample_n_steps_poses_from_canonical(
             vertices, batch_size, n_steps=2, mode='continuous', n_values=None,
-            rots_range=(-np.pi,np.pi), translation_grid=3,
+            rots_range=(-np.pi,np.pi),
+            rots_range_canonical=(-np.pi,np.pi), 
+            translation_grid=3,
             translation_stepsize=0.5, translation_range=1, 
             rotation_matrix_action:bool=False):
     
@@ -268,7 +278,7 @@ def sample_n_steps_poses_from_canonical(
     v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
          sample_poses_from_canonical(
                     vertices, batch_size, mode=mode,
-                    n_values=n_values,
+                    n_values=n_values, rots_range=rots_range_canonical,
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
                     rotation_matrix_action=rotation_matrix_action)
@@ -445,7 +455,8 @@ def vertices_to_colored_images(
 
 def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
                      mode='continuous', n_values=0, 
-                     rots_range=[-np.pi/2,np.pi/2],
+                     rots_range=(-np.pi/2,np.pi/2),
+                     rots_range_canonical=(-np.pi/2,np.pi/2),
                      rotate=False,
                      rotation_matrix_action=False,
                      translate=False,
@@ -518,6 +529,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
                     n_values=n_values, rots_range=rots_range,
+                    rots_range_canonical=rots_range_canonical,
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
                     translation_range=translation_range,
@@ -534,6 +546,7 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
                     vertices, batch_size=batch_size,
                     n_steps=n_steps, mode=mode,
                     n_values=n_values, rots_range=rots_range, 
+                    rots_range_canonical=rots_range_canonical,
                     rotation_matrix_action=rotation_matrix_action)
             
             if color:
@@ -563,6 +576,7 @@ def get_attributes_dict(obj_filename,
                     mode, 
                     n_values, 
                     rots_range,
+                    rots_range_canonical,
                     n_steps, 
                     n_samples,
                     center,
@@ -584,6 +598,7 @@ def get_attributes_dict(obj_filename,
         "mode":mode, 
         "n_values":n_values, 
         "rots_range":rots_range,
+        "rots_range_canonical":rots_range_canonical,
         "n_steps":n_steps, 
         "n_samples":n_samples,
         "center":center,
@@ -607,7 +622,7 @@ if __name__=='__main__':
         os.makedirs(os.path.dirname(config.out_path))
     figsize = misc.str_to_ints(config.figsize)
     rots_range = misc.str_to_floats(config.rots_range)
-
+    rots_range_canonical = misc.str_to_floats(config.rots_range_canonical)
     np.random.seed(config.gen_random_seed)
 
     attrs = get_attributes_dict(
@@ -618,6 +633,7 @@ if __name__=='__main__':
                      mode=config.mode, 
                      n_values=config.n_values, 
                      rots_range=rots_range,
+                     rots_range_canonical=rots_range_canonical,
                      n_steps=config.n_steps, 
                      n_samples=config.n_samples,
                      center=config.center,
@@ -656,4 +672,5 @@ if __name__=='__main__':
                      color=config.color,
                      n_colors=config.n_colors,
                      max_color_shift=config.max_color_shift,
+                     rots_range_canonical=rots_range_canonical
                      )
