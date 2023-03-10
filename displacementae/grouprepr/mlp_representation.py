@@ -23,9 +23,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import List
+
+
 from grouprepr.varphi import VarPhi
-
-
 from grouprepr.group_representation import GroupRepresentation
 from networks.mlp import MLP
 
@@ -36,7 +37,7 @@ class MLPRepresentation(GroupRepresentation):
 
     """
     def __init__(self, n_action_units: int, dim_representation: int, 
-                 hidden_units=[], 
+                 hidden_units:List[int]=[], 
                  activation=nn.ReLU(),
                  normalize=False, 
                  device='cpu',

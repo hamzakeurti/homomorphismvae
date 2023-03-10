@@ -23,6 +23,7 @@
 from argparse import Namespace
 from os import error
 import torch
+import torch.nn as nn
 from data.transition_dataset import TransitionDataset
 
 from networks.cnn import CNN
@@ -34,7 +35,7 @@ from networks.multistep_autoencoder import MultistepAutoencoder
 from grouprepr.block_mlp_representation import BlockMLPRepresentation
 from grouprepr.group_representation import GroupRepresentation
 from grouprepr.prodrepr.action_lookup import ActionLookup
-from grouprepr.representation_utils import Representation
+from grouprepr.representation_utils import Representation, str_to_enum
 from grouprepr.lookup_representation import LookupRepresentation
 from grouprepr.block_lookup_representation import BlockLookupRepresentation
 from grouprepr.trivial_representation import TrivialRepresentation
@@ -46,17 +47,13 @@ from grouprepr.varphi import VarPhi
 AUTOENCODER = 'autoencoder'
 
 
-def setup_network(config, dhandler, device, mode=AUTOENCODER,
-                  representation=Representation.BLOCK_ROTS):
+def setup_network(config, dhandler, device, mode=AUTOENCODER):
     if mode == AUTOENCODER:
-        return setup_autoencoder_network(config, dhandler, device,
-                                         representation)
+        return setup_autoencoder_network(config, dhandler, device)
     elif mode == 'homomorphism':
-        return setup_multistep_autoencoder(config, dhandler, device,
-                                           representation)
+        return setup_multistep_autoencoder(config, dhandler, device)
     elif mode == 'trajectory':
-        return setup_multistep_autoencoder(config, dhandler[0], device,
-                                           representation)
+        return setup_multistep_autoencoder(config, dhandler[0], device)
     elif mode == 'supervised':
         repr_units = dhandler.action_units
         if config.net_mode == 'encoder':
@@ -64,7 +61,14 @@ def setup_network(config, dhandler, device, mode=AUTOENCODER,
         elif config.net_mode == 'decoder':
             return setup_decoder(config,dhandler,device,repr_units)
         elif config.net_mode == 'grouprepr':
-            return setup_grp_morphism(config, dhandler, device, representation)
+            grp_morphism = setup_grp_morphism(config, dhandler, device)
+            d = grp_morphism.dim_representation
+            a = dhandler.action_units
+            if d**2 != a:
+                raise ValueError(f"Group morphism outputs {d**2} units = " +
+                            f"({d}x{d}), expected {a}.")
+            nets = nn.Sequential(grp_morphism, nn.Flatten())
+            return nets
     else:
         raise NotImplementedError
 
@@ -199,8 +203,8 @@ def setup_encoder_decoder(config, dhandler, device, repr_units):
 
 
 def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
-                       device: str,
-                       representation) -> GroupRepresentation:
+                       device: str
+                       ) -> GroupRepresentation:
     """
     Sets up the group morphism module which converts input actions to
     """
@@ -212,25 +216,10 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
            activation=config.varphi_act,
            seed=config.varphi_random_seed,
            ).to(device)
+    representation = str_to_enum(config.grouprepr)
 
-                             
-    if representation == Representation.BLOCK_ROTS:
-        if not hasattr(config, 'specified_grp_step'):
-            specified_step = 0
-        else:
-            specified_step = misc.str_to_floats(config.specified_grp_step)
-            if len(specified_step) == 0 and not config.learn_geometry:
-                raise ValueError
-            if len(specified_step) == 1:
-                specified_step = specified_step[0]
-
-        grp_morphism = orth.OrthogonalMatrix(
-            dim_representation=dhandler.action_units * 2, device=device,
-            learn_params=config.learn_geometry,
-            specified_step=specified_step,
-            varphi=varphi,).to(device)
    
-    elif representation == Representation.MLP:
+    if representation == Representation.MLP:
         hidden_units = misc.str_to_ints(config.group_hidden_units)
         grp_morphism = MLPRepresentation(
                 n_action_units=dhandler.action_units,
@@ -257,6 +246,17 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 varphi=varphi
                 ).to(device)
 
+    elif representation == Representation.SOFT_BLOCK_MLP:
+        hidden_units = misc.str_to_ints(config.group_hidden_units)
+        grp_morphism = SoftBlockMLPRepresentation(
+                n_action_units=dhandler.action_units,
+                dim_representation=config.dim,
+                hidden_units=hidden_units,device=device, 
+                normalize=config.normalize,
+                normalize_post_action=config.normalize_post_action,
+                exponential_map=config.exponential_map,
+                varphi=varphi).to(device)
+
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
                 n_action_units=dhandler.n_actions,
@@ -266,6 +266,22 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 device=device,
                 varphi=varphi,
                 ).to(device)
+
+    elif representation == Representation.BLOCK_ROTS:
+        if not hasattr(config, 'specified_grp_step'):
+            specified_step = 0
+        else:
+            specified_step = misc.str_to_floats(config.specified_grp_step)
+            if len(specified_step) == 0 and not config.learn_geometry:
+                raise ValueError
+            if len(specified_step) == 1:
+                specified_step = specified_step[0]
+
+        grp_morphism = orth.OrthogonalMatrix(
+            dim_representation=dhandler.action_units * 2, device=device,
+            learn_params=config.learn_geometry,
+            specified_step=specified_step,
+            varphi=varphi,).to(device)
 
     elif representation == Representation.LOOKUP:
         grp_morphism = LookupRepresentation(
@@ -295,6 +311,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 dim_representation=config.dim,
                 device=device,
                 varphi=varphi).to(device)
+
     elif representation == Representation.UNSTRUCTURED:
         grp_morphism = UnstructuredRepresentation(
                 n_action_units=dhandler.n_actions,
@@ -302,16 +319,7 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 hidden_units=config.group_hidden_units,
                 device=device,
                 varphi=varphi).to(device)
-    elif representation == Representation.SOFT_BLOCK_MLP:
-        hidden_units = misc.str_to_ints(config.group_hidden_units)
-        grp_morphism = SoftBlockMLPRepresentation(
-                n_action_units=dhandler.action_units,
-                dim_representation=config.dim,
-                hidden_units=hidden_units,device=device, 
-                normalize=config.normalize,
-                normalize_post_action=config.normalize_post_action,
-                exponential_map=config.exponential_map,
-                varphi=varphi).to(device)
+
             
     else:
         raise NotImplementedError(
@@ -319,7 +327,9 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
     return grp_morphism
 
 
-def setup_autoencoder_network(config, dhandler, device, representation):
+
+
+def setup_autoencoder_network(config, dhandler, device):
     """
     Sets up an autoencoder with a geometric transformation of the latent
     units.
@@ -338,8 +348,7 @@ def setup_autoencoder_network(config, dhandler, device, representation):
                     if 'block_repr': group representation is block
                     diagonal 2D rotation matrices.
     """
-    grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
-                                      representation=representation)
+    grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler)
 
     dim_representation = grp_morphism.dim_representation
     n_free_units = config.n_free_units
@@ -355,9 +364,8 @@ def setup_autoencoder_network(config, dhandler, device, representation):
     return autoencoder
 
 
-def setup_multistep_autoencoder(config, dhandler, device, representation):
-    grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler,
-                                      representation=representation)
+def setup_multistep_autoencoder(config, dhandler, device):
+    grp_morphism = setup_grp_morphism(config, device=device, dhandler=dhandler)
 
     dim_representation = grp_morphism.dim_representation
     n_free_units = config.n_free_units

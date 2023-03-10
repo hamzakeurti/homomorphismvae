@@ -38,6 +38,10 @@ class MLP(nn.Module):
                  seed=None):
         super().__init__()
 
+        if hidden_units == [] or hidden_units is None:
+            raise ValueError("hidden units should not be empty for " +
+                             "MLP network.")
+
         if seed is not None:
             self.rng = torch.Generator().manual_seed(seed)
 

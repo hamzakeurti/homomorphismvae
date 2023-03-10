@@ -318,6 +318,7 @@ def group_repr_args(parser:ArgumentParser):
     grprepr_subparsers = parser.add_subparsers(
                         required=False,
                         title='group_representation_subparsers',
+                        dest='grouprepr',
                         help='Multiple group representations are available ' + 
                              'with different arguments.')
     

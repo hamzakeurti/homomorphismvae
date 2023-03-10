@@ -31,7 +31,7 @@ import networks.network_utils as net_utils
 from grouprepr.representation_utils import Representation
 
 
-def run(mode='autoencoder', representation=None):
+def run(mode='autoencoder'):
     """Script for setting up and launching the training of the models.
 
     Args:
@@ -56,15 +56,14 @@ def run(mode='autoencoder', representation=None):
         import supervised.train_utils as tutils
 
     # parse commands
-    config = train_args.parse_cmd_arguments(representation)
+    config = train_args.parse_cmd_arguments()
     # setup environment
     device, logger = sim_utils.setup_environment(config)
     sim_utils.backup_cli_command(config)
     # setup dataset
     dhandler, dloader = data_utils.setup_data(config, mode)
     # setup models
-    nets = net_utils.setup_network(config, dhandler, device, mode=mode,
-                                   representation=representation)
+    nets = net_utils.setup_network(config, dhandler, device, mode=mode)
     # setup shared
     shared = Namespace()
     sim_utils.setup_summary_dict(config, shared, nets)

@@ -27,7 +27,7 @@ import utils.args as args
 
 
 
-def parse_cmd_arguments(representation=None,description='', argv=None):
+def parse_cmd_arguments(description='', argv=None):
     mode='homomorphism'
     curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     if not description:

@@ -35,7 +35,7 @@ class Representation(Enum):
     SOFT_BLOCK_MLP = 8
 
 
-str_to_enum = {
+__str_to_enum = {
     "trivial":Representation.TRIVIAL,
     "block_mlp":Representation.BLOCK_MLP,
     "mlp":Representation.MLP,
@@ -46,3 +46,6 @@ str_to_enum = {
     "unstructured":Representation.UNSTRUCTURED,
     "soft_block_mlp":Representation.SOFT_BLOCK_MLP,
 }
+
+def str_to_enum(str_repr:str)-> Representation:
+    return __str_to_enum[str_repr]
