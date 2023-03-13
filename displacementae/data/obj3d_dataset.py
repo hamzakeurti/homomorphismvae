@@ -69,13 +69,16 @@ class Obj3dDataset(TransitionDataset):
         self._trans_idx = np.array([])
         self._col_idx = np.array([])
         
-        if (not self._translate_only):
-            self._rots_idx = np.arange(3)
+        k = 0
+        if self._rotate:
+            n_rots_act = 9 if self._rotation_matrix_action else 3
+            self._rots_idx = np.arange(n_rots_act)
+            k += n_rots_act
         
         if self._translate:
-            self._trans_idx = np.arange(start=3,stop=6)
-        if self._translate_only:
-            self._trans_idx = np.arange(3)
+            self._trans_idx = np.arange(start=k,stop=k+3)
+            k+=3
+
         if self._color:
             self._col_idx = np.array(self._transitions.shape[-1]-1)        
         
@@ -174,15 +177,17 @@ class Obj3dDataset(TransitionDataset):
         # "figsize":figsize,
         # "dpi":dpi, 
         # "lim":lim,
+        # self._translate_only=self._attributes_dict["translate_only"]
         self._mode = self._attributes_dict["mode"] 
         self._translate=self._attributes_dict["translate"]
-        self._translate_only=self._attributes_dict["translate_only"]
+        self._rotate = self._attributes_dict["rotate"]
+        self._color= self._attributes_dict["color"]
         self._rots_range=self._attributes_dict["rots_range"]
         self._n_steps=self._attributes_dict["n_steps"] 
         self._n_samples=self._attributes_dict["n_samples"]
-        self._color= self._attributes_dict["color"]
-        self._rots_n_values=self._attributes_dict["n_values"] 
-        if self._translate or self._translate_only:
+        self._rots_n_values=self._attributes_dict["n_values"]
+        self._rotation_matrix_action=self._attributes_dict["rotation_matrix_action"] 
+        if self._translate:
             self._trans_grid=self._attributes_dict["translation_grid"]
             self._trans_stepsize=self._attributes_dict["translation_stepsize"]
             self._trans_range=self._attributes_dict["translation_range"]

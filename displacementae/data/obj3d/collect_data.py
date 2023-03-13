@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--obj3d_root', type=str, default='/fast/hkeurti/datasets/obj3d' , help='root of the dataset.')
 parser.add_argument('--collect_dir', type=str, help='Name of directory containing batch images.')
 parser.add_argument('--out', type=str, help='Output hdf5 file name with extension.')
 parser.add_argument('--store_pos', action='store_true', help='Whether datasets also contain position data.' )
@@ -14,7 +15,7 @@ parser.add_argument('--prefix', type=str, default='bunny', help='prefix of batch
 
 config = parser.parse_args()
 
-os.chdir('/lustre/home/hkeurti/datasets/obj3d')
+os.chdir(config.obj3d_root)
 
 IMGS = 'images'
 ACTS = 'actions'
