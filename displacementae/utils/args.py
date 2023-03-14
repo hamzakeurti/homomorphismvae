@@ -146,7 +146,21 @@ def data_gen_args(parser:ArgumentParser):
                         help='Number of colors equally spaced on the hue wheel.')
     group.add_argument('--max_color_shift', type=int, default=0, 
                         help='Range of the random displacement of the color.') 
+    group.add_argument('--gen_1d_rots', action='store_true', 
+                        help='Whether to generate an evaluation dataset ' + 
+                             'consisting of equally spaced rotations of the ' +
+                             'model around random orientations.')
+    group.add_argument('--manifold_batch_size', type=int, default=0, 
+                        help='Number of random initial orientations and ' +
+                             'random rotation directions around which to '+ 
+                             'generate a rollout of 1D rotations. ' + 
+                             'requires the flag "--gen_1d_rots".')
+    group.add_argument('--manifold_n_vals', type=int, default=0, 
+                        help='Number of equally spaced rotations in the 1D ' + 
+                             'rotation rollouts.' + 
+                             'requires the flag "--gen_1d_rots".')
     
+
 
 
 def train_args(parser:ArgumentParser):

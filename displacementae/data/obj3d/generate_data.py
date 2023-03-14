@@ -24,15 +24,16 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import numpy as np
+import numpy.typing as npt
 from mpl_toolkits import mplot3d
 import h5py
-from typing import List
+from typing import List, Optional, Tuple
 
 import __init__
 import data.obj3d.gen_args as gargs
 import utils.misc as misc
 
-def read_obj(filename, center=True):
+def read_obj(filename:str, center:bool=True) -> Tuple[npt.NDArray, npt.NDArray]:
     # Code taken from https://yuchen52.medium.com/beyond-data-scientist-3d-plots-in-python-with-examples-2a8bd7aa654b
     triangles = []
     vertices = []
@@ -48,10 +49,10 @@ def read_obj(filename, center=True):
                 # e.g. "v  30.2180 89.5757 -76.8089"
                 vertex = list(map(lambda c: float(c), components[1:]))
                 vertices.append(vertex)
-    vertices = np.array(vertices)
+    vertices = np.array(vertices,dtype=float)
     if center:
         vertices -= vertices.mean(axis=0)[None,:]
-    return vertices, np.array(triangles)
+    return vertices, np.array(triangles,dtype=int)
 
 
 def rotation_matrix(yaw,pitch,roll):
@@ -69,7 +70,7 @@ def rotation_matrix(yaw,pitch,roll):
 def sample_orientations_from_canonical(
                     vertices, batch_size, mode='continuous',
                     n_values=None, rotation_matrix_action:bool=False,
-                    rots_range:List=(-np.pi,np.pi)):
+                    rots_range:List=[-np.pi,np.pi]):
     """
     Produce a batch of different orientations from a single starting orientation.
     """
@@ -88,10 +89,12 @@ def sample_orientations_from_canonical(
         
 
 
-def sample_orientations_from_orientations(vertices, pos_in, mode='continuous',
-                                          n_values=None, low=-np.pi, 
-                                          high=np.pi,
-                                          rotation_matrix_action:bool=False):
+def sample_orientations_from_orientations(
+                    vertices, pos_in, mode='continuous', 
+                    n_values:Optional[int]=None, 
+                    low:float=-np.pi, 
+                    high:float=np.pi,
+                    rotation_matrix_action:bool=False):
     """
     Produce a batch of orientations by rotating a batch of orientations.
     """
@@ -210,9 +213,9 @@ def sample_n_steps_orientations_from_canonical(
             vertices, batch_size:int, n_steps:int=2, 
             mode:str='continuous',
             n_values:int=None, 
-            rots_range:List=(-np.pi,np.pi), 
-            rots_range_canonical:List=(-np.pi,np.pi), 
-            rotation_matrix_action:List=False):
+            rots_range:List=[-np.pi,np.pi], 
+            rots_range_canonical:List=[-np.pi,np.pi], 
+            rotation_matrix_action:bool=False):
     
     low, high = rots_range
     n_actions = 9 if rotation_matrix_action else 3
@@ -256,7 +259,9 @@ def sample_n_steps_poses_from_canonical(
             rots_range_canonical=(-np.pi,np.pi), 
             translation_grid=3,
             translation_stepsize=0.5, translation_range=1, 
-            rotation_matrix_action:bool=False):
+            rotation_matrix_action:bool=False) -> Tuple[npt.NDArray,
+                                                        npt.NDArray,
+                                                        npt.NDArray]:
     
     low, high = rots_range
     n_actions = 3 # 3D translation
@@ -297,7 +302,11 @@ def sample_n_steps_poses_from_canonical(
 
 
 def sample_n_steps_trans_from_canonical(
-            vertices, batch_size, n_steps=2, translation_grid=3,translation_stepsize=0.5,translation_range=1):
+            vertices, batch_size, n_steps=2, translation_grid=3, 
+            translation_stepsize=0.5, translation_range=1) -> Tuple[
+                                                        npt.NDArray,
+                                                        npt.NDArray,
+                                                        npt.NDArray]:
     
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
@@ -334,7 +343,8 @@ def sample_n_steps_colors(
                         batch_size,
                         n_steps=2,
                         n_colors=10,
-                        max_color_shift=2):
+                        max_color_shift=2) -> Tuple[npt.NDArray,
+                                                    npt.NDArray]:
     a_out = np.zeros([batch_size,n_steps+1,1],dtype=int)
     # Sample initial colors:
     a_out[:,0,0] = np.random.randint(n_colors,size=[batch_size])
@@ -350,24 +360,25 @@ def sample_n_steps_colors(
     return a_out, pos_out
 
 
-def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5, col='white'):
+def get_image(vertices, triangles, figsize:List[float]=[3,3], dpi:int=36, 
+              lim:float=1.5, col:str='white') -> npt.NDArray:
     """
     Plots a 3D view of the object and returns it as a numpy array.
     """
     fig = plt.figure(figsize=figsize,dpi=dpi)   
     ax = plt.axes(projection='3d')
 
-    ax.set_xlim([-lim,lim])
-    ax.set_ylim([-lim,lim])
-    ax.set_zlim([-lim,lim])
+    ax.set_xlim((-lim,lim))
+    ax.set_ylim((-lim,lim)) # type: ignore
+    ax.set_zlim((-lim,lim)) # type: ignore
 
     ax.set_axis_off()
 
     x,y,z = vertices[:,0], vertices[:,1], vertices[:,2]
-    ax.plot_trisurf(x,z,triangles,y,shade=True,color=col) 
+    ax.plot_trisurf(x,z,triangles,y,shade=True,color=col)  # type: ignore
 
     fig.canvas.draw()
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8') # type: ignore
     image = image.reshape(figsize[0]*dpi,figsize[1]*dpi,3)
     # image /= 255
     # image = np.moveaxis(image,-1,0)
@@ -375,7 +386,9 @@ def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5, col='white'):
     return image
 
 
-def vertices_to_images(v, triangles, figsize=(3,3), dpi=24, lim=1.5,crop=0):
+def vertices_to_images(v: npt.NDArray, triangles:npt.NDArray, 
+                       figsize:List[float]=[3,3], dpi:int=24, lim:float=1.5, 
+                       crop:int=0) -> npt.NDArray:
     """
     Converts a batch of vertices arrays to a batch of figures 
 
@@ -453,25 +466,30 @@ def vertices_to_colored_images(
         images_out = images_out[...,crop:-crop,crop:-crop]
     return images_out    
 
-def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, lim=1.5,
-                     mode='continuous', n_values=0, 
-                     rots_range=(-np.pi/2,np.pi/2),
-                     rots_range_canonical=(-np.pi/2,np.pi/2),
-                     rotate=False,
-                     rotation_matrix_action=False,
-                     translate=False,
-                     translation_grid=3,
-                     translation_stepsize=0.5,
-                     translation_range=1,
-                     n_steps=2, 
-                     n_samples=10000, 
-                     chunk_size=0, 
-                     center=True, 
-                     crop=0,
-                     color=False,
-                     n_colors=0,
-                     max_color_shift=0,
-                     attributes_dict={}):
+def generate_dataset(obj_filename:str, out_path:str, batch_size:int, 
+                     figsize:List[float]=[3,3], dpi:int=24, lim:float=1.5,
+                     mode:str='continuous', n_values:int=0, 
+                     rots_range:List[float]=[-np.pi/2,np.pi/2],
+                     rots_range_canonical:List[float]=[-np.pi/2,np.pi/2],
+                     rotate:bool=False,
+                     rotation_matrix_action:bool=False,
+                     translate:bool=False,
+                     translation_grid:int=3,
+                     translation_stepsize:float=0.5,
+                     translation_range:int=1,
+                     n_steps:int=2, 
+                     n_samples:int=10000, 
+                     chunk_size:int=0, 
+                     center:bool=True, 
+                     crop:int=0,
+                     color:bool=False,
+                     n_colors:int=0,
+                     max_color_shift:int=0,
+                     attributes_dict={},
+                     gen_1d_rots:bool=False,
+                     manifold_batch_size:int=0,
+                     manifold_n_vals:int=0,
+                     ):
     
     n_pos = 0 #number of dimensions for 3D position
     n_actions = 0
@@ -567,7 +585,60 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
             dset_rot[i*batch_size:(i+1)*batch_size] = a
             dset_pos[i*batch_size:(i+1)*batch_size] = pos
         dset_img.attrs.update(attributes_dict)
+
+        if gen_1d_rots:
+            print("Generating 1D rotation rollouts.")
+            f_man = f.create_group('manifold')
+            kwargs_images = {
+            'dtype':np.float32,
+            'shape' : (manifold_batch_size, manifold_n_vals, 3, figsize[0]*dpi-2*crop, 
+                                                figsize[1]*dpi-2*crop), 
+            'maxshape':(None, manifold_n_vals, 3, figsize[0]*dpi-2*crop, 
+                                                figsize[1]*dpi-2*crop),
+            }
+            dset_man = f_man.create_dataset('images', **kwargs_images)
+            v_out = generate_1d_rot_dataset(
+                vertices=vertices,
+                n_manifolds=manifold_batch_size, n_values=manifold_n_vals,
+                rotation_matrix_action=rotation_matrix_action)
+            colors = np.zeros([*v_out.shape[:-2],1],dtype=int)    
+            dset_man[...] = vertices_to_colored_images(
+                v_out, triangles, color_idx=colors, figsize=figsize, dpi=dpi,
+                lim=lim, crop=crop,n_colors=n_colors)
+
+        if False:
+            generate_actions_dataset()
+
     return 
+
+def generate_1d_rot_dataset(vertices:npt.NDArray, n_manifolds:int, n_values:int,
+                            rotation_matrix_action:bool) -> npt.NDArray:
+    # pick random starting orientations
+    v_0, p_0, R_0 = sample_orientations_from_canonical(
+                vertices, batch_size=n_manifolds,
+                mode='continuous', 
+                rotation_matrix_action=rotation_matrix_action)
+
+    # Generate a list of angles then matrices for rotation around z axis
+    angles = np.vstack([np.linspace(start=0,stop=2*np.pi,endpoint=False,num=n_values),
+                       np.zeros([2,n_values])])
+    R_ = rotation_matrix(*angles) # [20, 3,3]
+
+    # Rotate the rotation axis (conjugation of the matrices)
+    p = np.random.random([3,n_manifolds])
+    p = 2*np.pi*p
+    P = rotation_matrix(*p) # [n_manifolds, 3, 3]
+    R = np.einsum('nix,mxy,njy->nmij',P,R_,P)      # P@R_@P.T
+
+    # list of vertices
+    v_out = np.einsum('nmij,nvj->nmvi',R,v_0)
+
+    return v_out
+
+
+def generate_actions_dataset():
+    return
+
 
 def get_attributes_dict(obj_filename,  
                     figsize, 
@@ -672,5 +743,8 @@ if __name__=='__main__':
                      color=config.color,
                      n_colors=config.n_colors,
                      max_color_shift=config.max_color_shift,
-                     rots_range_canonical=rots_range_canonical
+                     rots_range_canonical=rots_range_canonical,
+                     gen_1d_rots=config.gen_1d_rots,
+                     manifold_batch_size=config.manifold_batch_size,
+                     manifold_n_vals=config.manifold_n_vals,
                      )
