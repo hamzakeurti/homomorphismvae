@@ -164,6 +164,8 @@ class Obj3dDataset(TransitionDataset):
                 if self._normalize_actions:
                     self._M = np.abs(self._transitions).max(axis=(0,1))
                     self._transitions /= self._M
+                if 'manifold' in f.keys():
+                    pass # TODO
             # images = self._file['images']
             # transitions = self._file['rotations']
 
