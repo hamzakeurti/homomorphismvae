@@ -24,7 +24,7 @@
 import __init__
 
 if __name__ == "__main__":
-    import utils.train_utils as ututils
+    import displacementae.utils.train_utils as ututils
 
 if __name__=='__main__':
     ututils.run(mode='supervised')

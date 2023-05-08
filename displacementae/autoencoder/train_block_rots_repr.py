@@ -22,9 +22,9 @@
 
 import __init__
 
-import utils.train_utils as ututils
+import displacementae.utils.train_utils as ututils
 
-from grouprepr.representation_utils import Representation
+from displacementae.grouprepr.representation_utils import Representation
 
 if __name__=='__main__':
     ututils.run(mode='autoencoder',representation=Representation.BLOCK_ROTS)

@@ -4,9 +4,9 @@ import torch.nn as nn
 
 import numpy as np
 
-from grouprepr.group_representation import GroupRepresentation
-from networks.mlp import MLP
-from grouprepr.varphi import VarPhi
+from displacementae.grouprepr.group_representation import GroupRepresentation
+from displacementae.networks.mlp import MLP
+from displacementae.grouprepr.varphi import VarPhi
 
 class UnstructuredRepresentation(GroupRepresentation):
     """

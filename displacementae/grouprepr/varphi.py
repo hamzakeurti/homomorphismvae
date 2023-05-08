@@ -26,7 +26,7 @@ import torch.nn.functional as F
 
 import numpy as np
 
-from networks.mlp import MLP
+from displacementae.networks.mlp import MLP
 
 
 class VarPhi(nn.Module):

@@ -25,9 +25,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from grouprepr.group_representation import GroupRepresentation
-from grouprepr.lookup_representation import LookupRepresentation
-from grouprepr.varphi import VarPhi
+from displacementae.grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.lookup_representation import LookupRepresentation
+from displacementae.grouprepr.varphi import VarPhi
 
 class BlockLookupRepresentation(GroupRepresentation):
     """

@@ -27,9 +27,9 @@ import wandb
 import os
 
 
-from networks.variational_utils import bce_loss
-from utils import checkpoint, sim_utils
-from utils import plotting_utils as plt_utils
+from displacementae.networks.variational_utils import bce_loss
+from displacementae.utils import checkpoint, sim_utils
+from displacementae.utils import plotting_utils as plt_utils
 
 LOSS_LOWEST = 'loss_lowest'
 LOSS_LOWEST_EPOCH = 'loss_lowest_epoch'

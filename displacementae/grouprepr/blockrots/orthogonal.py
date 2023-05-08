@@ -28,7 +28,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from models import nets
 
-from grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.group_representation import GroupRepresentation
 
 
 def _block_diag(m):

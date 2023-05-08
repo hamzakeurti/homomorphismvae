@@ -26,8 +26,8 @@ import torch.nn.functional as F
 
 import numpy as np
 
-from networks.mlp import MLP
-from grouprepr.varphi import VarPhi
+from displacementae.networks.mlp import MLP
+from displacementae.grouprepr.varphi import VarPhi
 
 
 class GroupRepresentation(nn.Module):

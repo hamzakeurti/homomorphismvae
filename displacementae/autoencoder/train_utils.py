@@ -26,18 +26,18 @@ import torch
 import torch.nn as nn
 
 import autoencoder.train_args as train_args
-from utils.scheduler import Scheduler , setup_scheduler
+from displacementae.utils.scheduler import Scheduler , setup_scheduler
 
-import data.data_utils as data_utils
-from networks.autoencoder import AutoEncoder
-import networks.network_utils as net_utils
-import networks.variational_utils as var_utils
-import utils.plotting_utils as plt_utils
-import utils.sim_utils as sim_utils
-import utils.misc as misc
-import utils.checkpoint as ckpt
+import displacementae.data.data_utils as data_utils
+from displacementae.networks.autoencoder import AutoEncoder
+import displacementae.networks.network_utils as net_utils
+import displacementae.networks.variational_utils as var_utils
+import displacementae.utils.plotting_utils as plt_utils
+import displacementae.utils.sim_utils as sim_utils
+import displacementae.utils.misc as misc
+import displacementae.utils.checkpoint as ckpt
 
-import networks.autoencoder_prodrep as aeprod
+import displacementae.networks.autoencoder_prodrep as aeprod
 
 
 def setup_optimizer(params, config):

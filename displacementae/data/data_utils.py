@@ -22,11 +22,12 @@
 
 from torch.utils.data import DataLoader
 
-from data.dsprites import DspritesDataset
-from data.obj3d_dataset import Obj3dDataset
-from data.obj3d_supervised_dset import Obj3dSupervisedDataset 
-from data.trajs import TrajectoryDataset
-import utils.misc as misc
+from displacementae.data.dsprites import DspritesDataset
+from displacementae.data.obj3d_dataset import Obj3dDataset
+from displacementae.data.obj3d_supervised_dset import Obj3dSupervisedDataset 
+from displacementae.data.trajs import TrajectoryDataset
+
+import displacementae.utils.misc as misc
 
 
 def setup_data(config, mode='autoencoder'):

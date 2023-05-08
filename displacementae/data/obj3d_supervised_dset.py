@@ -181,7 +181,7 @@ class Obj3dSupervisedDataset(Dataset):
 if __name__ == '__main__':
     # pass
 
-    from data.obj3d_supervised_dset import Obj3dSupervisedDataset
+    from displacementae.data.obj3d_supervised_dset import Obj3dSupervisedDataset
 
     root = 'C:/Users/hamza/datasets/obj3d/collect/bunny1.hdf5'
     dataset = Obj3dSupervisedDataset(root=root,rseed=5,use_rotation_matrix=True,num_train=1,num_val=0)

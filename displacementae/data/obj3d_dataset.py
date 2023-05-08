@@ -34,7 +34,7 @@ import os
 import h5py
 from typing import Any, Tuple
 
-from data.transition_dataset import TransitionDataset
+from displacementae.data.transition_dataset import TransitionDataset
 
 
 

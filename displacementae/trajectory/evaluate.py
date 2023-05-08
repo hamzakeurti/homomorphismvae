@@ -1,11 +1,11 @@
 import __init__
-import utils.checkpoint as ckpt
-import utils.plotting_utils as plt_utils
-import networks.variational_utils as var_utils
-import networks.network_utils as net_utils
-from data.trajs import TrajectoryDataset
-import utils.args as uargs
-from grouprepr.representation_utils import Representation
+import displacementae.utils.checkpoint as ckpt
+import displacementae.utils.plotting_utils as plt_utils
+import displacementae.networks.variational_utils as var_utils
+import displacementae.networks.network_utils as net_utils
+from displacementae.data.trajs import TrajectoryDataset
+import displacementae.utils.args as uargs
+from displacementae.grouprepr.representation_utils import Representation
 
 import argparse
 import os

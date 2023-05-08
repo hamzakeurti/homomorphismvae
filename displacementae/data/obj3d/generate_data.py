@@ -29,8 +29,8 @@ import h5py
 from typing import List
 
 import __init__
-import data.obj3d.gen_args as gargs
-import utils.misc as misc
+import displacementae.data.obj3d.gen_args as gargs
+import displacementae.utils.misc as misc
 
 def read_obj(filename, center=True):
     # Code taken from https://yuchen52.medium.com/beyond-data-scientist-3d-plots-in-python-with-examples-2a8bd7aa654b

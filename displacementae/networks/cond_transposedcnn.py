@@ -23,7 +23,7 @@
 
 import torch
 import torch.nn as nn
-import networks.transposedcnn as transposedcnn
+import displacementae.networks.transposedcnn as transposedcnn
 
 
 class ConditionalDecoder(nn.Module):

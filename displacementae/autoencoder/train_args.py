@@ -23,9 +23,9 @@
 import argparse
 from datetime import datetime
 
-import utils.args as args
+import displacementae.utils.args as args
 
-from grouprepr.representation_utils import Representation
+from displacementae.grouprepr.representation_utils import Representation
 
 def parse_cmd_arguments(representation=Representation.BLOCK_ROTS ,description=''):
     curr_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

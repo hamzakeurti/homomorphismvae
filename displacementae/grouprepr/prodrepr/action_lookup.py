@@ -32,8 +32,8 @@ import torch.nn as nn
 import torch
 import numpy as np
 
-from grouprepr.prodrepr.product_representation import ProductRepresentation
-from grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.prodrepr.product_representation import ProductRepresentation
+from displacementae.grouprepr.group_representation import GroupRepresentation
 
 
 class ActionLookup(GroupRepresentation):
