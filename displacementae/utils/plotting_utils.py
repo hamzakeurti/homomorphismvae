@@ -27,10 +27,10 @@ import torch
 from argparse import Namespace
 import wandb
 
-from data.dsprites import DspritesDataset
-import networks.autoencoder_prodrep as aeprod
-import utils.misc as misc
-import utils.data_utils as udutils
+from displacementae.data.dsprites import DspritesDataset
+import displacementae.networks.autoencoder_prodrep as aeprod
+import displacementae.utils.misc as misc
+import displacementae.utils.data_utils as udutils
 from sklearn.random_projection import GaussianRandomProjection
 from scipy.stats import sem
 

@@ -24,25 +24,25 @@ from argparse import Namespace
 from os import error
 import torch
 import torch.nn as nn
-from data.transition_dataset import TransitionDataset
+from displacementae.data.transition_dataset import TransitionDataset
 
-from networks.cnn import CNN
-from networks.transposedcnn import TransposedCNN 
-import grouprepr.blockrots.orthogonal as orth
-import utils.misc as misc
-from networks.autoencoder import AutoEncoder
-from networks.multistep_autoencoder import MultistepAutoencoder
-from grouprepr.block_mlp_representation import BlockMLPRepresentation
-from grouprepr.group_representation import GroupRepresentation
-from grouprepr.prodrepr.action_lookup import ActionLookup
-from grouprepr.representation_utils import Representation, str_to_enum
-from grouprepr.lookup_representation import LookupRepresentation
-from grouprepr.block_lookup_representation import BlockLookupRepresentation
-from grouprepr.trivial_representation import TrivialRepresentation
-from grouprepr.mlp_representation import MLPRepresentation
-from grouprepr.unstructured_representation import UnstructuredRepresentation
-from grouprepr.soft_block_mlp_representation import SoftBlockMLPRepresentation
-from grouprepr.varphi import VarPhi
+from displacementae.networks.cnn import CNN
+from displacementae.networks.transposedcnn import TransposedCNN 
+import displacementae.grouprepr.blockrots.orthogonal as orth
+import displacementae.utils.misc as misc
+from displacementae.networks.autoencoder import AutoEncoder
+from displacementae.networks.multistep_autoencoder import MultistepAutoencoder
+from displacementae.grouprepr.block_mlp_representation import BlockMLPRepresentation
+from displacementae.grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.prodrepr.action_lookup import ActionLookup
+from displacementae.grouprepr.representation_utils import Representation, str_to_enum
+from displacementae.grouprepr.lookup_representation import LookupRepresentation
+from displacementae.grouprepr.block_lookup_representation import BlockLookupRepresentation
+from displacementae.grouprepr.trivial_representation import TrivialRepresentation
+from displacementae.grouprepr.mlp_representation import MLPRepresentation
+from displacementae.grouprepr.unstructured_representation import UnstructuredRepresentation
+from displacementae.grouprepr.soft_block_mlp_representation import SoftBlockMLPRepresentation
+from displacementae.grouprepr.varphi import VarPhi
 
 AUTOENCODER = 'autoencoder'
 

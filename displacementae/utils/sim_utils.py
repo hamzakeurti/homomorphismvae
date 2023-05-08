@@ -32,7 +32,7 @@ import random
 import pickle
 import json
 
-from utils import logger_config
+from displacementae.utils import logger_config
 
 
 BCE_LOWEST = 'bce_lowest'

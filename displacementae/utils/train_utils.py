@@ -24,11 +24,11 @@ from argparse import Namespace
 from contextlib import ExitStack
 import wandb
 
-import utils.sim_utils as sim_utils
-import data.data_utils as data_utils
-import networks.network_utils as net_utils
+import displacementae.utils.sim_utils as sim_utils
+import displacementae.data.data_utils as data_utils
+import displacementae.networks.network_utils as net_utils
 
-from grouprepr.representation_utils import Representation
+from displacementae.grouprepr.representation_utils import Representation
 
 
 def run(mode='autoencoder'):
@@ -54,6 +54,9 @@ def run(mode='autoencoder'):
     elif mode == 'supervised':
         import supervised.train_args as train_args
         import supervised.train_utils as tutils
+    else:
+        raise ValueError('Mode not supported')
+    
 
     # parse commands
     config = train_args.parse_cmd_arguments()

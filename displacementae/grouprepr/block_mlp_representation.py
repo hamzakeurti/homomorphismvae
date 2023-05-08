@@ -25,9 +25,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from grouprepr.group_representation import GroupRepresentation
-from grouprepr.mlp_representation import MLPRepresentation
-from grouprepr.varphi import VarPhi
+from displacementae.grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.mlp_representation import MLPRepresentation
+from displacementae.grouprepr.varphi import VarPhi
 
 
 class BlockMLPRepresentation(GroupRepresentation):

@@ -22,10 +22,10 @@
 
 import torch
 
-import networks.autoencoder as ae
-import grouprepr.prodrepr.action_lookup as al
-import networks.variational_utils as var_utils
-import utils.data_utils as udutils
+import displacementae.networks.autoencoder as ae
+import displacementae.grouprepr.prodrepr.action_lookup as al
+import displacementae.networks.variational_utils as var_utils
+import displacementae.utils.data_utils as udutils
 
 
 class AutoencoderProdrep(ae.AutoEncoder):

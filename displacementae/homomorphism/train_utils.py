@@ -27,18 +27,18 @@ import torch.nn as nn
 import wandb
 import numpy as np
 
-from data.transition_dataset import TransitionDataset
-from networks.multistep_autoencoder import MultistepAutoencoder
-import data.data_utils as data_utils
-import data.transition_dataset as trns_data
-import networks.network_utils as net_utils
-import networks.variational_utils as var_utils
-import utils.plotting_utils as plt_utils
-import utils.sim_utils as sim_utils
-import utils.misc as misc
-import utils.checkpoint as ckpt
-import networks.multistep_autoencoder as ms_ae
-from utils.scheduler import setup_scheduler
+from displacementae.data.transition_dataset import TransitionDataset
+from displacementae.networks.multistep_autoencoder import MultistepAutoencoder
+import displacementae.data.data_utils as data_utils
+import displacementae.data.transition_dataset as trns_data
+import displacementae.networks.network_utils as net_utils
+import displacementae.networks.variational_utils as var_utils
+import displacementae.utils.plotting_utils as plt_utils
+import displacementae.utils.sim_utils as sim_utils
+import displacementae.utils.misc as misc
+import displacementae.utils.checkpoint as ckpt
+import displacementae.networks.multistep_autoencoder as ms_ae
+from displacementae.utils.scheduler import setup_scheduler
 
 
 BCE_LOWEST = 'bce_lowest'

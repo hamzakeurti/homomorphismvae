@@ -22,7 +22,7 @@
 
 from datetime import datetime
 
-from grouprepr.representation_utils import Representation
+from displacementae.grouprepr.representation_utils import Representation
 from argparse import ArgumentParser
 
 

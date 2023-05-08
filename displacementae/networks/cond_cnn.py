@@ -22,7 +22,7 @@
 
 import torch
 import torch.nn as nn
-import networks.cnn as cnn
+import displacementae.networks.cnn as cnn
 
 
 class ConditionalEncoder(nn.Module):

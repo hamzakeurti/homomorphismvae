@@ -274,7 +274,7 @@ _PERFORMANCE_SORT_ASC = False
 # ...                                             argv=argv)
 # >>> _ARGPARSE_HANDLE = f
 # import __init__
-from grouprepr.representation_utils import Representation
+from displacementae.grouprepr.representation_utils import Representation
 import homomorphism.train_args as targs
 
 _ARGPARSE_HANDLE = lambda argv : targs.parse_cmd_arguments( \

@@ -35,7 +35,7 @@ import h5py
 from typing import Tuple, List
 
 
-from data.transition_dataset import TransitionDataset
+from displacementae.data.transition_dataset import TransitionDataset
 
 IMGS = "imgs"
 LATENTS = "latents"
@@ -458,7 +458,7 @@ if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from data.dsprites import DspritesDataset
+    from displacementae.data.dsprites import DspritesDataset
 
 
     root = "D:\\Projects\\PhD\\datasets\\dsprites"

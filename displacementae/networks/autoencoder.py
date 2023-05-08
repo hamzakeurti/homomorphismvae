@@ -23,9 +23,9 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.group_representation import GroupRepresentation
 
-import networks.variational_utils as var_utils
+import displacementae.networks.variational_utils as var_utils
 
 class AutoEncoder(nn.Module):
     """

@@ -26,16 +26,16 @@ import os
 import torch
 from torch.utils.data import DataLoader
 
-from grouprepr.prodrepr.action_lookup import ActionLookup
-from grouprepr.block_lookup_representation import BlockLookupRepresentation
-from data.trajs import TrajectoryDataset
-import networks.network_utils as net_utils
-import networks.variational_utils as var_utils
-import utils.plotting_utils as plt_utils
-import utils.sim_utils as sim_utils
-import utils.misc as misc
-import utils.checkpoint as ckpt
-from networks.multistep_autoencoder import MultistepAutoencoder
+from displacementae.grouprepr.prodrepr.action_lookup import ActionLookup
+from displacementae.grouprepr.block_lookup_representation import BlockLookupRepresentation
+from displacementae.data.trajs import TrajectoryDataset
+import displacementae.networks.network_utils as net_utils
+import displacementae.networks.variational_utils as var_utils
+import displacementae.utils.plotting_utils as plt_utils
+import displacementae.utils.sim_utils as sim_utils
+import displacementae.utils.misc as misc
+import displacementae.utils.checkpoint as ckpt
+from displacementae.networks.multistep_autoencoder import MultistepAutoencoder
 
 
 BCE_LOWEST = 'bce_lowest'

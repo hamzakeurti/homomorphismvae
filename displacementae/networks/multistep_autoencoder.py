@@ -24,11 +24,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from networks.autoencoder import AutoEncoder
+from displacementae.networks.autoencoder import AutoEncoder
 
 class MultistepAutoencoder(AutoEncoder):
     def __init__(self, encoder, decoder, grp_morphism, n_repr_units, 
-                 n_transform_units, variational=True, spherical=False,
+                 n_transform_units, variational=False, spherical=False,
                  reconstruct_first=False, spherical_post_action=False):        
         """
         An Autoencoder with multiple future observation prediction through 
@@ -42,7 +42,7 @@ class MultistepAutoencoder(AutoEncoder):
         grp_transformation, nn.Module: Maps an action to a transformation of
                         the representation space.
         variational, bool: If True, the encoder describes a distribution instead 
-                        of being deterministic, defaults to True.
+                        of being deterministic, defaults to False.
         spherical, bool: If True, the encoder's outputs (the location part 
                         in the variational case) is normalized.
         """

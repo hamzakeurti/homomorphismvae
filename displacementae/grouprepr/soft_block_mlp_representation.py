@@ -25,10 +25,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-from grouprepr.group_representation import GroupRepresentation
-from grouprepr.mlp_representation import MLPRepresentation
-from networks.mlp import MLP
-from grouprepr.varphi import VarPhi
+from displacementae.grouprepr.group_representation import GroupRepresentation
+from displacementae.grouprepr.mlp_representation import MLPRepresentation
+from displacementae.networks.mlp import MLP
+from displacementae.grouprepr.varphi import VarPhi
 
 
 class SoftBlockMLPRepresentation(MLPRepresentation):
