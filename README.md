@@ -7,6 +7,17 @@ Main scripts are provided in `./displacementae/homomorphism/`.
 Best run commands are provided in the `./displacementae/homomorphism/README.rst`.
 
 
+## Installation
+---
+The package can be installed by first building the package through:
+```
+ $ python setup.py sdist bdist_wheel
+```
+Then it can be installed in your environment through:
+```
+ $ pip install homomorphism-autoencoder-<VERSION>.tar.gz
+```
+
 
 ## Documentation
 ---
