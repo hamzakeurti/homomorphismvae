@@ -21,7 +21,7 @@
 # @python_version :3.7.4
 
 from typing import List, Union
-
+import numpy as np
 
 def str_to_ints(str_arg:str) -> List:
     """
@@ -65,3 +65,14 @@ def str_to_floats(str_arg:str) -> List:
         args = [float(a.strip()) for a in args]
         return args
 
+def rotation_matrix(yaw,pitch,roll):
+    cy, sy = np.cos(yaw), np.sin(yaw)
+    cp, sp = np.cos(pitch), np.sin(pitch)
+    cr, sr = np.cos(roll), np.sin(roll)
+    R = np.array([
+        [cy*cp  , cy*sp*sr - sy*cr  , cy*sp*cr + sy*sr],
+        [sy*cp  , sy*sp*sr + cy*cr  , sy*sp*cr - cy*sr],
+        [-sp    , cp*sr             , cp*cr           ],
+    ])
+    R = np.moveaxis(R,[0,1],[-2,-1])
+    return R

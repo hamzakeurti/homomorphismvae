@@ -63,7 +63,8 @@ def rotation_matrix(yaw,pitch,roll):
         [sy*cp  , sy*sp*sr + cy*cr  , sy*sp*cr - cy*sr],
         [-sp    , cp*sr             , cp*cr           ],
     ])
-    return np.moveaxis(R,-1,0)
+    R = np.moveaxis(R,[0,1],[-2,-1])
+    return R
 
 
 def sample_orientations_from_canonical(

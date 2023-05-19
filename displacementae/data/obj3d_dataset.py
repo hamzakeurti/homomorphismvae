@@ -35,7 +35,7 @@ import h5py
 from typing import Any, Tuple
 
 from displacementae.data.transition_dataset import TransitionDataset
-
+from displacementae.utils.misc import rotation_matrix
 
 
 
@@ -91,9 +91,12 @@ class Obj3dDataset(TransitionDataset):
 
         data = {}
         data["in_shape"] = self._images.shape[2:]
+        # this is the input size to the group representation
         data["action_units"] = self._transitions.shape[-1]
-        data["action_dim"] = self._transitions.shape[-1]
-        self.action_dim = self._transitions.shape[-1]
+
+        # This is the dimensionality of the action space
+        
+        self.action_dim = 3*self._rotate + 3*self._translate + self._color
         self._data = data
 
 
@@ -223,12 +226,19 @@ class Obj3dDataset(TransitionDataset):
                 a[1+2*i:3+2*i,i] = np.array([1,-1])*self._rots_stepsize
             elif i in self._trans_idx:
                 a[1+2*i:3+2*i,i] = np.array([1,-1])*self._trans_stepsize
-            else:
+            else: # color
                 a[1+2*i:3+2*i,i] = np.array([1,-1])
+
+        if self._rotation_matrix_action:
+            R = rotation_matrix(*a[:,:3].T) # R shape: [n,3,3]
+            R = R.reshape(-1,9)
+            a_in = np.concatenate([R,a[:,3:].copy()], axis=-1)
+        else:
             a_in = a.copy()
-            if self._normalize_actions:
-                a_in /= self._M
+        if self._normalize_actions:
+            a_in /= self._M
         return a_in, a
+
 
     def get_val_batch(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get a batch of evaluation samples.
