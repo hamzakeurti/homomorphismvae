@@ -24,11 +24,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import List
-
+import warnings
 
 from displacementae.grouprepr.varphi import VarPhi
 from displacementae.grouprepr.group_representation import GroupRepresentation
 from displacementae.networks.mlp import MLP
+
+
+warnings.filterwarnings('ignore', 
+                        message='UserWarning: An output with one or more ' + 
+                                'elements or more elements was resized ' +
+                                'since it had shape ')
 
 
 class MLPRepresentation(GroupRepresentation):

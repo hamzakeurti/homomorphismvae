@@ -21,9 +21,14 @@
 # @python_version :3.7.4
 
 import __init__
-
+import warnings
 
 import displacementae.utils.train_utils as ututils
 
+
 if __name__=='__main__':
+    warnings.filterwarnings('ignore', 
+                            message='UserWarning: An output with one or more ' + 
+                                    'elements or more elements was resized ' +
+                                    'since it had shape')
     ututils.run(mode='homomorphism')
