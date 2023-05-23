@@ -71,7 +71,7 @@ class Obj3dDataset(TransitionDataset):
         
         k = 0
         if self._rotate:
-            n_rots_act = 9 if self._rotation_matrix_action else 3
+            n_rots_act = 3
             self._rots_idx = np.arange(n_rots_act)
             k += n_rots_act
         
