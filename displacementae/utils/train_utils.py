@@ -43,17 +43,17 @@ def run(mode='autoencoder'):
     """
     # Mode dependent imports
     if mode == 'autoencoder':
-        import autoencoder.train_args as train_args
-        import autoencoder.train_utils as tutils
+        import displacementae.autoencoder.train_args as train_args
+        import displacementae.autoencoder.train_utils as tutils
     elif mode == 'homomorphism':
-        import homomorphism.train_args as train_args
-        import homomorphism.train_utils as tutils
+        import displacementae.homomorphism.train_args as train_args
+        import displacementae.homomorphism.train_utils as tutils
     elif mode == 'trajectory':
-        import trajectory.train_args as train_args
-        import trajectory.train_utils as tutils
+        import displacementae.trajectory.train_args as train_args
+        import displacementae.trajectory.train_utils as tutils
     elif mode == 'supervised':
-        import supervised.train_args as train_args
-        import supervised.train_utils as tutils
+        import displacementae.supervised.train_args as train_args
+        import displacementae.supervised.train_utils as tutils
     else:
         raise ValueError('Mode not supported')
     

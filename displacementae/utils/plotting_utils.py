@@ -439,7 +439,7 @@ def plot_matrix(example_R,a, config, logger, figname=None):
             logger.info(f'Figure saved {figname1}')
         if config.log_wandb:
             log_dict= {
-                f'val/learned_representation/action:{action}':wandb.Image(plt)}
+                f'val/learned_representation/action={action}':wandb.Image(plt)}
             wandb.log(log_dict)
         plt.close(fig)
     
