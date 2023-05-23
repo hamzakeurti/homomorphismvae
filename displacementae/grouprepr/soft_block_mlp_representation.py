@@ -63,8 +63,10 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
         self.repr_loss_on = True
         self.regularize_algebra = regularize_algebra
         
-    def forward(self, a: torch.Tensor) -> torch.Tensor:
-        return super().forward(a)
+    def forward(self, a: torch.Tensor, use_exponential:bool=None) -> torch.Tensor:
+        if use_exponential is None:
+            use_exponential = self.exponential_map
+        return super().forward(a, use_exponential=use_exponential)
 
     def _get_masks(self):
         d = self.dim_representation
