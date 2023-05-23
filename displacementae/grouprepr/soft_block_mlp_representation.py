@@ -45,7 +45,8 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
                  normalize_post_action:bool=False,
                  exponential_map:bool=False,
                  varphi: VarPhi = None,
-                 ) -> None:
+                 regularize_algebra:bool=False,
+                 )-> None:
         super().__init__(
                  n_action_units=n_action_units, 
                  dim_representation=dim_representation, 
@@ -60,6 +61,7 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
                  )
         self.masks = self._get_masks().to(device)
         self.repr_loss_on = True
+        self.regularize_algebra = regularize_algebra
         
     def forward(self, a: torch.Tensor) -> torch.Tensor:
         return super().forward(a)
@@ -73,7 +75,11 @@ class SoftBlockMLPRepresentation(MLPRepresentation):
         return M
 
     def representation_loss(self, dj):
-        R = self(dj) # Calls the underlying MLPRepresentation forward.
+        # Calls the underlying MLPRepresentation forward.
+        # If self.regularize_algebra is True, then we regularize the 
+        # algebra representations prior to applying the exponential map.
+        R = self(dj, use_exponential=not self.regularize_algebra) 
+        
         l = self.masks.unsqueeze(0)*R.unsqueeze(1)
         l = l.square().sum((2,3)).sqrt().sum(1).square().sum().sqrt()
         return l

@@ -444,7 +444,12 @@ def group_repr_args(parser:ArgumentParser):
                         help='whether to add group representation loss.')
     soft_block_mlp_parser.add_argument('--grp_loss_weight', type=float, default=1e-2,
                         help='Factor of the grp loss in the total loss.')
-
+    soft_block_mlp_parser.add_argument('--regularize_algebra', 
+                         action='store_true',
+                         help='Whether to regularize the group ' +
+                         'representation before applying the matrix ' +
+                         'exponential. This corresponds to regularizing the ' +
+                         'algebra representation.')
 
 
 

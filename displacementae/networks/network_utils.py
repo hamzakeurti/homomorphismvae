@@ -255,7 +255,8 @@ def setup_grp_morphism(config: Namespace, dhandler: TransitionDataset,
                 normalize=config.normalize,
                 normalize_post_action=config.normalize_post_action,
                 exponential_map=config.exponential_map,
-                varphi=varphi).to(device)
+                varphi=varphi,
+                regularize_algebra=config.regularize_algebra).to(device)
 
     elif representation == Representation.PROD_ROTS_LOOKUP:
         grp_morphism = ActionLookup(
