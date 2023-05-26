@@ -26,6 +26,8 @@ import numpy as np
 import torch
 from argparse import Namespace
 import wandb
+import os
+
 
 from displacementae.data.dsprites import DspritesDataset
 import displacementae.networks.autoencoder_prodrep as aeprod
@@ -212,6 +214,55 @@ def plot_supervised_reconstruction(dhandler, nets, config, device, logger, figna
     if config.log_wandb:
         wandb.log({'plot/reconstructions':wandb.Image(plt)})
     plt.close(fig)
+
+
+def plot_rollout_reconstructions(dhandler, nets, config, device, logger):
+    n_rollouts = config.plot_n_rollouts
+    X, a = dhandler.get_n_rollouts(n_rollouts)
+    X = torch.FloatTensor(X).to(device)
+    a = torch.FloatTensor(a).to(device)
+    i_pow2 = np.power(2, np.arange(2,np.log2(a.shape[1]),1)).astype(int)
+    n_steps = len(i_pow2)
+    n_rows = X.shape[0]*2
+    n_cols = n_steps
+
+    # Forward pass
+    X_hat, _,_,_,_ = nets(X[:,0], a) 
+    X_hat = torch.sigmoid(X_hat)
+
+    unit_length = 2
+    fig, axs = plt.subplots(n_rows, n_cols, 
+                            figsize=(n_cols*unit_length, n_rows*unit_length))
+    
+    kwargs = {'vmin': 0, 'vmax': 1}
+    if X.shape[2] == 1:
+        kwargs['cmap'] = 'gray'
+        X = X[:,:,0].cpu().numpy()
+        X_hat = X_hat[:,:,0].cpu().numpy()
+    else:
+        X = np.moveaxis(X.cpu().numpy(),-3,-1)
+        X_hat = np.moveaxis(X_hat.cpu().numpy(),-3,-1)
+    
+    for row in range(n_rollouts):
+        for col in range(n_cols):
+            axs[row*2,col].imshow(X[row,i_pow2[col]], **kwargs)
+            axs[row*2,col].axis('off')
+            axs[row*2+1,col].imshow(X_hat[row,i_pow2[col]], **kwargs)
+            axs[row*2+1,col].axis('off')
+    
+    figname = f'rollout_reconstructions'
+    plt.subplots_adjust(wspace=0, hspace=0.1)
+    if config.save_figures:
+        fig_dir = os.path.join(config.out_dir, 'figures')
+        fig_path = os.path.join(fig_dir,figname)
+        plt.savefig(f'{fig_path}.pdf', bbox_inches='tight')
+        logger.info(f'Figure saved {fig_path}')
+
+    if config.log_wandb:
+        wandb.log({f'plot/{figname}':wandb.Image(plt)})
+    plt.close(fig)
+
+
 
 
 
