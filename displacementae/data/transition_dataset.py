@@ -24,9 +24,10 @@ Abstract Dataset class for transitions tuple :math:`(o_1,g_1,...,g_{n-1},o_n)`.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 """
 
-from typing import Tuple, List
+from typing import Tuple, List, Generator
 
 import numpy as np
+import numpy.typing as npt
 from torch.utils.data import Dataset
 
 
@@ -101,6 +102,16 @@ class TransitionDataset(Dataset):
         """
         pass
     
+
+    def get_rollouts(self) -> Generator[
+            Tuple[npt.NDArray, npt.NDArray], None, None]:
+        pass
+
+
+    def get_n_rollouts(self, n:int) -> Tuple[npt.NDArray, npt.NDArray]:
+        pass
+
+
     @property
     def action_units(self) -> int:
         """Number of action units 

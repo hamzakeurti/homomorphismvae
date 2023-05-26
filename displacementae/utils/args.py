@@ -78,16 +78,22 @@ def data_args(parser:ArgumentParser, mode='autoencoder'):
     dgroup.add_argument('--normalize_actions',action='store_true',
                          help='Divide the input transition signals by their ' +
                               'max values.')
-    dgroup.add_argument('--rollouts', action='store_true',
-                         help='Whether to use rollouts.')
-    dgroup.add_argument('--rollouts_path', type=str, default=None,
-                         help='Path to the rollouts.')
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
                             help='Whether to vary joint positions.')
     if mode == 'homomorphism':
         dgroup.add_argument('--n_steps', type=int, default=2,
                             help='Number of observed transitions per example.')
+    dgroup.add_argument('--rollouts', action='store_true',
+                         help='Whether to use rollouts.')
+    dgroup.add_argument('--rollouts_path', type=str, default=None,
+                         help='Path to the rollouts.')
+    dgroup.add_argument('--rollouts_batch_size', type=int, default=100,
+                         help='Number of rollouts per batch.')
+    dgroup.add_argument('--plot_rollouts', action='store_true',
+                        help='Whether to plot rollouts.')
+    dgroup.add_argument('--plot_n_rollouts', type=int, default=10,
+                        help='Number of rollouts to plot.')
 
 def data_gen_args(parser:ArgumentParser):
     group = parser.add_argument_group("Data Generation Options")
@@ -297,7 +303,8 @@ def misc_args(parser:ArgumentParser, dout_dir=None):
     mgroup.add_argument('--wandb_project_name', type=str, 
                         default='homomorphism-autoencoder',
                         help='Name of the WandB project to log this run.')
-
+    mgroup.add_argument('--save_figures', action='store_true',
+                         help='Whether to save figures')
 
 def group_repr_args(parser:ArgumentParser):
     ggroup = parser.add_argument_group('Group Representation options')

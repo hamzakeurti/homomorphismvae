@@ -28,11 +28,12 @@ generated from .obj models.
 """
 
 import numpy as np
+import numpy.typing as npt
 import torch.nn as nn
 from torch.utils.data import Dataset, Sampler
 import os
 import h5py
-from typing import Any, Tuple, Optional
+from typing import Any, Generator, Tuple, Optional
 
 from displacementae.data.transition_dataset import TransitionDataset
 from displacementae.utils import misc
@@ -49,7 +50,8 @@ class Obj3dDataset(TransitionDataset):
                  num_samples:int=200,
                  normalize_actions:bool=False,
                  rollouts:bool=False,
-                 rollouts_path:Optional[str]=None,):
+                 rollouts_path:Optional[str]=None,
+                 rollouts_batch_size:Optional[int]=None,):
         super().__init__(rseed, n_transitions)
 
         # Read Data from file.
@@ -58,11 +60,6 @@ class Obj3dDataset(TransitionDataset):
         self._resample = resample
         self._num_samples = num_samples
         self._normalize_actions = normalize_actions
-        self._rollouts = rollouts
-        if self._rollouts:
-            assert rollouts_path is not None
-            self._rollouts_path = os.path.expanduser(
-                        os.path.expandvars(rollouts_path))
 
         # Number of samples
         self._num_train = num_train
@@ -71,6 +68,16 @@ class Obj3dDataset(TransitionDataset):
         self._load_data()
         self._load_attributes()
         self._sample_val_batch()
+
+        self._rollouts = rollouts
+        if self._rollouts:
+            assert rollouts_path is not None
+            assert rollouts_batch_size is not None
+            self._rollouts_path = os.path.expanduser(
+                        os.path.expandvars(rollouts_path))
+            self._rollouts_batch_size = rollouts_batch_size
+            self._load_rollouts()
+
         
         self._rots_idx = np.array([])
         self._trans_idx = np.array([])
@@ -229,25 +236,23 @@ class Obj3dDataset(TransitionDataset):
 
     def _load_rollouts(self):
 
-        if self._resample:
-            self.resample_data()
-        else:
-            with h5py.File(self._rollouts_path,'r') as f:
-                assert f.attrs['figsize'] == self._figsize
-                assert f.attrs['mode'] == self._mode
-                assert f.attrs['rotate'] == self._rotate
-                assert f.attrs['translate'] == self._translate
-                assert f.attrs['color'] == self._color
-                if self._rotate:
-                    assert f.attrs['rotation_range'] == self._rots_range
-                    assert f.attrs['rotation_format'] == self._rotation_format
-                if self._color:
-                    assert f.attrs['n_colors'] == self._n_colors
+        with h5py.File(self._rollouts_path,'r') as f:
+            assert f.attrs['figsize'] == self._figsize
+            assert f.attrs['mode'] == self._mode
+            assert f.attrs['rotate'] == self._rotate
+            assert f.attrs['translate'] == self._translate
+            assert f.attrs['color'] == self._color
+            if self._rotate:
+                rng = misc.str_to_floats(f.attrs['rotation_range'])
+                assert rng == self._rots_range
+                assert f.attrs['rotation_format'] == self._rotation_format
+            if self._color:
+                assert f.attrs['n_colors'] == self._n_colors
 
-                self._roll_images = f['images'][:self._num_train]
-                self._roll_transitions = f['actions'][:self._num_train] 
-                if self._normalize_actions:
-                    self._roll_transitions /= self._M
+            self._roll_imgs = f['images'][:]
+            self._roll_actions = f['actions'][:] 
+            if self._normalize_actions:
+                self._roll_actions /= self._M
 
     def get_example_actions(self) -> Tuple[np.ndarray, np.ndarray]:
         """returns a set of example actions (transition signals) with labels. 
@@ -286,5 +291,27 @@ class Obj3dDataset(TransitionDataset):
         return self._val_imgs, None, self._val_actions
 
 
+    def get_rollouts(self) -> Generator[
+         Tuple[npt.NDArray, npt.NDArray], None, None]:
+        """Returns a generator of rollouts."""
+        
+        if not self._rollouts:
+            raise ValueError("Rollouts were not loaded.")
+        
+        b = self._rollouts_batch_size
+        for i in range(0, self._roll_imgs.shape[0], b): 
+            yield self._roll_imgs[i:i+b],\
+                    self._roll_actions[i:i+b] # type: ignore
+            
+
+    def get_n_rollouts(self, n: int) -> Tuple[npt.NDArray, npt.NDArray]:
+        """Returns the first n rollouts."""
+
+        if not self._rollouts:
+            raise ValueError("Rollouts were not loaded.")
+        return self._roll_imgs[:n], \
+                self._roll_actions[:n] # type: ignore
+    
+            
 if __name__ == '__main__':
     pass
