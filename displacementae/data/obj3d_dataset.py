@@ -35,8 +35,7 @@ import h5py
 from typing import Any, Tuple
 
 from displacementae.data.transition_dataset import TransitionDataset
-from displacementae.utils.misc import rotation_matrix
-
+from displacementae.utils import misc
 
 
 class Obj3dDataset(TransitionDataset):
@@ -163,7 +162,7 @@ class Obj3dDataset(TransitionDataset):
         else:
             with h5py.File(filepath,'r') as f:
                 self._images = f['images'][:self._num_train]
-                self._transitions = f['actions'][:self._num_train,1:] 
+                self._transitions = f['actions'][:self._num_train] 
                 if self._normalize_actions:
                     self._M = np.abs(self._transitions).max(axis=(0,1))
                     self._transitions /= self._M
@@ -175,7 +174,7 @@ class Obj3dDataset(TransitionDataset):
         Loads the atributes of the dataset
         """
         with h5py.File(self._root,'r') as f:
-            self._attributes_dict = dict(f['images'].attrs)
+            self._attributes_dict = dict(f.attrs)
         #         "obj_filename":obj_filename,  
         # "figsize":figsize,
         # "dpi":dpi, 
@@ -185,11 +184,13 @@ class Obj3dDataset(TransitionDataset):
         self._translate=self._attributes_dict["translate"]
         self._rotate = self._attributes_dict["rotate"]
         self._color= self._attributes_dict["color"]
-        self._rots_range=self._attributes_dict["rots_range"]
+        self._rots_range=misc.str_to_floats(
+                    self._attributes_dict["rotation_range"])
         self._n_steps=self._attributes_dict["n_steps"] 
         self._n_samples=self._attributes_dict["n_samples"]
-        self._rots_n_values=self._attributes_dict["n_values"]
-        self._rotation_matrix_action=self._attributes_dict["rotation_matrix_action"] 
+        if self._mode=='discrete':
+            self._rots_n_values=self._attributes_dict["n_values"]
+        self._rotation_format=self._attributes_dict["rotation_format"]
         if self._translate:
             self._trans_grid=self._attributes_dict["translation_grid"]
             self._trans_stepsize=self._attributes_dict["translation_stepsize"]
@@ -206,7 +207,7 @@ class Obj3dDataset(TransitionDataset):
                 raise ValueError(f"Not enough samples {n} for chosen " + 
                     f"--num_train={nt} and --num_val={nv}")
             self._val_imgs = f['images'][nt:nt+nv]
-            self._val_actions = f['actions'][nt:nt+nv,1:]
+            self._val_actions = f['actions'][nt:nt+nv]
             if self._normalize_actions:
                 self._val_actions /= self._M
 
@@ -229,9 +230,8 @@ class Obj3dDataset(TransitionDataset):
             else: # color
                 a[1+2*i:3+2*i,i] = np.array([1,-1])
 
-        if self._rotation_matrix_action:
-            R = rotation_matrix(*a[:,:3].T) # R shape: [n,3,3]
-            R = R.reshape(-1,9)
+        if self._rotation_format == "mat":
+            R = misc.euler_to_mat(a[:,:3]) # R shape: [n,9]
             a_in = np.concatenate([R,a[:,3:].copy()], axis=-1)
         else:
             a_in = a.copy()

@@ -41,7 +41,7 @@ if __name__ == '__main__':
     total_losses, step_losses, bce_losses, kl_losses = [], [], [], []
     with torch.no_grad():
         for batch in dloader:
-            imgs, actions = [torch.as_tensor(elem, dtype=torch.float32, device=device) for elem in batch]
+            imgs, actions = [torch.as_tensor(elem, dtype=torch.float64, device=device) for elem in batch]
             # imgs is of shape
             # [batch_size, n_steps+1, channels, height, width]
             # actions is of shape [batch_size, n_steps, n_actions]
