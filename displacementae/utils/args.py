@@ -78,13 +78,16 @@ def data_args(parser:ArgumentParser, mode='autoencoder'):
     dgroup.add_argument('--normalize_actions',action='store_true',
                          help='Divide the input transition signals by their ' +
                               'max values.')
+    dgroup.add_argument('--rollouts', action='store_true',
+                         help='Whether to use rollouts.')
+    dgroup.add_argument('--rollouts_path', type=str, default=None,
+                         help='Path to the rollouts.')
     if mode == 'autoencoder':
         dgroup.add_argument('--intervene', action='store_true',
                             help='Whether to vary joint positions.')
     if mode == 'homomorphism':
         dgroup.add_argument('--n_steps', type=int, default=2,
                             help='Number of observed transitions per example.')
-
 
 def data_gen_args(parser:ArgumentParser):
     group = parser.add_argument_group("Data Generation Options")
