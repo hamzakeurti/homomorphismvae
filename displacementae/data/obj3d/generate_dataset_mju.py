@@ -1,6 +1,6 @@
 import __init__
 
-import os
+import os, platform
 import h5py
 import argparse
 import numpy as np
@@ -8,6 +8,8 @@ import numpy.typing as npt
 from typing import List, Optional, Tuple
 from tqdm import tqdm
 import matplotlib.colors as clr
+if platform.system() == 'Linux':
+    os.environ['MUJOCO_GL']='egl' 
 import mujoco
 
 os.environ['HDF5_USE_FILE_LOCKING']='FALSE' 
@@ -180,8 +182,7 @@ def main():
                 color=args.color, n_colors=args.n_colors,
                 color_range=args.color_range)
     
-    
-    with h5py.File(args.output_path, 'w') as f:
+    with h5py.File(os.path.expanduser(args.output_path), 'w') as f:
         if args.verbose:
             print('Saving in HDF5...')
         f.create_dataset('images', data=imgs/255.0)
