@@ -290,6 +290,8 @@ def misc_args(parser:ArgumentParser, dout_dir=None):
     mgroup.add_argument('--checkpoint', action='store_true',
                         help='Saves a checkpoint of the model and optimizer ' +
                         'at the end of training')
+    mgroup.add_argument('--checkpoint_every', type=int, default=10000,
+                        help='Period of making checkpoints.')
     mgroup.add_argument('--plot_pca', action='store_true',
                         help='Plots scatter of representations projected ' +
                              'along 2 main pca components')

@@ -5,7 +5,7 @@ import h5py
 import argparse
 import numpy as np
 import numpy.typing as npt
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 from tqdm import tqdm
 import matplotlib.colors as clr
 if platform.system() == 'Linux':
@@ -40,8 +40,13 @@ def parse_args() -> argparse.Namespace:
                         help='Format of the rotations.')
     parser.add_argument('--color', action='store_true',
                         help='Whether to act on color or not.')
-    parser.add_argument('--color_range', type=int, default=None,
-                        help='Range of color displacements.')
+    parser.add_argument('--continuous_color',action='store_true',
+                        help='Whether hues are continuously sampled.')
+    parser.add_argument('--color_range', type=str, default=None,
+                        help='Range of color displacements. ' + 
+                        'If --continuous_color, this is a float between ' + 
+                        '0 and 1. With 1 corresponding to the whole ' + 
+                        'color wheel.')
     parser.add_argument('--n_colors', type=int, default=None,
                         help='Number of equally spaced colors on the hue ' +
                              'wheel.')
@@ -51,6 +56,9 @@ def parse_args() -> argparse.Namespace:
                         help='Random seed.')
     parser.add_argument('--verbose', action='store_true',
                         help='Whether to print progress.')
+    parser.add_argument('--write_batch_size', type=int, default=200,
+                        help='Size of the batches of samples written at the ' +
+                             'same time on the hdf5 file.')
     
     args = parser.parse_args()
     return args
@@ -58,40 +66,26 @@ def parse_args() -> argparse.Namespace:
 
 def generate_transitions(world_model:WorldModel, n_samples:int, n_steps:int, 
                          rot_range:Tuple[float, float], 
-                         rotation_format:str='quat', color:bool=False, 
+                         rotation_format:str='quat', color:bool=False,
+                         continuous_color:bool=False, 
                          n_colors:Optional[int]=None, 
-                         color_range:Optional[int]=None
-                         ) -> Tuple[npt.NDArray[np.float64], 
-                                    npt.NDArray[np.float64], 
-                                    npt.NDArray[np.float64]]:
+                         color_range:Optional[Union[int,float]]=None
+                         ) -> Tuple[npt.NDArray[np.float32], 
+                                    npt.NDArray[np.float32], 
+                                    npt.NDArray[np.float32]]:
     """
     Generate a dataset of transitions (image, action, image,...) .
     """
-    if color:
-        if n_colors is None or color_range is None:
-            raise ValueError("n_colors and color_range must be " +
-                                        "specified when color is True.")
-        colors_hsv = np.ones([n_colors,3])
-        colors_hsv[:,0] = np.arange(n_colors)/n_colors # hue colors from 0 to 1
-        colors_rgb = clr.hsv_to_rgb(colors_hsv)
-        colors_rgba = np.concatenate([colors_rgb, np.ones([n_colors,1])], axis=1)
 
-    if rotation_format == 'quat':
-        n_rotation_params = 4 
-    elif rotation_format == 'euler':
-        n_rotation_params = 3
-    elif rotation_format == 'mat':
-        n_rotation_params = 9
-    else:
-        raise ValueError(f"Unknown rotation format: {rotation_format}")
     n_color_params = 1 if color else 0
     # Initialize arrays
-    n_actions = n_rotation_params + n_color_params 
-    n_poses = n_rotation_params + n_color_params
+    n_rotation_params = get_n_rotation_params(rotation_format) 
+    n_actions = n_rotation_params + n_color_params
+    n_poses = n_actions
     images = np.zeros((n_samples, n_steps+1, 3, *world_model.figsize), 
                       dtype=np.uint8)
-    actions = np.zeros((n_samples, n_steps, n_actions), dtype=np.float64)
-    poses = np.zeros((n_samples, n_steps+1, n_poses), dtype=np.float64)
+    actions = np.zeros((n_samples, n_steps, n_actions), dtype=np.float32)
+    poses = np.zeros((n_samples, n_steps+1, n_poses), dtype=np.float32)
 
     # Sample initial orientations (euler angles).
     euler = np.random.uniform(-np.pi, np.pi, size=(n_samples, 3))
@@ -109,20 +103,39 @@ def generate_transitions(world_model:WorldModel, n_samples:int, n_steps:int,
         poses[:, 0, :n_rotation_params] = quat
         actions[:, :, :n_rotation_params] = dquat
     elif rotation_format == 'mat':
-        poses[:,0,:n_rotation_params] = misc.quat_to_mat(quat)
-        actions[:,:,:n_rotation_params] = misc.quat_to_mat(dquat)
+        poses[:,0,:n_rotation_params] = misc.quat_to_mat(quat.astype(np.float64)).astype(np.float32)
+        actions[:,:,:n_rotation_params] = misc.quat_to_mat(dquat.astype(np.float64)).astype(np.float32)
 
     if color:
-        assert n_colors is not None
-        assert color_range is not None
-        # sample initial colors
-        poses[:, 0, -1] = np.random.randint(0, n_colors, size=n_samples)
-        # sample color displacements
-        actions[:, :, -1] = np.random.randint(-color_range, color_range+1,
-                                                size=(n_samples, n_steps))
-        poses[:, 1:, -1] = actions[:, :, -1]
-        poses[:, :, -1] = np.cumsum(poses[:, :, -1], axis=1) % n_colors
-
+        if (not continuous_color and n_colors is None) or color_range is None:
+            raise ValueError("color_range and at least one of n_colors or " +
+                             "continuous_colors must be specified when " + 
+                             "color is True.")
+        if not continuous_color:
+            assert n_colors is not None
+            assert isinstance(color_range,int)
+            colors_hsv = np.ones([n_colors,3])
+            colors_hsv[:,0] = np.arange(n_colors)/n_colors # hue colors from 0 to 1
+            colors_rgb = clr.hsv_to_rgb(colors_hsv)
+            colors_rgba = np.concatenate([colors_rgb, np.ones([n_colors,1])], axis=1)
+            # sample initial colors
+            poses[:, 0, -1] = np.random.randint(0, n_colors, size=n_samples)
+            # sample color displacements
+            actions[:, :, -1] = np.random.randint(-color_range, color_range+1,
+                                                    size=(n_samples, n_steps))
+            poses[:, 1:, -1] = actions[:, :, -1]
+            poses[:, :, -1] = np.cumsum(poses[:, :, -1], axis=1) % n_colors
+        else:
+            assert isinstance(color_range,float)
+            poses[:, 0, -1] = np.random.random(size=n_samples)
+            actions[:, :, -1] = (np.random.random(size=(n_samples, n_steps)) * 2 - 1)  * color_range
+            poses[:, 1:, -1] = actions[:, :, -1]
+            poses[:, :, -1] = np.cumsum(poses[:, :, -1], axis=1) % 1
+            colors_hsv = np.ones([n_samples,n_steps+1,3])
+            colors_hsv[...,0] = poses[...,-1]
+            colors_rgba = np.ones([n_samples,n_steps+1,4])
+            colors_rgba[...,:3] = clr.hsv_to_rgb(colors_hsv)
+            
 
     for i in tqdm(range(n_samples)):
         # Sample initial color
@@ -131,9 +144,12 @@ def generate_transitions(world_model:WorldModel, n_samples:int, n_steps:int,
         #     poses[i, 0, 4] = color
 
         # Sample initial image
-        world_model.set_orientation(poses[i, 0, :4])
+        world_model.set_orientation(quat[i])
         if color:
-            world_model.set_color(colors_rgba[int(poses[i, 0, -1])])
+            if not continuous_color:
+                world_model.set_color(colors_rgba[int(poses[i, 0, -1])])
+            else:
+                world_model.set_color(colors_rgba[i, 0])
 
         images[i, 0] = np.moveaxis(world_model.render(), -1, 0)
 
@@ -147,15 +163,31 @@ def generate_transitions(world_model:WorldModel, n_samples:int, n_steps:int,
             elif rotation_format == 'quat':
                 poses[i, j+1, :4] = quat_pose
             elif rotation_format == 'mat':
-                mujoco.mju_quat2Mat(poses[i, j+1, :9], quat_pose)
-            world_model.set_color(colors_rgba[int(poses[i, j+1, -1])])
+                poses[i, j+1, :9] = misc.quat_to_mat(quat_pose.astype(np.float64)).astype(np.float32)
+            
+            if color:
+                if not continuous_color:
+                    world_model.set_color(colors_rgba[int(poses[i, j+1, -1])])
+                else:
+                    world_model.set_color(colors_rgba[i, j+1])
 
             # Update image
             images[i, j+1] = np.moveaxis(world_model.render(), -1, 0)
 
-
+    images = images/255.0
     return images, actions, poses
 
+
+def get_n_rotation_params(rotation_format:str) -> int:
+    if rotation_format == 'quat':
+        return 4 
+    elif rotation_format == 'euler':
+        return 3
+    elif rotation_format == 'mat':
+        return 9
+    else:
+        raise ValueError(f"Unknown rotation format: {rotation_format}")
+        
 
 def main():
     """
@@ -176,25 +208,52 @@ def main():
     if args.verbose:
         print('Generating transitions...')
     
+    color_rng = None
+    if args.color:
+        color_rng = float(args.color_range) if args.continuous_color \
+                 else int(args.color_range)
+
     imgs, acts, poses = generate_transitions(
                 world_model, n_samples=args.n_samples, n_steps=args.n_steps,
                 rot_range=rots_range, rotation_format=args.rotation_format,
-                color=args.color, n_colors=args.n_colors,
-                color_range=args.color_range)
+                color=args.color, continuous_color=args.continuous_color, 
+                n_colors=args.n_colors, color_range=color_rng)
     
+    n_color_params = 1 if args.color else 0
+    # Initialize arrays
+    n_rotation_params = get_n_rotation_params(args.rotation_format) 
+    n_actions = n_rotation_params + n_color_params
+
+
     with h5py.File(os.path.expanduser(args.output_path), 'w') as f:
         if args.verbose:
             print('Saving in HDF5...')
-        f.create_dataset('images', data=imgs/255.0)
-        f.create_dataset('poses', data=poses)
-        f.create_dataset('actions', data=acts)
+        kwargs_images = {
+            'dtype':np.float32,
+            'shape' : (args.n_samples, args.n_steps+1, 3, figsize[0], 
+                                                figsize[1]), 
+            'maxshape':(None, args.n_steps+1, 3, figsize[0], 
+                                                figsize[1]),
+        }
+        kwargs_actions = {
+            'dtype':np.float32,
+            'shape' : (args.n_samples, args.n_steps, n_actions), 
+            'maxshape':(None, args.n_steps, n_actions),
+        }
+        kwargs_pos = {
+            'dtype':np.float32,
+            'shape' : (args.n_samples, args.n_steps+1, n_actions), 
+            'maxshape':(None, args.n_steps+1, n_actions),
+        }
 
         f.attrs['n_samples'] = args.n_samples
         f.attrs['n_steps'] = args.n_steps
         f.attrs['rotation_range'] = args.rotation_range
         f.attrs['color'] = args.color
-        f.attrs['n_colors'] = args.n_colors
-        f.attrs['color_range'] = args.color_range
+        if args.color:
+            f.attrs['color_range'] = color_rng
+            f.attrs['continuous_color'] = args.continuous_color
+            f.attrs['n_colors'] = 0 if args.continuous_color else args.n_colors
         f.attrs['figsize'] = args.figsize
         f.attrs['seed'] = args.seed
         f.attrs['rotation_format'] = args.rotation_format
@@ -203,6 +262,16 @@ def main():
         f.attrs['translate'] = False
         f.attrs['rotate'] = True
 
+        dset_imgs = f.create_dataset('images', **kwargs_images)
+        dset_act = f.create_dataset('actions', **kwargs_actions)
+        dset_pos = f.create_dataset('positions', **kwargs_pos)
+
+        bsize = args.write_batch_size
+        n_batches = args.n_samples // bsize
+        for i in tqdm(range(n_batches)):
+            dset_imgs[i*bsize:(i+1)*bsize] = imgs[i*bsize:(i+1)*bsize]
+            dset_act[i*bsize:(i+1)*bsize] = acts[i*bsize:(i+1)*bsize]
+            dset_pos[i*bsize:(i+1)*bsize] = poses[i*bsize:(i+1)*bsize]
 
 if __name__ == '__main__':
     main()

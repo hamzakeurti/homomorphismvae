@@ -268,6 +268,7 @@ def evaluate_rollouts(dhandler:TransitionDataset, nets:MultistepAutoencoder,
                 X = torch.FloatTensor(X).to(device)
                 a = torch.FloatTensor(a).to(device)
                 X_hat, _,_,_,_ = nets(X[:,0], a) 
+                X_hat = torch.nan_to_num(X_hat,nan=0.0)
                 X_hat = torch.sigmoid(X_hat)
                 bce_loss_elementwise = var_utils.bce_loss(X_hat, X, 'none')
                 bce_loss_per_image =\
@@ -292,7 +293,8 @@ def evaluate_rollouts(dhandler:TransitionDataset, nets:MultistepAutoencoder,
                     p = int(p)
                     log_dict[f'val/rollouts/error_step_{p}'] = errors[p]
         
-        
+                wandb.log(log_dict)
+
         
     if plot_rollouts and (epoch % config.plot_epoch == 0):
         plt_utils.plot_rollout_reconstructions(
@@ -425,6 +427,13 @@ def train(dhandler:TransitionDataset, dloader, nets:MultistepAutoencoder,
                     log_dict['train/gl_loss'] = grp_loss.item()
                 wandb.log(log_dict,step=batch_cnt,commit=False)
                 batch_cnt += 1
+        
+        if config.checkpoint and (epoch > 0) and (epoch % config.checkpoint_every == 0):
+            checkpoint_dir = os.path.join(config.out_dir, "checkpoint")
+            losses = {
+                key: val for (key, val) in vars(shared).items() if 'loss' in key}
+            ckpt.save_checkpoint(nets, optim, losses=losses, epoch=epoch,
+                             save_path=checkpoint_dir)
     
     if config.checkpoint:
         checkpoint_dir = os.path.join(config.out_dir, "checkpoint")

@@ -34,6 +34,7 @@ from torch.utils.data import Dataset, Sampler
 import os
 import h5py
 from typing import Any, Generator, Tuple, Optional
+os.environ['HDF5_USE_FILE_LOCKING']='FALSE' 
 
 from displacementae.data.transition_dataset import TransitionDataset
 from displacementae.utils import misc
@@ -98,7 +99,7 @@ class Obj3dDataset(TransitionDataset):
         
         rng = self._rots_range[1] - self._rots_range[0]
         if self._mode=='continuous':
-            self._rots_stepsize=rng/4
+            self._rots_stepsize=self._rots_range[1]
         else:
             self._rots_stepsize=rng/(self._rots_n_values-1)
         
@@ -210,7 +211,11 @@ class Obj3dDataset(TransitionDataset):
 
         self._color= self._attributes_dict["color"]
         if self._color:
-            self._n_colors=self._attributes_dict["n_colors"]
+            self._continuous_color = self._attributes_dict["continuous_color"]
+            if not self._continuous_color:
+                self._n_colors=self._attributes_dict["n_colors"]
+            self._color_range = self._attributes_dict["color_range"]
+
         
         self._translate=self._attributes_dict["translate"]
         if self._translate:
@@ -228,8 +233,8 @@ class Obj3dDataset(TransitionDataset):
             if  n < (nt+nv):
                 raise ValueError(f"Not enough samples {n} for chosen " + 
                     f"--num_train={nt} and --num_val={nv}")
-            self._val_imgs = f['images'][nt:nt+nv]
-            self._val_actions = f['actions'][nt:nt+nv]
+            self._val_imgs = f['images'][-nv:]
+            self._val_actions = f['actions'][-nv:]
             if self._normalize_actions:
                 self._val_actions /= self._M
 
@@ -247,7 +252,9 @@ class Obj3dDataset(TransitionDataset):
                 assert rng == self._rots_range
                 assert f.attrs['rotation_format'] == self._rotation_format
             if self._color:
-                assert f.attrs['n_colors'] == self._n_colors
+                assert f.attrs['continuous_color'] == self._continuous_color
+                if not self._continuous_color:
+                    assert f.attrs['n_colors'] == self._n_colors
 
             self._roll_imgs = f['images'][:]
             self._roll_actions = f['actions'][:] 
@@ -264,15 +271,24 @@ class Obj3dDataset(TransitionDataset):
         a = np.zeros((self.action_dim*2+1,self.action_dim))
         for i in range(self.action_dim):
             if i in self._rots_idx:
-                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._rots_stepsize
+                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._rots_stepsize*0.8
             elif i in self._trans_idx:
-                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._trans_stepsize
+                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._trans_stepsize*0.8
             else: # color
-                a[1+2*i:3+2*i,i] = np.array([1,-1])
+                # We take a step big enough that the angle sin is visible.
+                if self._continuous_color:
+                    a[1+2*i:3+2*i,i] = np.array([1,-1])*self._color_range*0.8
+                else:
+                    a[1+2*i:3+2*i,i] = np.array([1,-1])*min(
+                            self._n_colors//10, 
+                            np.floor(self._color_range*0.8).astype(int)) 
 
         if self._rotation_format == "mat":
             R = misc.euler_to_mat(a[:,:3]) # R shape: [n,9]
             a_in = np.concatenate([R,a[:,3:].copy()], axis=-1)
+        elif self._rotation_format == "quat":
+            q = misc.euler_to_quat(a[:,:3])
+            a_in = np.concatenate([q,a[:,3:].copy()], axis=-1)
         else:
             a_in = a.copy()
         if self._normalize_actions:
