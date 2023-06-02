@@ -180,7 +180,12 @@ def hue_to_rgb(hue: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         npt.NDArray[np.float64]: rgb array shape (..., 3)
     """
     ph = 2*np.pi/3
-    rgb = np.stack([np.cos(2*np.pi*hue),
-                       np.cos(2*np.pi*hue+ph),
-                       np.cos(2*np.pi*hue+2*ph)], axis=-1)
+    if len(hue.shape) == 1:
+        rgb = np.stack([np.cos(2*np.pi*hue),
+                        np.cos(2*np.pi*hue+ph),
+                        np.cos(2*np.pi*hue+2*ph)], axis=1)
+    else:
+        rgb = np.stack([np.cos(2*np.pi*hue),
+                        np.cos(2*np.pi*hue+ph),
+                        np.cos(2*np.pi*hue+2*ph)], axis=-1)
     return rgb
