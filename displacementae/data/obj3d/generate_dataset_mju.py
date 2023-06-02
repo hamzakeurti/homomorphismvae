@@ -7,7 +7,6 @@ import numpy as np
 import numpy.typing as npt
 from typing import List, Optional, Tuple, Union
 from tqdm import tqdm
-import matplotlib.colors as clr
 if platform.system() == 'Linux':
     os.environ['MUJOCO_GL']='egl' 
 import mujoco
@@ -114,9 +113,8 @@ def generate_transitions(world_model:WorldModel, n_samples:int, n_steps:int,
         if not continuous_color:
             assert n_colors is not None
             assert isinstance(color_range,int)
-            colors_hsv = np.ones([n_colors,3])
-            colors_hsv[:,0] = np.arange(n_colors)/n_colors # hue colors from 0 to 1
-            colors_rgb = clr.hsv_to_rgb(colors_hsv)
+            hues = np.arange(n_colors)/n_colors # hue colors from 0 to 1
+            colors_rgb = misc.hue_to_rgb(hues)
             colors_rgba = np.concatenate([colors_rgb, np.ones([n_colors,1])], axis=1)
             # sample initial colors
             poses[:, 0, -1] = np.random.randint(0, n_colors, size=n_samples)
@@ -127,14 +125,16 @@ def generate_transitions(world_model:WorldModel, n_samples:int, n_steps:int,
             poses[:, :, -1] = np.cumsum(poses[:, :, -1], axis=1) % n_colors
         else:
             assert isinstance(color_range,float)
+            # sample initial hues
             poses[:, 0, -1] = np.random.random(size=n_samples)
+            # sample hue displacements
             actions[:, :, -1] = (np.random.random(size=(n_samples, n_steps)) * 2 - 1)  * color_range
+            # compute hues for next steps
             poses[:, 1:, -1] = actions[:, :, -1]
             poses[:, :, -1] = np.cumsum(poses[:, :, -1], axis=1) % 1
-            colors_hsv = np.ones([n_samples,n_steps+1,3])
-            colors_hsv[...,0] = poses[...,-1]
+            # convert hues to rgba
             colors_rgba = np.ones([n_samples,n_steps+1,4])
-            colors_rgba[...,:3] = clr.hsv_to_rgb(colors_hsv)
+            colors_rgba[...,:3] = misc.hue_to_rgb(poses[:,:,-1])
             
 
     for i in tqdm(range(n_samples)):

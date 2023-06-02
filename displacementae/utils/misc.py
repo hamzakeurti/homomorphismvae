@@ -167,5 +167,20 @@ def quat_to_mat(quat: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     ret = np.zeros(q.shape[:-1] + (9,))
     for i in range(q.shape[0]):
         mujoco.mju_quat2Mat(ret[i],q[i])
-
     return ret.reshape(quat.shape[:-1] + (9,))
+
+
+def hue_to_rgb(hue: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Convert hue to rgb
+
+    Args:
+        hue (npt.NDArray[np.float64]): hue array shape (..., 1)
+
+    Returns:
+        npt.NDArray[np.float64]: rgb array shape (..., 3)
+    """
+    ph = 2*np.pi/3
+    rgb = np.stack([np.cos(2*np.pi*hue),
+                       np.cos(2*np.pi*hue+ph),
+                       np.cos(2*np.pi*hue+2*ph)], axis=-1)
+    return rgb
