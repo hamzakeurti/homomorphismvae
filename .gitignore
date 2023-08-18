@@ -22,3 +22,6 @@ build/*
 *.whl
 dist/*
 displacementae/homomorphism_autoencoder.egg-info/PKG-INFO
+out/*
+displacementae/data/obj3d/test.ipynb
+displacementae/data/obj3d/mujoco_dset.ipynb
