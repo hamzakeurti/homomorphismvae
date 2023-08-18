@@ -74,7 +74,7 @@ def evaluate(dhandler: TrajectoryDataset,
 
     total_losses, step_losses, bce_losses, kl_losses = [], [], [], []
     for batch in dloader:
-        imgs, actions = [torch.as_tensor(elem, dtype=torch.float32, device=device) for elem in batch]
+        imgs, actions = [torch.as_tensor(elem, dtype=torch.float64, device=device) for elem in batch]
         # imgs is of shape
         # [batch_size, n_steps+1, channels, height, width]
         # actions is of shape [batch_size, n_steps, n_actions]
@@ -140,7 +140,7 @@ def evaluate(dhandler: TrajectoryDataset,
         shared.kl_loss.append(kl_loss.item())
     a_in, a = dhandler.get_example_actions()
     #example_R = nets.grp_morphism.get_example_repr(
-    #                torch.as_tensor([a_in], dtype=torch.float32, device=device))
+    #                torch.as_tensor([a_in], dtype=torch.float64, device=device))
     #shared.learned_repr = example_R.tolist()
     if (isinstance(nets.grp_morphism, BlockLookupRepresentation) or
             isinstance(nets.grp_morphism, ActionLookup)):
@@ -218,7 +218,7 @@ def train(dhandler: List[TrajectoryDataset],
         for i, batch in enumerate(dloader[0]):
             optim.zero_grad()
 
-            imgs, actions = [torch.as_tensor(elem, dtype=torch.float32, device=device) for elem in batch]
+            imgs, actions = [torch.as_tensor(elem, dtype=torch.float64, device=device) for elem in batch]
 
             x1 = imgs[:, 0]  # initial observed image
             if config.reconstruct_first:

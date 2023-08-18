@@ -41,10 +41,10 @@ with h5py.File(config.out,'w') as fw:
         imgs_shape = fr[IMGS].shape[1:]
         acts_shape = fr[ACTS].shape[1:]
         pos_shape = fr[POS].shape[1:]
-    dset_imgs = fw.create_dataset(IMGS,shape=(N_SAMPLES,*imgs_shape),dtype=np.float32)
-    dset_acts = fw.create_dataset(ACTS,shape=(N_SAMPLES,*acts_shape),dtype=np.float32)
+    dset_imgs = fw.create_dataset(IMGS,shape=(N_SAMPLES,*imgs_shape),dtype=np.float64)
+    dset_acts = fw.create_dataset(ACTS,shape=(N_SAMPLES,*acts_shape),dtype=np.float64)
     if config.store_pos:
-        dset_pos = fw.create_dataset(POS,shape=(N_SAMPLES,*pos_shape),dtype=np.float32)
+        dset_pos = fw.create_dataset(POS,shape=(N_SAMPLES,*pos_shape),dtype=np.float64)
     print('Created datasets')
     for i in range(N_BATCHES):
         with h5py.File(os.path.join(clct_dir,prfix+str(i)+suffix),'r') as fr:
