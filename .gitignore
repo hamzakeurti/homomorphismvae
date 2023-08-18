@@ -16,3 +16,8 @@ displacementae/*/out/*
 */out/*
 */*/wandb
 wandb/*
+build/*
+displacementae/homomorphism_autoencoder.egg-info/PKG-INFO
+out/*
+dist/*
+homomorphism_autoencoder.egg-info/PKG-INFO
