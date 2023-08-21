@@ -11,7 +11,7 @@
 *.jpg
 *.png
 *.gif
-docs/*
+docs/source/*
 displacementae/*/out/*
 */out/*
 */*/wandb

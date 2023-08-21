@@ -20,6 +20,12 @@ Then it can be installed in your environment through:
  $ pip install homomorphism-autoencoder-<VERSION>.tar.gz
 ```
 
+## Datasets 
+The Dsprites dataset and the 3D bunny .obj model need to be downloaded separately.
+
+In addition, a transition dataset for the bunny dataset needs to be constructed from the downloaded .obj file using provided scripts in `./displacementae/data/obj3d/`.
+Please refer to `./discplacementae/data/obj3d/README.md` for instructions.
+
 
 ## Documentation
 ---
