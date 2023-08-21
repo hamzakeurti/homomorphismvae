@@ -1,6 +1,8 @@
 # Symmetry Based Representation Learning through Homomorphism AutoEncoders
 ---
-Homomorphism AutoEncoder HAE is a model trained on observed transitions $(o_t, g_t, o_{t+1})$ to jointly learn a group representation of the observed actions $g_t$ and a representation of the observations $o$.
+Implementation associated with the paper [Homomorphism Autoencoder -- Learning Group Structured Representations from Observed Transitions](https://arxiv.org/abs/2207.12067).
+
+The Homomorphism AutoEncoder HAE is a model trained on observed transitions $(o_t, g_t, o_{t+1})$ to jointly learn a group representation of the observed actions $g_t$ and a representation of the observations $o$.
 
 Main scripts are provided in `./displacementae/homomorphism/`.
 

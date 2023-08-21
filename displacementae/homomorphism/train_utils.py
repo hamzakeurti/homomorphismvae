@@ -70,6 +70,8 @@ def evaluate(dhandler:TransitionDataset,
     if epoch == 0:
         shared.bce_loss = []
         shared.learned_repr = []
+        if config.rollouts:
+            shared.rollout_errors = []
         if config.variational:
             shared.kl_loss = []
         if nets.grp_morphism.repr_loss_on:
@@ -78,6 +80,7 @@ def evaluate(dhandler:TransitionDataset,
     if epoch % config.val_epoch == 0:
 
         with torch.no_grad():
+            # Evaluation on left out data
             batch = dhandler.get_val_batch()
             imgs, _, dj = batch
             imgs, dj = [torch.from_numpy(elem).to(device)
@@ -245,7 +248,60 @@ def evaluate(dhandler:TransitionDataset,
                                             vary_latents=vary_latents[i],
                                             plot_latent=plot_latent[i], 
                                             figname=figname)
+    
+    if config.rollouts:
+        evaluate_rollouts(dhandler, nets, device, config, shared, logger, mode, epoch, plot_rollouts=config.plot_rollouts)
+    
     nets.train()
+
+
+def evaluate_rollouts(dhandler:TransitionDataset, nets:MultistepAutoencoder,
+                      device, config, shared, logger, mode, epoch, 
+                      plot_rollouts=False):
+    nets.eval()
+    
+    if epoch % config.val_epoch == 0:
+        with torch.no_grad():
+            errors = []
+            n = 0
+            for X, a in dhandler.get_rollouts():
+                X = torch.FloatTensor(X).to(device)
+                a = torch.FloatTensor(a).to(device)
+                X_hat, _,_,_,_ = nets(X[:,0], a) 
+                X_hat = torch.nan_to_num(X_hat,nan=0.0)
+                X_hat = torch.sigmoid(X_hat)
+                bce_loss_elementwise = var_utils.bce_loss(X_hat, X, 'none')
+                bce_loss_per_image =\
+                    bce_loss_elementwise.sum(dim=[0,2,3,4])/X.shape[0]
+                errors.append(bce_loss_per_image.cpu().numpy())
+                n += X.shape[0]
+            errors = np.vstack(errors)
+            errors = errors.sum(axis=0)/n
+            avg_error = errors.mean()
+            i_pow2 = np.power(2, np.arange(2, np.log2(len(errors)),1)).astype(int)
+            shared.rollout_errors.append(errors[i_pow2].tolist())
+
+            logger.info(f'[{epoch}] EVALUATION rollouts over {a.shape[1]} steps')
+            log_text = f'[{epoch}] avg bce loss\t{avg_error:.2f}'
+            logger.info(log_text)
+
+            ### WandB Logging
+            if config.log_wandb:
+                log_dict = {'val/rollouts/epoch':epoch,
+                            f'val/rollouts/avg_error_{errors.shape[-1]}_steps':avg_error,}
+                for p in i_pow2:
+                    p = int(p)
+                    log_dict[f'val/rollouts/error_step_{p}'] = errors[p]
+        
+                wandb.log(log_dict)
+
+        
+    if plot_rollouts and (epoch % config.plot_epoch == 0):
+        plt_utils.plot_rollout_reconstructions(
+                        dhandler=dhandler, nets=nets, config=config, 
+                        device=device, logger=logger)
+    nets.train()
+
 
 def train(dhandler:TransitionDataset, dloader, nets:MultistepAutoencoder, 
           config, shared, device, logger, mode):
@@ -371,6 +427,13 @@ def train(dhandler:TransitionDataset, dloader, nets:MultistepAutoencoder,
                     log_dict['train/gl_loss'] = grp_loss.item()
                 wandb.log(log_dict,step=batch_cnt,commit=False)
                 batch_cnt += 1
+        
+        if config.checkpoint and (epoch > 0) and (epoch % config.checkpoint_every == 0):
+            checkpoint_dir = os.path.join(config.out_dir, "checkpoint")
+            losses = {
+                key: val for (key, val) in vars(shared).items() if 'loss' in key}
+            ckpt.save_checkpoint(nets, optim, losses=losses, epoch=epoch,
+                             save_path=checkpoint_dir)
     
     if config.checkpoint:
         checkpoint_dir = os.path.join(config.out_dir, "checkpoint")

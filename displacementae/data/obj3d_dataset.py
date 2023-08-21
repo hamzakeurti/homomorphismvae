@@ -28,15 +28,16 @@ generated from .obj models.
 """
 
 import numpy as np
+import numpy.typing as npt
 import torch.nn as nn
 from torch.utils.data import Dataset, Sampler
 import os
 import h5py
-from typing import Any, Tuple
+from typing import Any, Generator, Tuple, Optional
+os.environ['HDF5_USE_FILE_LOCKING']='FALSE' 
 
 from displacementae.data.transition_dataset import TransitionDataset
-from displacementae.utils.misc import rotation_matrix
-
+from displacementae.utils import misc
 
 
 class Obj3dDataset(TransitionDataset):
@@ -48,11 +49,15 @@ class Obj3dDataset(TransitionDataset):
                  num_val: int = 30,
                  resample:bool=False,
                  num_samples:int=200,
-                 normalize_actions:bool=False):
+                 normalize_actions:bool=False,
+                 rollouts:bool=False,
+                 rollouts_path:Optional[str]=None,
+                 rollouts_batch_size:Optional[int]=None,):
         super().__init__(rseed, n_transitions)
 
         # Read Data from file.
-        self._root = root
+        self._root = os.path.expanduser(
+                    os.path.expandvars(root))
         self._resample = resample
         self._num_samples = num_samples
         self._normalize_actions = normalize_actions
@@ -64,6 +69,16 @@ class Obj3dDataset(TransitionDataset):
         self._load_data()
         self._load_attributes()
         self._sample_val_batch()
+
+        self._rollouts = rollouts
+        if self._rollouts:
+            assert rollouts_path is not None
+            assert rollouts_batch_size is not None
+            self._rollouts_path = os.path.expanduser(
+                        os.path.expandvars(rollouts_path))
+            self._rollouts_batch_size = rollouts_batch_size
+            self._load_rollouts()
+
         
         self._rots_idx = np.array([])
         self._trans_idx = np.array([])
@@ -84,7 +99,7 @@ class Obj3dDataset(TransitionDataset):
         
         rng = self._rots_range[1] - self._rots_range[0]
         if self._mode=='continuous':
-            self._rots_stepsize=rng/4
+            self._rots_stepsize=self._rots_range[1]
         else:
             self._rots_stepsize=rng/(self._rots_n_values-1)
         
@@ -157,13 +172,13 @@ class Obj3dDataset(TransitionDataset):
         """
         Loads samples from an hdf5 dataset.
         """
-        filepath = os.path.join(self._root)
+
         if self._resample:
             self.resample_data()
         else:
-            with h5py.File(filepath,'r') as f:
+            with h5py.File(self._root,'r') as f:
                 self._images = f['images'][:self._num_train]
-                self._transitions = f['actions'][:self._num_train,1:] 
+                self._transitions = f['actions'][:self._num_train] 
                 if self._normalize_actions:
                     self._M = np.abs(self._transitions).max(axis=(0,1))
                     self._transitions /= self._M
@@ -175,21 +190,34 @@ class Obj3dDataset(TransitionDataset):
         Loads the atributes of the dataset
         """
         with h5py.File(self._root,'r') as f:
-            self._attributes_dict = dict(f['images'].attrs)
+            self._attributes_dict = dict(f.attrs)
         #         "obj_filename":obj_filename,  
         # "figsize":figsize,
         # "dpi":dpi, 
         # "lim":lim,
         # self._translate_only=self._attributes_dict["translate_only"]
         self._mode = self._attributes_dict["mode"] 
-        self._translate=self._attributes_dict["translate"]
-        self._rotate = self._attributes_dict["rotate"]
-        self._color= self._attributes_dict["color"]
-        self._rots_range=self._attributes_dict["rots_range"]
+        self._figsize = self._attributes_dict["figsize"]
         self._n_steps=self._attributes_dict["n_steps"] 
         self._n_samples=self._attributes_dict["n_samples"]
-        self._rots_n_values=self._attributes_dict["n_values"]
-        self._rotation_matrix_action=self._attributes_dict["rotation_matrix_action"] 
+        
+        self._rotate = self._attributes_dict["rotate"]
+        if self._rotate:
+            self._rots_range=misc.str_to_floats(
+                        self._attributes_dict["rotation_range"])
+            self._rotation_format=self._attributes_dict["rotation_format"]
+            if self._mode=='discrete':
+                self._rots_n_values=self._attributes_dict["n_values"]
+
+        self._color= self._attributes_dict["color"]
+        if self._color:
+            self._continuous_color = self._attributes_dict["continuous_color"]
+            if not self._continuous_color:
+                self._n_colors=self._attributes_dict["n_colors"]
+            self._color_range = self._attributes_dict["color_range"]
+
+        
+        self._translate=self._attributes_dict["translate"]
         if self._translate:
             self._trans_grid=self._attributes_dict["translation_grid"]
             self._trans_stepsize=self._attributes_dict["translation_stepsize"]
@@ -205,13 +233,33 @@ class Obj3dDataset(TransitionDataset):
             if  n < (nt+nv):
                 raise ValueError(f"Not enough samples {n} for chosen " + 
                     f"--num_train={nt} and --num_val={nv}")
-            self._val_imgs = f['images'][nt:nt+nv]
-            self._val_actions = f['actions'][nt:nt+nv,1:]
+            self._val_imgs = f['images'][-nv:]
+            self._val_actions = f['actions'][-nv:]
             if self._normalize_actions:
                 self._val_actions /= self._M
 
 
+    def _load_rollouts(self):
 
+        with h5py.File(self._rollouts_path,'r') as f:
+            assert f.attrs['figsize'] == self._figsize
+            assert f.attrs['mode'] == self._mode
+            assert f.attrs['rotate'] == self._rotate
+            assert f.attrs['translate'] == self._translate
+            assert f.attrs['color'] == self._color
+            if self._rotate:
+                rng = misc.str_to_floats(f.attrs['rotation_range'])
+                assert rng == self._rots_range
+                assert f.attrs['rotation_format'] == self._rotation_format
+            if self._color:
+                assert f.attrs['continuous_color'] == self._continuous_color
+                if not self._continuous_color:
+                    assert f.attrs['n_colors'] == self._n_colors
+
+            self._roll_imgs = f['images'][:]
+            self._roll_actions = f['actions'][:] 
+            if self._normalize_actions:
+                self._roll_actions /= self._M
 
     def get_example_actions(self) -> Tuple[np.ndarray, np.ndarray]:
         """returns a set of example actions (transition signals) with labels. 
@@ -223,16 +271,24 @@ class Obj3dDataset(TransitionDataset):
         a = np.zeros((self.action_dim*2+1,self.action_dim))
         for i in range(self.action_dim):
             if i in self._rots_idx:
-                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._rots_stepsize
+                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._rots_stepsize*0.8
             elif i in self._trans_idx:
-                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._trans_stepsize
+                a[1+2*i:3+2*i,i] = np.array([1,-1])*self._trans_stepsize*0.8
             else: # color
-                a[1+2*i:3+2*i,i] = np.array([1,-1])
+                # We take a step big enough that the angle sin is visible.
+                if self._continuous_color:
+                    a[1+2*i:3+2*i,i] = np.array([1,-1])*self._color_range*0.8
+                else:
+                    a[1+2*i:3+2*i,i] = np.array([1,-1])*min(
+                            self._n_colors//10, 
+                            np.floor(self._color_range*0.8).astype(int)) 
 
-        if self._rotation_matrix_action:
-            R = rotation_matrix(*a[:,:3].T) # R shape: [n,3,3]
-            R = R.reshape(-1,9)
+        if self._rotation_format == "mat":
+            R = misc.euler_to_mat(a[:,:3]) # R shape: [n,9]
             a_in = np.concatenate([R,a[:,3:].copy()], axis=-1)
+        elif self._rotation_format == "quat":
+            q = misc.euler_to_quat(a[:,:3])
+            a_in = np.concatenate([q,a[:,3:].copy()], axis=-1)
         else:
             a_in = a.copy()
         if self._normalize_actions:
@@ -251,5 +307,27 @@ class Obj3dDataset(TransitionDataset):
         return self._val_imgs, None, self._val_actions
 
 
+    def get_rollouts(self) -> Generator[
+         Tuple[npt.NDArray, npt.NDArray], None, None]:
+        """Returns a generator of rollouts."""
+        
+        if not self._rollouts:
+            raise ValueError("Rollouts were not loaded.")
+        
+        b = self._rollouts_batch_size
+        for i in range(0, self._roll_imgs.shape[0], b): 
+            yield self._roll_imgs[i:i+b],\
+                    self._roll_actions[i:i+b] # type: ignore
+            
+
+    def get_n_rollouts(self, n: int) -> Tuple[npt.NDArray, npt.NDArray]:
+        """Returns the first n rollouts."""
+
+        if not self._rollouts:
+            raise ValueError("Rollouts were not loaded.")
+        return self._roll_imgs[:n], \
+                self._roll_actions[:n] # type: ignore
+    
+            
 if __name__ == '__main__':
     pass

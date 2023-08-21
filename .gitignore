@@ -22,3 +22,4 @@ build/*
 *.whl
 dist/*
 displacementae/homomorphism_autoencoder.egg-info/PKG-INFO
+out/*

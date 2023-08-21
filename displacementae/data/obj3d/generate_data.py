@@ -220,17 +220,17 @@ def sample_n_steps_orientations_from_canonical(
 
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
-        dtype=np.float32)
+        dtype=np.float64)
     
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
         shape=(batch_size, n_steps+1, n_actions),
-        dtype=np.float32)
+        dtype=np.float64)
 
     pos_out = np.zeros(
         shape=(batch_size, n_steps+1, 9),
-        dtype=np.float32)
+        dtype=np.float64)
     
     # Sample initial positions
     v_out[:,0,...], a_out[:,0,...],pos_out[:,0,...] = \
@@ -248,7 +248,7 @@ def sample_n_steps_orientations_from_canonical(
                     vertices=v_out[:,step], pos_in=pos_out[:,step],
                     mode=mode, n_values=n_values, low=low, high=high,
                     rotation_matrix_action=rotation_matrix_action)
-    return v_out, a_out, pos_out
+    return v_out, a_out[:,1:], pos_out
 
 
 def sample_n_steps_poses_from_canonical(
@@ -265,16 +265,16 @@ def sample_n_steps_poses_from_canonical(
 
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
-        dtype=np.float32)
+        dtype=np.float64)
     
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
         shape=(batch_size, n_steps+1, n_actions),
-        dtype=np.float32)
+        dtype=np.float64)
     pos_out = np.zeros(
         shape=(batch_size, n_steps+1, 12), # always returns rotation matrix
-        dtype=np.float32)
+        dtype=np.float64)
     # Sample initial positions
     v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
          sample_poses_from_canonical(
@@ -294,7 +294,7 @@ def sample_n_steps_poses_from_canonical(
                     translation_grid=translation_grid,
                     translation_stepsize=translation_stepsize,
                     translation_range=translation_range)
-    return v_out, a_out, pos_out
+    return v_out, a_out[:,1:], pos_out
 
 
 def sample_n_steps_trans_from_canonical(
@@ -302,16 +302,16 @@ def sample_n_steps_trans_from_canonical(
     
     v_out = np.zeros(
         shape=(batch_size, n_steps+1, *vertices.shape),
-        dtype=np.float32)
+        dtype=np.float64)
     
     # First action angles corresponds to rotation from the canonical view of 
     # the first image
     a_out = np.zeros(
         shape=(batch_size, n_steps+1, 3),
-        dtype=np.float32)
+        dtype=np.float64)
     pos_out = np.zeros(
         shape=(batch_size, n_steps+1, 3),
-        dtype=np.float32)
+        dtype=np.float64)
     # Sample initial positions
     v_out[:,0,...], a_out[:,0,...], pos_out[:,0,...] =\
          sample_trans_from_canonical(
@@ -329,7 +329,7 @@ def sample_n_steps_trans_from_canonical(
                     translation_stepsize=translation_stepsize,
                     translation_range=translation_range)
 
-    return v_out, a_out, pos_out
+    return v_out, a_out[:,1:], pos_out
 
 def sample_n_steps_colors(
                         batch_size,
@@ -348,7 +348,7 @@ def sample_n_steps_colors(
     else:
         # a_out = a_out[:,0]
         pos_out = a_out
-    return a_out, pos_out
+    return a_out[:,1:], pos_out
 
 
 def get_image(vertices, triangles, figsize=(3,3), dpi=36, lim=1.5, col='white'):
@@ -495,26 +495,26 @@ def generate_dataset(obj_filename, out_path, batch_size, figsize=(3,3), dpi=24, 
     
     with h5py.File(out_path, "w") as f:
         kwargs_images = {
-            'dtype':np.float32,
+            'dtype':np.float64,
             'shape' : (n_samples, n_steps+1, 3, figsize[0]*dpi-2*crop, 
                                                 figsize[1]*dpi-2*crop), 
             'maxshape':(None, n_steps+1, 3, figsize[0]*dpi-2*crop, 
                                                 figsize[1]*dpi-2*crop),
             }
         kwargs_actions = {
-            'dtype':np.float32,
-            'shape':(n_samples, n_steps+1, n_actions), 
-            'maxshape':(None, n_steps+1, n_actions),
+            'dtype':np.float64,
+            'shape':(n_samples, n_steps, n_actions), 
+            'maxshape':(None, n_steps, n_actions),
             }
         kwargs_pos = {
-            'dtype':np.float32,
+            'dtype':np.float64,
             'shape':(n_samples, n_steps+1, n_pos), 
             'maxshape':(None, n_steps+1, n_pos),
             }
         if chunk_size:
             kwargs_images['chunks'] = (chunk_size, n_steps+1, 3, 
                                 figsize[0]*dpi-2*crop, figsize[1]*dpi-2*crop)
-            kwargs_actions['chunks'] = (chunk_size, n_steps+1, n_actions)
+            kwargs_actions['chunks'] = (chunk_size, n_steps, n_actions)
             kwargs_pos['chunks'] = (chunk_size, n_steps+1, n_pos)
         
         dset_img = f.create_dataset('images', **kwargs_images)
