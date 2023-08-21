@@ -24,7 +24,7 @@ Abstract Dataset class for transitions tuple :math:`(o_1,g_1,...,g_{n-1},o_n)`.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 """
 
-from typing import Tuple, List, Generator
+from typing import Tuple, List, Generator, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -47,7 +47,7 @@ class TransitionDataset(Dataset):
     """
 
 
-    def __init__(self, rseed:int=None, n_transitions:int=1):
+    def __init__(self, rseed:Optional[int]=None, n_transitions:int=1):
         
         # Random generator
         if rseed is not None:
@@ -58,7 +58,7 @@ class TransitionDataset(Dataset):
         self._rseed = rseed
 
         # Number of transitions
-        self.n_transitions = n_transitions
+        self._n_transitions = n_transitions
     
 
     def __getitem__(self, idx:int) -> Tuple[np.ndarray, np.ndarray]:
@@ -151,93 +151,3 @@ class TransitionDataset(Dataset):
         :rtype: int
         """
         pass
-
-# class TransitionDataset(Dataset):
-#     def __init__(self, rseed=None, transitions_on=True, n_transitions=None):
-        
-#         # Random generator
-#         if rseed is not None:
-#             rand = np.random.RandomState(rseed)
-#         else:
-#             rand = np.random
-#         self._rand = rand
-#         self._rseed = rseed
-
-#         # Number of samples
-#         self.num_train = 0
-#         self.num_val = 0
-
-#         # Latents Config
-#         self.transitions_on = transitions_on
-#         self.n_latents = 0
-#         self.latents = np.array([])
-
-#         self.fixed_in_sampling = []
-#         self.fixed_values = []
-#         self.varied_in_sampling = []
-
-#         self.fixed_in_action = []
-#         self.varied_in_action = []
-#         self.transition_range = []
-
-#         # Number of transitions
-#         if not transitions_on:
-#             self.n_transitions = 0
-#         elif n_transitions is None:
-#             self.n_transitions = 1
-#         else:
-#             self.n_transitions = n_transitions
-        
-
-#     def __getitem__(self,idx):
-#         pass
-
-#     def __len__(self):
-#         pass
-
-#     def latents_2_index(self,latents):
-#         """
-#         Converts a vector of latents values to its index in the subdataset.
-#         """
-#         return np.dot(
-#             latents[...,self.varied_in_sampling],self.latent_bases_varied)
-
-#     def setup_latents_bases(self):
-#         """
-#         Computes the latents bases vector for converting latents vectors to indices.
-#         """
-#         self.num_latents_varied = self.num_latents[self.varied_in_sampling]
-#         self.latent_bases = np.concatenate([
-#             np.cumprod(self.num_latents[::-1])[::-1][1:],[1]])
-#         self.latent_bases_varied = np.concatenate([
-#             np.cumprod(self.num_latents_varied[::-1])[::-1][1:],[1]])    
-#         self.dataset_size = np.prod(self.num_latents_varied)
-
-#     def transition(self, idx):
-#         pass
-
-#     def observe_n_transitions(self, idx):
-#         indices = np.empty(shape=(idx.shape[-1], self.n_transitions+1), dtype=int)
-#         transitions = []
-#         indices[:, 0] = idx
-#         for i in range(self.n_transitions):
-#             idx2, dj = self.transition(indices[:,i])
-#             indices[:,i+1]= idx2
-#             transitions.append(dj)
-#         transitions = np.stack(transitions,axis=1)
-#         return indices,transitions
-    
-#     def get_val_batch(self):
-#         pass
-    
-
-#     def resample_data(self):
-#         pass
-    
-#     @property
-#     def action_shape(self) -> list:
-#         pass
-
-#     @property
-#     def in_shape(self) -> list:
-#         pass
