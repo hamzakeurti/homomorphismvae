@@ -226,31 +226,21 @@ def evaluate(dhandler:TransitionDataset,
                 figname = os.path.join(fig_dir, f'{epoch}_')
                 shared.figname = figname
             if config.plot_reconstruction:
-                plt_utils.plot_n_step_reconstruction(dhandler, nets, config,
+                dhandler.plot_n_step_reconstruction(nets, config,
                                                  device, logger, figname)
             
             if config.plot_manifold:
-                vary_latents = misc.str_to_ints(config.plot_vary_latents)
-                plot_latent = misc.str_to_ints(config.plot_manifold_latent)
-                if len(plot_latent) > 0:
-                    if not isinstance(plot_latent[0], list):
-                        plot_latent = [plot_latent]
-                        vary_latents = [vary_latents]
-                    for i in range(len(vary_latents)):
-                        if config.plot_pca:
-                            plt_utils.plot_manifold_pca(dhandler, nets, shared, config,
-                                                        device, logger, mode, epoch,
-                                                        vary_latents=vary_latents[i],
-                                                        figname=figname)
-                        else:
-                            plt_utils.plot_manifold(dhandler, nets, shared, config, 
-                                            device, logger, mode, epoch, 
-                                            vary_latents=vary_latents[i],
-                                            plot_latent=plot_latent[i], 
-                                            figname=figname)
+                if config.plot_pca:
+                    dhandler.plot_manifold_pca(nets, shared, config,
+                                               device, logger, mode, 
+                                               epoch)
+                else:
+                    dhandler.plot_manifold(nets, shared, config, 
+                                           device, logger, mode, epoch)
     
     if config.rollouts:
-        evaluate_rollouts(dhandler, nets, device, config, shared, logger, mode, epoch, plot_rollouts=config.plot_rollouts)
+        evaluate_rollouts(dhandler, nets, device, config, shared, logger, mode, 
+                          epoch, plot_rollouts=config.plot_rollouts)
     
     nets.train()
 
@@ -297,8 +287,8 @@ def evaluate_rollouts(dhandler:TransitionDataset, nets:MultistepAutoencoder,
 
         
     if plot_rollouts and (epoch % config.plot_epoch == 0):
-        plt_utils.plot_rollout_reconstructions(
-                        dhandler=dhandler, nets=nets, config=config, 
+        dhandler.plot_rollout_reconstruction(
+                        nets=nets, config=config, 
                         device=device, logger=logger)
     nets.train()
 

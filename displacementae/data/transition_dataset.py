@@ -30,6 +30,8 @@ import numpy as np
 import numpy.typing as npt
 from torch.utils.data import Dataset
 
+from displacementae.utils import plotting_utils as plt_utils
+
 
 class TransitionDataset(Dataset):
     """Abstract dataset for transitions.
@@ -151,3 +153,61 @@ class TransitionDataset(Dataset):
         :rtype: int
         """
         pass
+
+    # ----------------------
+    # Plotting methods
+    # ----------------------
+
+    def plot_n_step_reconstruction(self, nets, config, 
+                                   device, logger, figname)->None:
+        """
+        Plots the :math:`n` first transitions in the evaluation batch.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+        plt_utils.plot_n_step_reconstruction(
+                self, nets, config, device, logger, figname)
+
+
+    def plot_manifold(
+                    self,nets,shared, config,
+                    device, logger, mode, epoch)->None:
+        """
+        Plots the learned representation manifold of the dataset.
+
+        Plots the learned representation manifold 
+        (or its projection along specified representation units) 
+        of the dataset (or a subset of it).
+        
+        To be implemented by inheriting class.
+        """
+        raise NotImplementedError
+
+
+    def plot_manifold_pca(self, nets, shared, config,
+                          device, logger, mode, epoch):
+        """
+        Plots the PCA projection of the learned representation manifold.
+
+        Plots the PCA projection of the learned representation manifold 
+        of the dataset or a subset of it.
+        
+        To be implemented by inheriting class.
+        """
+        raise NotImplementedError
+    
+
+    def plot_rollout_reconstruction(self, nets, config, device, logger):
+        """
+        Plots the reconstructions of the first :math:`n` rollouts.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+        plt_utils.plot_rollout_reconstructions(self, nets, config, device, 
+                                               logger)
+
+
+if __name__ == "__main__":
+    pass

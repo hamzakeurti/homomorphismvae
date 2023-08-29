@@ -28,6 +28,8 @@ The module :mod:`data.dsprites` contains a data handler for the
 """
 
 import numpy as np
+from sklearn.random_projection import GaussianRandomProjection
+import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, Sampler
 import os
@@ -36,6 +38,8 @@ from typing import Tuple, List
 
 
 from displacementae.data.transition_dataset import TransitionDataset
+from displacementae.utils import misc
+import displacementae.utils.plotting_utils as plt_utils
 
 IMGS = "imgs"
 LATENTS = "latents"
@@ -70,7 +74,9 @@ class DspritesDataset(TransitionDataset):
             dist: str = 'uniform',
             return_integer_actions: bool = False,
             rotate_actions: float = 0,
-            normalize_actions:bool=True):
+            normalize_actions:bool=True,
+            plot_vary_latents:List[List[int]]=[],
+            plot_repr_units:List[List[int]]=[],):
         super().__init__(rseed, n_transitions)
 
         # Distribution
@@ -163,7 +169,12 @@ class DspritesDataset(TransitionDataset):
 
             self.train_dj[...,:2] = self.train_dj[...,:2] @ self._rot_mat
             self.val_dj[...,:2] = self.val_dj[...,:2] @ self._rot_mat
-            
+
+        
+        # Plotting config
+        self.plot_vary_latents = plot_vary_latents
+        self.plot_repr_units = plot_repr_units
+
     def __len__(self):
         return self._num_train
 
@@ -433,54 +444,113 @@ class DspritesDataset(TransitionDataset):
             a_in /=self.M
         return a_in, a
 
-    # @property
-    # def allowed_indices(self):
-    #     if hasattr(self, '_allowed_indices'):
-    #         pass
-    #     else:
-    #         self._allowed_indices = [self.get_index(i) for i in range(self.n_samples)]
-    #     return self._allowed_indices
+    
+    # -------------------
+    # Plotting
+    # -------------------
+    def plot_manifold(
+                    self, nets, shared, config,
+                    device, logger, mode, epoch)->None:
+        """
+        Plots the learned representation manifold of the dataset.
+
+        Plots the learned representation manifold 
+        (or its projection along specified representation units) 
+        of the dataset (or a subset of it).
+        """
+        n_repr_units = nets.n_repr_units
+        for plot_units,vary_latents in zip(self.plot_repr_units,
+                                           self.plot_vary_latents):             
+            if max(plot_units) >= n_repr_units:
+                raise ValueError(
+                    "Requested plotting a representational unit which index: "+
+                    f"{max(plot_units)} is too large for the "+
+                    f"number of representational units: {n_repr_units}")
+
+            indices = self.get_indices_vary_latents(vary_latents)
+            latents = self.latents[indices][:,vary_latents] # type: ignore
+            batch_size = config.batch_size
+            n_batches = len(indices) // batch_size + 1
+            
+            results = []
+
+            for i in range(n_batches):
+                batch_indices = indices[ i * batch_size : (i+1) * batch_size]
+                images = self.images[batch_indices]
+                X = torch.FloatTensor(images).to(device)
+                with torch.no_grad():
+                    h, mu, logvar = nets.encode(X)
+                    h = nets.normalize_representation(h)
+                    results.append(h[:,plot_units].cpu().numpy())
+            results = np.vstack(results).squeeze()
+            
+            for i in range(len(vary_latents)):
+                latent = vary_latents[i]
+                latent_name = self.get_latent_name(latent)
+
+                figname = f'{epoch} - repr_manifold'
+                figname += '_repr_units='+ misc.ints_to_str(plot_units)
+                figname += '_varied='+ misc.ints_to_str(vary_latents)
+                figname += '_true='+ misc.ints_to_str(latent) + '.pdf'
+
+
+                plt_utils.plot_manifold(
+                    representations=results, true_latents=latents[:,i], 
+                    logger=logger, label=f'latent {latent} ({latent_name})',
+                    plot_on_black=config.plot_on_black, 
+                    log_wandb=config.log_wandb, figname=figname, savefig=True)
+
+
+
+    def plot_manifold_pca(self, nets, shared, config,
+                          device, logger, mode, epoch):
+        """
+        Plots the PCA projection of the learned representation manifold.
+
+        Plots the PCA projection of the learned representation manifold 
+        of the dataset or a subset of it.
+        
+        To be implemented by inheriting class.
+        """
+        for vary_latents in self.plot_vary_latents:
+
+            indices = self.get_indices_vary_latents(vary_latents)
+            latents = self.latents[indices][:,vary_latents]
+            batch_size = config.batch_size
+            n_batches = len(indices) // batch_size + 1
+            
+            results = []
+
+            for i in range(n_batches):
+                batch_indices = indices[ i * batch_size : (i+1) * batch_size]
+                images = self.images[batch_indices]
+                X = torch.FloatTensor(images).to(device)
+                with torch.no_grad():
+                    h, mu, logvar = nets.encode(X)
+                    h = nets.normalize_representation(h)
+                    results.append(h[:,:].cpu().numpy())
+            results = np.vstack(results).squeeze()
+
+            # PCA Projection
+            pca = GaussianRandomProjection(n_components=2)
+            results2d = pca.fit_transform(results)
+
+            # The loop is only to pick which latent to color and
+            # which to use as marker.
+            for i in range(len(vary_latents)):
+                    
+                latent = vary_latents[i]
+                figname = f'{epoch} - repr_manifold_pca'
+                figname += '_varied='+ misc.ints_to_str(vary_latents)
+                figname += '_true='+ misc.ints_to_str(latent) + '.pdf'
+
+                plt_utils.plot_manifold_markers(
+                        representations=results2d, latents_clr=latents[:,i],
+                        latents_mrk=latents[:,(i+1)%2], logger=logger, 
+                        plot_on_black=config.plot_on_black,
+                        log_wandb=config.log_wandb, figname=figname, 
+                        savefig=True,)
 
 
 if __name__ == '__main__':
-    import os,sys
-
-    curr_dir = os.path.basename(os.path.abspath(os.curdir))
-    # See __init__.py in folder "toy_example" for an explanation.
-    if curr_dir == 'data' and '..' not in sys.path:
-        sys.path.insert(0, '..')
-
-
-
-    import __init__
-
-    import h5py
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    from displacementae.data.dsprites import DspritesDataset
-
-
-    root = "D:\\Projects\\PhD\\datasets\\dsprites"
-
-    dhandler = DspritesDataset(root, rseed=None, fixed_in_sampling=[],
-                 fixed_values=[], fixed_in_action=[],
-                 n_transitions= 1, action_range = [-1, 1],
-                 num_train=200,
-                 num_val= 30, cyclic_trans = False,
-                 dist= 'uniform',
-                 return_integer_actions= False,
-                 rotate_actions= 0,
-                 normalize_actions=True)
     pass
-    # dataset = DspritesDataset(root = '/home/hamza/datasets/dsprites')
-    # print(dataset.train_idx)
-    # from torch.utils.data import DataLoader
-    # dloader = DataLoader(dataset=dataset, batch_size=50)
-    # for batch in dloader:
-    #     print(len(batch))
-    # dhandler = DspritesDataset(
-    # root = '/home/hamza/datasets/dsprites',fixed_in_sampling=[0,1,2],fixed_values=[0,0,5],
-    # fixed_in_action=[0,1,2],transitions_on=True,n_transitions=2,
-    # num_train=200,num_val=30, cyclic_trans=True)
-    # print(dhandler.train_dj.shape)
