@@ -233,10 +233,10 @@ def evaluate(dhandler:TransitionDataset,
                 if config.plot_pca:
                     dhandler.plot_manifold_pca(nets, shared, config,
                                                device, logger, mode, 
-                                               epoch)
+                                               epoch, fig_dir)
                 else:
                     dhandler.plot_manifold(nets, shared, config, 
-                                           device, logger, mode, epoch)
+                                           device, logger, mode, epoch, fig_dir)
     
     if config.rollouts:
         evaluate_rollouts(dhandler, nets, device, config, shared, logger, mode, 

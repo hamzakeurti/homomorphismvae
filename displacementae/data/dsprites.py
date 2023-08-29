@@ -450,7 +450,7 @@ class DspritesDataset(TransitionDataset):
     # -------------------
     def plot_manifold(
                     self, nets, shared, config,
-                    device, logger, mode, epoch)->None:
+                    device, logger, mode, epoch, figdir)->None:
         """
         Plots the learned representation manifold of the dataset.
 
@@ -493,17 +493,18 @@ class DspritesDataset(TransitionDataset):
                 figname += '_varied='+ misc.ints_to_str(vary_latents)
                 figname += '_true='+ misc.ints_to_str(latent) + '.pdf'
 
+                fig_path = os.path.join(figdir, figname)
 
                 plt_utils.plot_manifold(
                     representations=results, true_latents=latents[:,i], 
                     logger=logger, label=f'latent {latent} ({latent_name})',
                     plot_on_black=config.plot_on_black, 
-                    log_wandb=config.log_wandb, figname=figname, savefig=True)
+                    log_wandb=config.log_wandb, path=fig_path, savefig=True)
 
 
 
     def plot_manifold_pca(self, nets, shared, config,
-                          device, logger, mode, epoch):
+                          device, logger, mode, epoch, figdir):
         """
         Plots the PCA projection of the learned representation manifold.
 
@@ -544,11 +545,13 @@ class DspritesDataset(TransitionDataset):
                 figname += '_varied='+ misc.ints_to_str(vary_latents)
                 figname += '_true='+ misc.ints_to_str(latent) + '.pdf'
 
+                fig_path = os.path.join(figdir, figname)
+
                 plt_utils.plot_manifold_markers(
                         representations=results2d, latents_clr=latents[:,i],
                         latents_mrk=latents[:,(i+1)%2], logger=logger, 
                         plot_on_black=config.plot_on_black,
-                        log_wandb=config.log_wandb, figname=figname, 
+                        log_wandb=config.log_wandb, path=fig_path, 
                         savefig=True,)
 
 

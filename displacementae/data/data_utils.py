@@ -53,10 +53,9 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
         raise NotImplementedError
     plot_vary_latents = misc.str_to_ints(config.plot_vary_latents)
     plot_repr_units = misc.str_to_ints(config.plot_manifold_latent)
-    if len(plot_repr_units) > 0:
-        if not isinstance(plot_repr_units[0], list):
-            plot_repr_units = [plot_repr_units]
-            plot_vary_latents = [plot_vary_latents]
+    if len(plot_repr_units) > 0 and not isinstance(plot_repr_units[0], list):
+        plot_repr_units = [plot_repr_units]
+        plot_vary_latents = [plot_vary_latents]
     dhandler = DspritesDataset(
         root=config.data_root,
         num_train=config.num_train,

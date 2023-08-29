@@ -172,7 +172,7 @@ class TransitionDataset(Dataset):
 
     def plot_manifold(
                     self,nets,shared, config,
-                    device, logger, mode, epoch)->None:
+                    device, logger, mode, epoch, figdir)->None:
         """
         Plots the learned representation manifold of the dataset.
 
@@ -186,7 +186,7 @@ class TransitionDataset(Dataset):
 
 
     def plot_manifold_pca(self, nets, shared, config,
-                          device, logger, mode, epoch):
+                          device, logger, mode, epoch, figdir):
         """
         Plots the PCA projection of the learned representation manifold.
 

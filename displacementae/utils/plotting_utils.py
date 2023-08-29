@@ -265,7 +265,7 @@ def plot_rollout_reconstructions(dhandler, nets, config, device, logger):
 
 
 def plot_manifold(representations, true_latents, logger, plot_on_black:bool=False, 
-                  log_wandb:bool=False, label:str='', figname:str='', 
+                  log_wandb:bool=False, label:str='', path:str='', 
                   savefig:bool=False):
     kwargs={}
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
@@ -292,18 +292,20 @@ def plot_manifold(representations, true_latents, logger, plot_on_black:bool=Fals
         ax.set_xlabel(f'repr unit 0', fontsize=ts)
         ax.set_ylabel(f'repr unit 1', fontsize=ts)
         plt.colorbar(f)
-    ax.set_title(figname.split(".")[0])
+
+    figname = os.path.basename(path).split('.')[0]
+    ax.set_title(figname)
     if savefig:
-        plt.savefig(figname)
-        logger.info(f'Figure saved {figname}')
+        plt.savefig(path)
+        logger.info(f'Figure saved {path}')
     if log_wandb:
-        wandb.log({f'plot/{figname.split(".")[0]}':wandb.Image(plt)})
+        wandb.log({f'plot/{figname}':wandb.Image(plt)})
     plt.close(fig)
 
 
 def plot_manifold_markers(latents_clr, latents_mrk, representations, logger,
                           plot_on_black:bool=False, log_wandb:bool=False, 
-                          figname:str=None, savefig:bool=False):
+                          path:str=None, savefig:bool=False):
     """
     Plots a scatter plot of the representation manifold with 
     colors and markers corresponding to the true latents.
@@ -347,12 +349,13 @@ def plot_manifold_markers(latents_clr, latents_mrk, representations, logger,
     
     plt.colorbar(f)
     
-    ax.set_title(figname.split(".")[0])
+    figname = os.path.basename(path).split('.')[0]
+    ax.set_title(figname)
     if savefig:
-        plt.savefig(figname)
-        logger.info(f'Figure saved {figname}')
+        plt.savefig(path)
+        logger.info(f'Figure saved {path}')
     if log_wandb:
-        wandb.log({f'plot/{figname.split(".")[0]}':wandb.Image(plt)})
+        wandb.log({f'plot/{figname}':wandb.Image(plt)})
     plt.close(fig)
 
 
