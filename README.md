@@ -1,4 +1,4 @@
-# Symmetry Based Representation Learning through Homomorphism AutoEncoders
+# Group-Structured Representation Learning through Homomorphism AutoEncoders
 ---
 Implementation associated with the paper [Homomorphism Autoencoder -- Learning Group Structured Representations from Observed Transitions](https://arxiv.org/abs/2207.12067).
 
@@ -17,7 +17,7 @@ The package can be installed by first building the package through:
 ```
 Then it can be installed in your environment through:
 ```
- $ pip install homomorphism-autoencoder-<VERSION>.tar.gz
+ $ pip install dist/homomorphism-autoencoder-<VERSION>.tar.gz
 ```
 
 ## Datasets 
