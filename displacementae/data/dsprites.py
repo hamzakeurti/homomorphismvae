@@ -268,10 +268,10 @@ class DspritesDataset(TransitionDataset):
         return LATENT_NAMES[id]
 
     def observe_n_transitions(self, idx):
-        indices = np.empty(shape=(idx.shape[-1], self.n_transitions+1), dtype=int)
+        indices = np.empty(shape=(idx.shape[-1], self._n_transitions+1), dtype=int)
         transitions = []
         indices[:, 0] = idx
-        for i in range(self.n_transitions):
+        for i in range(self._n_transitions):
             idx2, dj = self._transition(indices[:,i])
             indices[:,i+1]= idx2
             transitions.append(dj)
