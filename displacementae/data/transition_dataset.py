@@ -78,7 +78,8 @@ class TransitionDataset(Dataset):
         pass
 
     def resample_data(self) -> None:
-        """resamples the training dataset. (Does nothing for some datasets).
+        """
+        resamples the training dataset. (Does nothing for some datasets).
         """
         pass
 
@@ -102,16 +103,16 @@ class TransitionDataset(Dataset):
         .. todo::
         maybe get rid of the labels.
         """
-        pass
+        raise NotImplementedError
     
 
     def get_rollouts(self) -> Generator[
             Tuple[npt.NDArray, npt.NDArray], None, None]:
-        pass
+        raise NotImplementedError
 
 
     def get_n_rollouts(self, n:int) -> Tuple[npt.NDArray, npt.NDArray]:
-        pass
+        raise NotImplementedError
 
 
     @property
@@ -121,7 +122,7 @@ class TransitionDataset(Dataset):
         :return: Dimension of the action vector.
         :rtype: int
         """
-        pass
+        raise NotImplementedError
 
     @property
     def in_shape(self) -> List[int]:
@@ -133,7 +134,7 @@ class TransitionDataset(Dataset):
                  this returns `[1, height, width]`. 
         :rtype: List[int]
         """
-        pass
+        raise NotImplementedError
 
 
     @property
@@ -143,7 +144,8 @@ class TransitionDataset(Dataset):
         :return: `int` indicating total number fo training samples.
         :rtype: int
         """
-        pass
+        raise NotImplementedError
+
 
     @property
     def num_val(self) -> int:
@@ -152,27 +154,26 @@ class TransitionDataset(Dataset):
         :return: an integer indicating the number of evaluation samples.
         :rtype: int
         """
-        pass
+        raise NotImplementedError
 
     # ----------------------
     # Plotting methods
     # ----------------------
 
     def plot_n_step_reconstruction(self, nets, config, 
-                                   device, logger, figname)->None:
+                                   device, logger, epoch, figdir) -> None:
         """
-        Plots the :math:`n` first transitions in the evaluation batch.
+        Plots the first few transitions in the evaluation batch.
 
         This method saves the figure in the `figname` path,
         and logs it to WandB as well.
         """
-        plt_utils.plot_n_step_reconstruction(
-                self, nets, config, device, logger, figname)
+        raise NotImplementedError
 
 
     def plot_manifold(
                     self,nets,shared, config,
-                    device, logger, mode, epoch, figdir)->None:
+                    device, logger, mode, epoch, figdir) -> None:
         """
         Plots the learned representation manifold of the dataset.
 
@@ -186,7 +187,7 @@ class TransitionDataset(Dataset):
 
 
     def plot_manifold_pca(self, nets, shared, config,
-                          device, logger, mode, epoch, figdir):
+                          device, logger, mode, epoch, figdir) -> None:
         """
         Plots the PCA projection of the learned representation manifold.
 
@@ -198,15 +199,12 @@ class TransitionDataset(Dataset):
         raise NotImplementedError
     
 
-    def plot_rollout_reconstruction(self, nets, config, device, logger):
+    def plot_rollout_reconstruction(self, nets, config, device, logger, epoch, figdir) -> None:
         """
-        Plots the reconstructions of the first :math:`n` rollouts.
+        Plots the reconstructions of the first few rollouts.
+        """
+        raise NotImplementedError
 
-        This method saves the figure in the `figname` path,
-        and logs it to WandB as well.
-        """
-        plt_utils.plot_rollout_reconstructions(self, nets, config, device, 
-                                               logger)
 
 
 if __name__ == "__main__":

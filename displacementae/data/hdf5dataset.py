@@ -9,6 +9,7 @@ import os
 from typing import Optional, Tuple, Generator
 
 from displacementae.data.transition_dataset import TransitionDataset
+from displacementae.utils import plotting_utils as plt_utils
 
 OBSERVATIONS = 'observations'
 ACTIONS = 'actions'
@@ -158,8 +159,8 @@ class HDF5Dataset(TransitionDataset):
             raise ValueError("Rollouts were not loaded.")
         
         b = self._rollouts_batch_size
-        for i in range(0, self._roll_imgs.shape[0], b): 
-            yield self._roll_imgs[i:i+b],\
+        for i in range(0, self._roll_obs.shape[0], b): 
+            yield self._roll_obs[i:i+b],\
                     self._roll_actions[i:i+b] # type: ignore
             
     def get_n_rollouts(self, n: int) -> Tuple[npt.NDArray, npt.NDArray]:
@@ -167,7 +168,7 @@ class HDF5Dataset(TransitionDataset):
 
         if not self._rollouts:
             raise ValueError("Rollouts were not loaded.")
-        return self._roll_imgs[:n], \
+        return self._roll_obs[:n], \
                 self._roll_actions[:n] # type: ignore
     
 
@@ -209,6 +210,52 @@ class HDF5Dataset(TransitionDataset):
             self._roll_actions = f[ROLLOUTS][ACTIONS][:self._num_rollouts] 
             if self._normalize_actions:
                 self._roll_actions /= self._M
+
+
+    def plot_n_step_reconstruction(self, nets, config, 
+                                   device, logger, epoch, figdir)->None:
+        """
+        Plots the first few transitions in the evaluation batch.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+
+        figname = f'{epoch} - reconstructions.pdf'
+
+        fig_path = os.path.join(figdir, figname)
+
+        imgs, _, actions = self.get_val_batch()
+
+        plt_utils.plot_n_step_reconstruction(
+                imgs, actions, nets, device, logger, 
+                plot_on_black=config.plot_on_black, 
+                n_steps=self._n_transitions, n_examples=7, 
+                savefig=config.savefig, path=fig_path, 
+                log_wandb=config.log_wandb)
+
+
+
+    def plot_rollout_reconstruction(self, nets, config, device, logger, epoch, 
+                                    figdir) -> None:
+        """
+        Plots the reconstructions of the first :math:`n` rollouts.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+        figname = f'{epoch} - rollouts_reconstructions.pdf'
+
+        fig_path = os.path.join(figdir, figname)
+
+        X, a = self.get_n_rollouts(config.plot_n_rollouts)
+
+        plt_utils.plot_rollout_reconstructions(
+                X, a, nets, device, logger, n_rollouts=config.plot_n_rollouts, 
+                powers=True, savefig=config.savefig, path=fig_path, 
+                log_wandb=config.log_wandb)
+
+
 
 if __name__ == '__main__':
     pass

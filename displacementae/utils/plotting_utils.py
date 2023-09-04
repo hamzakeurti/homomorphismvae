@@ -20,7 +20,7 @@
 # @version        :1.0
 # @python_version :3.7.4
 
-from typing import List
+from typing import List, Optional
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
@@ -93,31 +93,24 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
     plt.close(fig)
 
 
-def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
+def plot_n_step_reconstruction(imgs, actions, nets, device, logger, 
+                               plot_on_black:bool=False, n_steps:int=1, 
+                               n_examples:int=7, savefig:bool=False, 
+                               path:str='', log_wandb:bool=False):
     # always reonstruct first, even when not considered in loss
     reconstruct_first = 1
-    if config.plot_on_black:
+    if plot_on_black:
         plt.style.use('dark_background')
 
-    n_steps = config.n_steps
-
-    imgs, latents, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(imgs[:,0]).to(device)
-    if reconstruct_first:
-        Xi = torch.FloatTensor(imgs).to(device)
-    else:
-        Xi = torch.FloatTensor(imgs[:,1:]).to(device)
 
-    dj = torch.FloatTensor(dj).to(device)
+    dj = torch.FloatTensor(actions).to(device)
 
     h, _, _, mu, logvar = nets(X1, dj)
     Xi_hat = torch.sigmoid(h)
 
-    nrows = 7
-    if reconstruct_first :
-        ncols = 2 + 2*n_steps
-    else:
-        ncols = 1 + 2*n_steps
+    nrows = n_examples
+    ncols = 2 + 2*n_steps
 
     unit_length = 1.5
 
@@ -127,11 +120,11 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
     kwargs = {'vmin': 0, 'vmax': 1}
     if imgs.shape[2] == 1:
         kwargs['cmap'] = 'gray'
-        Xi = Xi[:,:,0].cpu().numpy()
+        Xi = Xi[:,:,0]
         Xi_hat = Xi_hat[:,:,0].cpu().numpy()
         X1 = X1[:,0].cpu().numpy()
     else:
-        Xi = np.moveaxis(Xi.cpu().numpy(),-3,-1)
+        Xi = np.moveaxis(Xi,-3,-1)
         Xi_hat = np.moveaxis(Xi_hat.cpu().numpy(),-3,-1)
         X1 = np.moveaxis(X1.cpu().numpy(),-3,-1)
 
@@ -145,7 +138,7 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
         for i in range(Xi_hat.shape[1]):
             axes[row,2*i+s].imshow(Xi[row,i],**kwargs)#should be i+1
             axes[row,2*i+s+1].imshow(Xi_hat[row,i],**kwargs)
-        if config.plot_on_black:
+        if plot_on_black:
             for j in range(ncols):
                 axes[row, j].axes.xaxis.set_visible(False)
                 axes[row, j].axes.yaxis.set_visible(False)
@@ -154,12 +147,12 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
                 axes[row, j].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
-    if figname is not None:
-        figname += 'reconstructions.pdf'
-        plt.savefig(figname, bbox_inches='tight')
-        logger.info(f'Figure saved {figname}')
-    if config.log_wandb:
-        wandb.log({'plot/reconstructions':wandb.Image(plt)})
+    figname = os.path.basename(path).split('.')[0]
+    if savefig:
+        plt.savefig(path)
+        logger.info(f'Figure saved {path}')
+    if log_wandb:
+        wandb.log({f'plot/{figname}':wandb.Image(plt)})
     plt.close(fig)
 
 
@@ -217,13 +210,29 @@ def plot_supervised_reconstruction(dhandler, nets, config, device, logger, figna
     plt.close(fig)
 
 
-def plot_rollout_reconstructions(dhandler, nets, config, device, logger):
-    n_rollouts = config.plot_n_rollouts
-    X, a = dhandler.get_n_rollouts(n_rollouts)
-    X = torch.FloatTensor(X).to(device)
-    a = torch.FloatTensor(a).to(device)
-    i_pow2 = np.power(2, np.arange(2,np.log2(a.shape[1]),1)).astype(int)
-    n_steps = len(i_pow2)
+def plot_rollout_reconstructions(imgs, actions, nets, device, logger, 
+                                 n_rollouts:int=7, powers:bool=False, 
+                                 n_images:Optional[int]=None, 
+                                 savefig:bool=False, path:str='', 
+                                 log_wandb:bool=False):
+    """
+    Plots the reconstructions of the first `n_{rollouts}` rollouts.
+
+    """
+
+    X = torch.FloatTensor(imgs).to(device)
+    a = torch.FloatTensor(actions).to(device)
+
+    if powers:
+        indices = np.power(2, np.arange(2,np.log2(a.shape[1]),1)).astype(int)
+    else:
+        indices = np.arange(0,a.shape[1],1).astype(int)
+    
+    if n_images is not None:
+        indices = indices[:n_images]
+    
+    n_steps = len(indices)
+
     n_rows = X.shape[0]*2
     n_cols = n_steps
 
@@ -246,20 +255,19 @@ def plot_rollout_reconstructions(dhandler, nets, config, device, logger):
     
     for row in range(n_rollouts):
         for col in range(n_cols):
-            axs[row*2,col].imshow(X[row,i_pow2[col]], **kwargs)
+            axs[row*2,col].imshow(X[row,indices[col]], **kwargs)
             axs[row*2,col].axis('off')
-            axs[row*2+1,col].imshow(X_hat[row,i_pow2[col]], **kwargs)
+            axs[row*2+1,col].imshow(X_hat[row,indices[col]], **kwargs)
             axs[row*2+1,col].axis('off')
     
     figname = f'rollout_reconstructions'
     plt.subplots_adjust(wspace=0, hspace=0.1)
-    if config.save_figures:
-        fig_dir = os.path.join(config.out_dir, 'figures')
-        fig_path = os.path.join(fig_dir,figname)
-        plt.savefig(f'{fig_path}.pdf', bbox_inches='tight')
-        logger.info(f'Figure saved {fig_path}')
 
-    if config.log_wandb:
+    figname = os.path.basename(path).split('.')[0]
+    if savefig:
+        plt.savefig(path)
+        logger.info(f'Figure saved {path}')
+    if log_wandb:
         wandb.log({f'plot/{figname}':wandb.Image(plt)})
     plt.close(fig)
 

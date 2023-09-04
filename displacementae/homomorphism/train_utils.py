@@ -227,7 +227,7 @@ def evaluate(dhandler:TransitionDataset,
                 shared.figname = figname
             if config.plot_reconstruction:
                 dhandler.plot_n_step_reconstruction(nets, config,
-                                                 device, logger, figname)
+                                                 device, logger, epoch, fig_dir)
             
             if config.plot_manifold:
                 if config.plot_pca:
@@ -287,9 +287,12 @@ def evaluate_rollouts(dhandler:TransitionDataset, nets:MultistepAutoencoder,
 
         
     if plot_rollouts and (epoch % config.plot_epoch == 0):
+        fig_dir = os.path.join(config.out_dir, 'figures')
+
         dhandler.plot_rollout_reconstruction(
                         nets=nets, config=config, 
-                        device=device, logger=logger)
+                        device=device, logger=logger, 
+                        epoch=epoch,figdir=fig_dir)
     nets.train()
 
 

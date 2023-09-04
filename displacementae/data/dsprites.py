@@ -553,6 +553,45 @@ class DspritesDataset(TransitionDataset):
                         plot_on_black=config.plot_on_black,
                         log_wandb=config.log_wandb, path=fig_path, 
                         savefig=True,)
+    
+
+    def plot_n_step_reconstruction(self, nets, config, 
+                                   device, logger, epoch, figdir)->None:
+        """
+        Plots the first few transitions in the evaluation batch.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+
+        figname = f'{epoch} - reconstructions.pdf'
+
+        fig_path = os.path.join(figdir, figname)
+
+        imgs, latents, actions = self.get_val_batch()
+
+        plt_utils.plot_n_step_reconstruction(
+                imgs, actions, nets, device, logger, 
+                plot_on_black=config.plot_on_black, 
+                n_steps=self._n_transitions, n_examples=7, 
+                savefig=config.savefig, path=fig_path, 
+                log_wandb=config.log_wandb)
+
+
+    def plot_rollout_reconstruction(self, nets, config, device, logger):
+        """
+        Plots the reconstructions of the first :math:`n` rollouts.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+        raise NotImplementedError
+        X, a = self.get_n_rollouts(7)
+
+        plt_utils.plot_rollout_reconstructions(self, nets, config, device, 
+                                               logger)
+
+
 
 
 if __name__ == '__main__':
