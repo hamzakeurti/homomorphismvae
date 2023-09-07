@@ -294,7 +294,7 @@ def plot_manifold(representations, true_latents, logger, plot_on_black:bool=Fals
         f = ax.scatter(x=true_latents, y=representations)
         ax.set_xlabel(f'{label}', fontsize=ts)
         ax.set_ylabel(f'repr unit', fontsize=ts)
-    else:
+    elif representations.shape[1] == 2:
         f = ax.scatter(x=representations[:,0], y=representations[:,1], 
                        c=true_latents, **kwargs)
         ax.set_xlabel(f'repr unit 0', fontsize=ts)

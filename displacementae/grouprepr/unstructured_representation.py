@@ -40,7 +40,7 @@ class UnstructuredRepresentation(GroupRepresentation):
         """
         Gets the representation matrix of input transition :arg:`a`.
         """
-        pass
+        raise NotImplementedError
 
     def act(self, a: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """

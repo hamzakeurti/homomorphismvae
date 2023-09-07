@@ -489,9 +489,9 @@ class DspritesDataset(TransitionDataset):
                 latent_name = self.get_latent_name(latent)
 
                 figname = f'{epoch} - repr_manifold'
-                figname += '_repr_units='+ misc.ints_to_str(plot_units)
-                figname += '_varied='+ misc.ints_to_str(vary_latents)
-                figname += '_true='+ misc.ints_to_str(latent) + '.pdf'
+                figname += '_repr_units-'+ misc.ints_to_str(plot_units)
+                figname += '_varied-'+ misc.ints_to_str(vary_latents)
+                figname += '_true-'+ misc.ints_to_str(latent) + '.pdf'
 
                 fig_path = os.path.join(figdir, figname)
 
