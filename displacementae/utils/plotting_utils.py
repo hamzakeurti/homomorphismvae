@@ -154,7 +154,7 @@ def plot_n_step_reconstruction(imgs, actions, nets, device, logger,
     title = figname.split('.')[0]
     if savefig:
         if epoch is not None:
-            figname = '{epoch} - {figname}'
+            figname = f'{epoch} - {figname}'
         savepath = os.path.join(savedir,figname)
         plt.savefig(savepath)
         logger.info(f'Figure saved {savepath}')
@@ -274,7 +274,7 @@ def plot_rollout_reconstructions(imgs, actions, nets, device, logger,
     title = figname.split('.')[0]
     if savefig:
         if epoch is not None:
-            figname = '{epoch} - {figname}'
+            figname = f'{epoch} - {figname}'
         savepath = os.path.join(savedir,figname)
         plt.savefig(savepath)
         logger.info(f'Figure saved {savepath}')
@@ -317,7 +317,7 @@ def plot_manifold(representations, true_latents, logger, plot_on_black:bool=Fals
     ax.set_title(title)
     if savefig:
         if epoch is not None:
-            figname = '{epoch} - {figname}'
+            figname = f'{epoch} - {figname}'
         savepath = os.path.join(savedir,figname)
         plt.savefig(savepath)
         logger.info(f'Figure saved {savepath}')
@@ -378,7 +378,7 @@ def plot_manifold_markers(latents_clr, latents_mrk, representations, logger,
     ax.set_title(title)
     if savefig:
         if epoch is not None:
-            figname = '{epoch} - {figname}'
+            figname = f'{epoch} - {figname}'
         savepath = os.path.join(savedir,figname)
         plt.savefig(savepath)
         logger.info(f'Figure saved {savepath}')
