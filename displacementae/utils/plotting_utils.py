@@ -118,6 +118,8 @@ def plot_n_step_reconstruction(imgs, actions, nets, device, logger,
                              figsize=(ncols * unit_length,
                                       nrows * unit_length))
     kwargs = {'vmin': 0, 'vmax': 1}
+    
+    Xi = imgs
     if imgs.shape[2] == 1:
         kwargs['cmap'] = 'gray'
         Xi = Xi[:,:,0]
