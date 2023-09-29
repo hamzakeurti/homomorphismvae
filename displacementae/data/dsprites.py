@@ -488,18 +488,18 @@ class DspritesDataset(TransitionDataset):
                 latent = vary_latents[i]
                 latent_name = self.get_latent_name(latent)
 
-                figname = f'{epoch} - repr_manifold'
+                figname = f'repr_manifold'
                 figname += '_repr_units-'+ misc.ints_to_str(plot_units)
                 figname += '_varied-'+ misc.ints_to_str(vary_latents)
                 figname += '_true-'+ misc.ints_to_str(latent) + '.pdf'
 
-                fig_path = os.path.join(figdir, figname)
 
                 plt_utils.plot_manifold(
                     representations=results, true_latents=latents[:,i], 
                     logger=logger, label=f'latent {latent} ({latent_name})',
                     plot_on_black=config.plot_on_black, 
-                    log_wandb=config.log_wandb, path=fig_path, savefig=True)
+                    log_wandb=config.log_wandb, savedir=figdir, savefig=True,
+                    epoch=epoch, figname=figname)
 
 
 
@@ -541,18 +541,17 @@ class DspritesDataset(TransitionDataset):
             for i in range(len(vary_latents)):
                     
                 latent = vary_latents[i]
-                figname = f'{epoch} - repr_manifold_pca'
+                figname = f'repr_manifold_pca'
                 figname += '_varied='+ misc.ints_to_str(vary_latents)
                 figname += '_true='+ misc.ints_to_str(latent) + '.pdf'
 
-                fig_path = os.path.join(figdir, figname)
 
                 plt_utils.plot_manifold_markers(
                         representations=results2d, latents_clr=latents[:,i],
                         latents_mrk=latents[:,(i+1)%2], logger=logger, 
                         plot_on_black=config.plot_on_black,
-                        log_wandb=config.log_wandb, path=fig_path, 
-                        savefig=True,)
+                        log_wandb=config.log_wandb, savedir=figdir, 
+                        savefig=True, epoch=epoch, figname=figname)
     
 
     def plot_n_step_reconstruction(self, nets, config, 
@@ -564,9 +563,7 @@ class DspritesDataset(TransitionDataset):
         and logs it to WandB as well.
         """
 
-        figname = f'{epoch} - reconstructions.pdf'
-
-        fig_path = os.path.join(figdir, figname)
+        figname = f'reconstructions.pdf'
 
         imgs, latents, actions = self.get_val_batch()
 
@@ -574,8 +571,8 @@ class DspritesDataset(TransitionDataset):
                 imgs, actions, nets, device, logger, 
                 plot_on_black=config.plot_on_black, 
                 n_steps=self._n_transitions, n_examples=7, 
-                savefig=config.savefig, path=fig_path, 
-                log_wandb=config.log_wandb)
+                savefig=config.savefig, savedir=figdir, epoch=epoch,
+                figname=figname, log_wandb=config.log_wandb)
 
 
     def plot_rollout_reconstruction(self, nets, config, device, logger):

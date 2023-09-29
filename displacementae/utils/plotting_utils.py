@@ -96,7 +96,9 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
 def plot_n_step_reconstruction(imgs, actions, nets, device, logger, 
                                plot_on_black:bool=False, n_steps:int=1, 
                                n_examples:int=7, savefig:bool=False, 
-                               path:str='', log_wandb:bool=False):
+                               savedir:str='', log_wandb:bool=False, 
+                               figname:str="reconstructions", 
+                               epoch:Optional[int]=None):
     # always reonstruct first, even when not considered in loss
     reconstruct_first = 1
     if plot_on_black:
@@ -149,12 +151,15 @@ def plot_n_step_reconstruction(imgs, actions, nets, device, logger,
                 axes[row, j].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
-    figname = os.path.basename(path).split('.')[0]
+    title = figname.split('.')[0]
     if savefig:
-        plt.savefig(path)
-        logger.info(f'Figure saved {path}')
+        if epoch is not None:
+            figname = '{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
     if log_wandb:
-        wandb.log({f'plot/{figname}':wandb.Image(plt)})
+        wandb.log({f'plot/reconstructions/{title}':wandb.Image(plt)})
     plt.close(fig)
 
 
@@ -215,8 +220,10 @@ def plot_supervised_reconstruction(dhandler, nets, config, device, logger, figna
 def plot_rollout_reconstructions(imgs, actions, nets, device, logger, 
                                  n_rollouts:int=7, powers:bool=False, 
                                  n_images:Optional[int]=None, 
-                                 savefig:bool=False, path:str='', 
-                                 log_wandb:bool=False):
+                                 savefig:bool=False, savedir:str='', 
+                                 log_wandb:bool=False, 
+                                 figname:str="rollouts_reconstructions",
+                                 epoch:Optional[int]=None):
     """
     Plots the reconstructions of the first `n_{rollouts}` rollouts.
 
@@ -262,21 +269,24 @@ def plot_rollout_reconstructions(imgs, actions, nets, device, logger,
             axs[row*2+1,col].imshow(X_hat[row,indices[col]], **kwargs)
             axs[row*2+1,col].axis('off')
     
-    figname = f'rollout_reconstructions'
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
-    figname = os.path.basename(path).split('.')[0]
+    title = figname.split('.')[0]
     if savefig:
-        plt.savefig(path)
-        logger.info(f'Figure saved {path}')
+        if epoch is not None:
+            figname = '{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
     if log_wandb:
-        wandb.log({f'plot/{figname}':wandb.Image(plt)})
+        wandb.log({f'plot/rollouts/{title}':wandb.Image(plt)})
     plt.close(fig)
 
 
 def plot_manifold(representations, true_latents, logger, plot_on_black:bool=False, 
-                  log_wandb:bool=False, label:str='', path:str='', 
-                  savefig:bool=False):
+                  log_wandb:bool=False, label:str='', savedir:str='', 
+                  savefig:bool=False, figname:str="manifold", 
+                  epoch:Optional[int]=None):
     kwargs={}
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
     if plot_on_black:
@@ -303,19 +313,24 @@ def plot_manifold(representations, true_latents, logger, plot_on_black:bool=Fals
         ax.set_ylabel(f'repr unit 1', fontsize=ts)
         plt.colorbar(f)
 
-    figname = os.path.basename(path).split('.')[0]
-    ax.set_title(figname)
+    title = figname.split('.')[0]
+    ax.set_title(title)
     if savefig:
-        plt.savefig(path)
-        logger.info(f'Figure saved {path}')
+        if epoch is not None:
+            figname = '{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
     if log_wandb:
-        wandb.log({f'plot/{figname}':wandb.Image(plt)})
+        wandb.log({f'plot/manifold/{title}':wandb.Image(plt)})
     plt.close(fig)
 
 
 def plot_manifold_markers(latents_clr, latents_mrk, representations, logger,
                           plot_on_black:bool=False, log_wandb:bool=False, 
-                          path:str=None, savefig:bool=False):
+                          savedir:str=None, savefig:bool=False, 
+                          figname:str="manifold",
+                          epoch:Optional[int]=None):
     """
     Plots a scatter plot of the representation manifold with 
     colors and markers corresponding to the true latents.
@@ -359,13 +374,16 @@ def plot_manifold_markers(latents_clr, latents_mrk, representations, logger,
     
     plt.colorbar(f)
     
-    figname = os.path.basename(path).split('.')[0]
-    ax.set_title(figname)
+    title = figname.split('.')[0]
+    ax.set_title(title)
     if savefig:
-        plt.savefig(path)
-        logger.info(f'Figure saved {path}')
+        if epoch is not None:
+            figname = '{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
     if log_wandb:
-        wandb.log({f'plot/{figname}':wandb.Image(plt)})
+        wandb.log({f'plot/manifold/{title}':wandb.Image(plt)})
     plt.close(fig)
 
 

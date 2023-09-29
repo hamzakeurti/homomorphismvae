@@ -342,9 +342,7 @@ class Obj3dDataset(TransitionDataset):
         and logs it to WandB as well.
         """
 
-        figname = f'{epoch} - reconstructions.pdf'
-
-        fig_path = os.path.join(figdir, figname)
+        figname = f'reconstructions.pdf'
 
         imgs, latents, actions = self.get_val_batch()
 
@@ -352,8 +350,8 @@ class Obj3dDataset(TransitionDataset):
                 imgs, actions, nets, device, logger, 
                 plot_on_black=config.plot_on_black, 
                 n_steps=self._n_transitions, n_examples=7, 
-                savefig=config.savefig, path=fig_path, 
-                log_wandb=config.log_wandb)
+                savefig=config.savefig, savedir=figdir, 
+                log_wandb=config.log_wandb, epoch=epoch, figname=figname)
 
 
     def plot_rollout_reconstruction(self, nets, config, device, logger, epoch, 
@@ -364,16 +362,14 @@ class Obj3dDataset(TransitionDataset):
         This method saves the figure in the `figname` path,
         and logs it to WandB as well.
         """
-        figname = f'{epoch} - rollouts_reconstructions.pdf'
-
-        fig_path = os.path.join(figdir, figname)
+        figname = f'rollouts_reconstructions.pdf'
 
         X, a = self.get_n_rollouts(7)
 
         plt_utils.plot_rollout_reconstructions(
                 X, a, nets, device, logger, n_rollouts=7, powers=True, 
-                savefig=config.savefig, path=fig_path, 
-                log_wandb=config.log_wandb)
+                savefig=config.savefig, savedir=figdir, epoch=epoch, 
+                figname=figname, log_wandb=config.log_wandb)
 
 
 if __name__ == '__main__':

@@ -221,9 +221,7 @@ class HDF5Dataset(TransitionDataset):
         and logs it to WandB as well.
         """
 
-        figname = f'{epoch} - reconstructions.pdf'
-
-        fig_path = os.path.join(figdir, figname)
+        figname = f'reconstructions.pdf'
 
         imgs, _, actions = self.get_val_batch()
 
@@ -231,8 +229,8 @@ class HDF5Dataset(TransitionDataset):
                 imgs, actions, nets, device, logger, 
                 plot_on_black=config.plot_on_black, 
                 n_steps=self._n_transitions, n_examples=7, 
-                savefig=config.savefig, path=fig_path, 
-                log_wandb=config.log_wandb)
+                savefig=config.savefig, savedir=figdir, 
+                log_wandb=config.log_wandb, epoch=epoch, figname=figname)
 
 
 
@@ -244,16 +242,14 @@ class HDF5Dataset(TransitionDataset):
         This method saves the figure in the `figname` path,
         and logs it to WandB as well.
         """
-        figname = f'{epoch} - rollouts_reconstructions.pdf'
-
-        fig_path = os.path.join(figdir, figname)
+        figname = f'rollouts_reconstructions.pdf'
 
         X, a = self.get_n_rollouts(config.plot_n_rollouts)
 
         plt_utils.plot_rollout_reconstructions(
                 X, a, nets, device, logger, n_rollouts=config.plot_n_rollouts, 
-                powers=True, savefig=config.savefig, path=fig_path, 
-                log_wandb=config.log_wandb)
+                powers=True, savefig=config.savefig, savedir=figdir, 
+                log_wandb=config.log_wandb, epoch=epoch, figname=figname)
 
 
 
