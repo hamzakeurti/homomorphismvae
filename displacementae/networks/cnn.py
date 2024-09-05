@@ -98,7 +98,7 @@ class CNN(nn.Module):
 
         # Linear layers
         if len(self._lin_layers) != 0:
-            out = out.view([-1, self._lin_channels[0]])
+            out = out.reshape([-1, self._lin_channels[0]])
         for l in range(len(self._lin_layers)):
             out = self._lin_layers[l](out)
             is_last_layer = (l == len(self._lin_layers) - 1)

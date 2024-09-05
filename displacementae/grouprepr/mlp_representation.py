@@ -74,7 +74,7 @@ class MLPRepresentation(GroupRepresentation):
             use_exponential = self.exponential_map
         a = self.varphi(a)
         R = self.net(a)
-        R = R.view(-1, self.dim_representation, self.dim_representation)
+        R = R.reshape(-1, self.dim_representation, self.dim_representation)
         if use_exponential:
             R = torch.matrix_exp(R) 
         return R
@@ -86,7 +86,7 @@ class MLPRepresentation(GroupRepresentation):
         """
         a = self.varphi(a)
         R = self.net(a)
-        R = R.view(-1, self.dim_representation, self.dim_representation)
+        R = R.reshape(-1, self.dim_representation, self.dim_representation)
         return R
 
 

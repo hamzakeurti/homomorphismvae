@@ -92,7 +92,7 @@ class TransposedCNN(nn.Module):
                 out = self._activation_fn(out)
 
         if len(self._lin_layers) != 0:
-            out = out.view([-1, self._conv_channels[0]]+self._fm_shapes[0])
+            out = out.reshape([-1, self._conv_channels[0]]+self._fm_shapes[0])
 
         # Transposed Convolutions
         for l in range(len(self._conv_layers)):

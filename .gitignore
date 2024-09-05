@@ -24,3 +24,5 @@ dist/*
 displacementae/homomorphism_autoencoder.egg-info/PKG-INFO
 out/*
 docs/build/*
+displacementae/homomorphism/hpconfigs/*
+displacementae/supervised/hpconfigs/*
