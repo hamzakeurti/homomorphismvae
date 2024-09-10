@@ -17,7 +17,7 @@ The package can be installed by first building the package through:
 ```
 Then it can be installed in your environment through:
 ```
- $ pip install homomorphism-autoencoder-<VERSION>.tar.gz
+ $ pip install dist\homomorphism-autoencoder-<VERSION>.tar.gz
 ```
 
 ## Datasets 
