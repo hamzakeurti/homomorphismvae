@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.utils.sim_utils &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.sim_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.utils.sim_utils</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/utils/sim_utils.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :16/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">select</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.utils</span> <span class="kn">import</span> <span class="n">logger_config</span>
+
+
+<span class="n">BCE_LOWEST</span> <span class="o">=</span> <span class="s1">&#39;bce_lowest&#39;</span>
+<span class="n">KL_HIGHEST</span> <span class="o">=</span> <span class="s1">&#39;kl_highest&#39;</span>
+<span class="n">LOSS_LOWEST</span> <span class="o">=</span> <span class="s1">&#39;loss_lowest&#39;</span>
+<span class="n">LOSS_LOWEST_EPOCH</span> <span class="o">=</span> <span class="s1">&#39;loss_lowest_epoch&#39;</span>
+<span class="n">BCE_FINAL</span> <span class="o">=</span> <span class="s1">&#39;bce_final&#39;</span>
+<span class="n">KL_FINAL</span> <span class="o">=</span> <span class="s1">&#39;kl_final&#39;</span>
+<span class="n">LOSS_FINAL</span> <span class="o">=</span> <span class="s1">&#39;loss_final&#39;</span>
+<span class="n">FINISHED</span> <span class="o">=</span> <span class="s1">&#39;finished&#39;</span>
+<span class="n">NUM_WEIGHTS</span> <span class="o">=</span> <span class="s1">&#39;num_weights&#39;</span>
+
+<span class="n">_SUMMARY_KEYWORDS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># The weird prefix &quot;aa_&quot; makes sure keywords appear first in the result csv.</span>
+    <span class="n">LOSS_FINAL</span><span class="p">,</span>
+    <span class="n">LOSS_LOWEST</span><span class="p">,</span>
+    <span class="n">LOSS_LOWEST_EPOCH</span><span class="p">,</span>
+
+    <span class="n">BCE_FINAL</span><span class="p">,</span>
+    <span class="n">BCE_LOWEST</span><span class="p">,</span>
+    
+    <span class="c1"># The following are only relevant for variational models.</span>
+    <span class="n">KL_FINAL</span><span class="p">,</span>
+    <span class="n">KL_HIGHEST</span><span class="p">,</span>
+    
+    
+    <span class="n">NUM_WEIGHTS</span><span class="p">,</span>
+
+    <span class="c1"># Should be set in your program when the execution finished successfully.</span>
+    <span class="n">FINISHED</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="setup_environment"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.sim_utils.setup_environment">[docs]</a><span class="k">def</span> <span class="nf">setup_environment</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets up output directory and logger.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">### Output folder.</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">):</span>
+        <span class="c1"># TODO allow continuing from an old checkpoint.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The output folder </span><span class="si">%s</span><span class="s1"> already exists. &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">)</span> <span class="o">+</span> \
+              <span class="s1">&#39;Do you want us to delete it? [y/n]&#39;</span><span class="p">)</span>
+        <span class="n">inps</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inps</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Timeout occurred. No user input received!&#39;</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="s1">&#39;n&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">response</span> <span class="o">!=</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;Could not delete output folder!&#39;</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">)</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Created output folder </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Created output folder </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">))</span>
+
+    <span class="n">figs_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span><span class="s1">&#39;figures&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">no_plots</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">figs_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">figs_dir</span><span class="p">)</span>
+    
+    <span class="n">ckpt_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span><span class="s1">&#39;checkpoint&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">ckpt_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ckpt_dir</span><span class="p">)</span> 
+
+    <span class="c1"># Save user configs to ensure reproducibility of this experiment.</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;config.pickle&#39;</span><span class="p">),</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="c1"># A JSON file is easier to read for a human.</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;config.json&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">config</span><span class="p">),</span> <span class="n">f</span><span class="p">,</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1">### Logger</span>
+    <span class="n">logger_name</span> <span class="o">=</span> <span class="s1">&#39;logger&#39;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logger_config</span><span class="o">.</span><span class="n">config_logger</span><span class="p">(</span><span class="n">logger_name</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;logfile.txt&#39;</span><span class="p">),</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    
+    <span class="c1">### Deterministic computation.</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
+
+    <span class="c1">### Torch Device</span>
+    <span class="n">use_cuda</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">use_cuda</span>
+    <span class="k">if</span> <span class="n">use_cuda</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">cuda_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cuda_number</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">cuda_number</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">cuda_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using cuda : </span><span class="si">{</span><span class="n">use_cuda</span><span class="si">}</span><span class="s1"> -- Device Number </span><span class="si">{</span><span class="n">cuda_number</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">use_cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using cuda : </span><span class="si">{</span><span class="n">use_cuda</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">device</span><span class="p">,</span> <span class="n">logger</span></div>
+
+<div class="viewcode-block" id="setup_summary_dict"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.sim_utils.setup_summary_dict">[docs]</a><span class="k">def</span> <span class="nf">setup_summary_dict</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">,</span> <span class="n">nets</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Setup the summary dictionary that is written to the performance</span>
+<span class="sd">    summary file (in the result folder).</span>
+
+<span class="sd">    This method adds the keyword &quot;summary&quot; to `shared`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config: Command-line arguments.</span>
+<span class="sd">        shared: Miscellaneous data shared among training functions (summary dict</span>
+<span class="sd">            will be added to this :class:`argparse.Namespace`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="n">num</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">nets</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">])</span>
+
+
+    <span class="c1"># Note, we assume that all configs have the exact same keywords.</span>
+    <span class="n">summary_keys</span> <span class="o">=</span> <span class="n">_SUMMARY_KEYWORDS</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">summary_keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="n">LOSS_FINAL</span><span class="p">,</span><span class="n">BCE_FINAL</span><span class="p">,</span><span class="n">KL_FINAL</span><span class="p">,</span><span class="n">LOSS_LOWEST</span><span class="p">,</span><span class="n">KL_HIGHEST</span><span class="p">,</span>
+                 <span class="n">BCE_LOWEST</span><span class="p">,</span><span class="n">LOSS_LOWEST_EPOCH</span><span class="p">]:</span>
+            <span class="n">summary</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="n">NUM_WEIGHTS</span><span class="p">:</span>
+            <span class="n">summary</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">num</span>
+        <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;finished&#39;</span><span class="p">:</span>
+            <span class="n">summary</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Implementation must have changed if this exception is</span>
+            <span class="c1"># raised.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Summary argument </span><span class="si">%s</span><span class="s1"> unknown!&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="n">shared</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="n">summary</span></div>
+
+
+<div class="viewcode-block" id="save_summary_dict"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.sim_utils.save_summary_dict">[docs]</a><span class="k">def</span> <span class="nf">save_summary_dict</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write a text file in the result folder that gives a quick</span>
+<span class="sd">    overview over the results achieved so far.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        (....): See docstring of function :func:`setup_summary_dict`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># &quot;setup_summary_dict&quot; must be called first.</span>
+    <span class="k">assert</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">shared</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+
+    <span class="n">summary_fn</span> <span class="o">=</span> <span class="s1">&#39;performance_overview.txt&#39;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">summary_fn</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%f</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%d</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="backup_cli_command"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.sim_utils.backup_cli_command">[docs]</a><span class="k">def</span> <span class="nf">backup_cli_command</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write the curret CLI call into a script.</span>
+
+<span class="sd">    This will make it very easy to reproduce a run, by just copying the call</span>
+<span class="sd">    from the script in the output folder. However, this call might be ambiguous</span>
+<span class="sd">    in case default values have changed. In contrast, all default values are</span>
+<span class="sd">    backed up in the file ``config.json``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        (....): See docstring of function :func:`setup_summary_dict`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">script_name</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">run_args</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;python3 &#39;</span> <span class="o">+</span> <span class="n">script_name</span>
+    <span class="c1"># FIXME Call reconstruction fails if user passed strings with white spaces.</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">run_args</span><span class="p">:</span>
+        <span class="n">command</span> <span class="o">+=</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">arg</span>
+
+    <span class="n">fn_script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;cli_call.sh&#39;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn_script</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#!/bin/sh</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# The user invoked CLI call that caused the creation of</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# this output folder.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="save_dictionary"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.sim_utils.save_dictionary">[docs]</a><span class="k">def</span> <span class="nf">save_dictionary</span><span class="p">(</span><span class="n">shared</span><span class="p">,</span><span class="n">config</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;stats.json&#39;</span><span class="p">),</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">shared</span><span class="p">),</span><span class="n">f</span><span class="p">,</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.sim_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

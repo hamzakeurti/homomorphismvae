@@ -1,0 +1,261 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.data.armeye &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.armeye</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.data.armeye</h1><div class="highlight"><pre>
+<span></span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span><span class="n">DataLoader</span><span class="p">,</span><span class="n">Sampler</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">image</span>
+
+<div class="viewcode-block" id="ArmEyeDataset"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.ArmEyeDataset">[docs]</a><span class="k">class</span> <span class="nc">ArmEyeDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A pytorch dataset object to load samples from the arm eye dataset.</span>
+<span class="sd">    The dataset is generated from a view of a simulated invisble robotic arm holding a visible object.</span>
+<span class="sd">    Variation comes from joints movements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">LABELS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="s1">&#39;angle0&#39;</span><span class="p">,</span><span class="s1">&#39;angle1&#39;</span><span class="p">,</span><span class="s1">&#39;angle2&#39;</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="s1">&#39;y&#39;</span><span class="p">,</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">intervene</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">intervention_range</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> 
+                <span class="n">n_joints</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rseed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fixed_in_sampling</span><span class="o">=</span><span class="p">[],</span> 
+                <span class="n">fixed_values</span><span class="o">=</span><span class="p">[],</span><span class="n">fixed_in_intervention</span><span class="o">=</span><span class="p">[],</span> <span class="n">num_train</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> 
+                <span class="n">num_val</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">rseed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_train</span> <span class="o">=</span> <span class="n">num_train</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__num_val</span> <span class="o">=</span> <span class="n">num_val</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span><span class="s2">&quot;labels.npy&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span> <span class="o">=</span> <span class="n">n_joints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">joints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">n_joints</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_joints</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">n_joints</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_labels</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">intervene</span> <span class="o">=</span> <span class="n">intervene</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span> <span class="o">=</span> <span class="n">n_joints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_sampling</span> <span class="o">=</span> <span class="n">fixed_in_sampling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_values</span> <span class="o">=</span> <span class="n">fixed_values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varied_in_sampling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">joints</span> \
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_sampling</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_intervention</span> <span class="o">=</span> <span class="n">fixed_in_intervention</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">joints</span> \
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_intervention</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervene</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_intervention</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joints</span>
+
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;in_shape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;action_shape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+
+        
+
+<div class="viewcode-block" id="ArmEyeDataset.process_labels"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.ArmEyeDataset.process_labels">[docs]</a>    <span class="k">def</span> <span class="nf">process_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">new_labels</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_ids</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_ids</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">joint_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">joint_n_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span><span class="p">):</span>
+            <span class="n">unique_vals</span><span class="p">,</span><span class="n">new_labels</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">joints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">joints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span><span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">joint_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">unique_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">joint_n_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_vals</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_labels</span></div>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervene</span><span class="p">:</span>
+            <span class="n">i2</span><span class="p">,</span><span class="n">dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_intervene</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="n">i2</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">i2</span><span class="p">],</span><span class="n">dj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">img</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ArmEyeDataset.load_image"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.ArmEyeDataset.load_image">[docs]</a>    <span class="k">def</span> <span class="nf">load_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="n">img_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.jpeg&#39;</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">img_file</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span>
+        <span class="k">return</span> <span class="n">img</span></div>
+    
+<div class="viewcode-block" id="ArmEyeDataset.f_intervene"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.ArmEyeDataset.f_intervene">[docs]</a>    <span class="k">def</span> <span class="nf">f_intervene</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="c1"># intervention in the vicinity in the joints space </span>
+        <span class="n">joints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">joints_ids</span><span class="p">]</span>
+        <span class="c1">#sample displacement</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_intervention</span><span class="p">:</span>
+            <span class="n">len_dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fixed_in_intervention</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">len_dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span>
+        <span class="n">dj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_joints</span><span class="p">)</span>
+        <span class="n">dj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rand</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+            <span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">intervention_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">intervention_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">len_dj</span><span class="p">)</span>
+        <span class="n">new_joints</span> <span class="o">=</span> <span class="n">joints</span>
+        <span class="n">new_joints</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">joints</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span><span class="p">]</span> <span class="o">+</span> <span class="n">dj</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">joint_n_vals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">intervened_on</span><span class="p">]</span>
+        <span class="n">i2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="n">new_joints</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">i2</span><span class="p">,</span><span class="n">dj</span></div>
+
+<div class="viewcode-block" id="ArmEyeDataset.get_index"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.ArmEyeDataset.get_index">[docs]</a>    <span class="k">def</span> <span class="nf">get_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">joints</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">num</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">joint_n_vals</span><span class="p">))):</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="n">joints</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">base</span>
+            <span class="n">base</span> <span class="o">*=</span> <span class="n">num</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">in_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;in_shape&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">action_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;action_shape&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FixedJointsSampler"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.FixedJointsSampler">[docs]</a><span class="k">class</span> <span class="nc">FixedJointsSampler</span><span class="p">(</span><span class="n">Sampler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fixed_joints</span><span class="p">,</span><span class="n">fixed_values</span><span class="p">,</span><span class="n">dataset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span> <span class="o">=</span> <span class="n">fixed_joints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="n">fixed_values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">facs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="n">dataset</span><span class="o">.</span><span class="n">n_joints</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fixed</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fixed</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumulative_product</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mi">1</span><span class="p">],</span><span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">joint_n_vals</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cum_prod_fix</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">f</span><span class="p">,</span><span class="n">num</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">joint_n_vals</span><span class="p">))):</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span> <span class="o">*=</span> <span class="n">num</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cum_prod_fix</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span><span class="p">)</span>
+        
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span>
+    
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">random</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span><span class="p">)),</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span><span class="p">))</span>
+
+<div class="viewcode-block" id="FixedJointsSampler.get_index"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.armeye.FixedJointsSampler.get_index">[docs]</a>    <span class="k">def</span> <span class="nf">get_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Transfers indices from range (0,self.n_samples) to indices of samples in the dataset with desired fixed factors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">joint_n_vals</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">facs</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">facs</span><span class="p">[</span><span class="n">f</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">cumulative_product</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">f</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">+=</span> <span class="p">((</span><span class="n">i</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cum_prod_fix</span><span class="p">[</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">cum_prod_fix</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumulative_product</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">f</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="n">ret</span></div></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="c1"># if __name__ == &#39;__main__&#39;:</span>
+<span class="c1">#     root = os.path.expanduser(&#39;~/datasets/armeye/sphere_v1/transparent_small/&#39;)</span>
+<span class="c1">#     dataset = ArmEyeDataset(root,n_joints=3,intervene=True,fixed_joints=[2])</span>
+<span class="c1">#     dataloader = DataLoader(dataset,batch_size=50)</span>
+<span class="c1">#     for x,y,x2,y2,dj in dataloader:</span>
+<span class="c1">#         break</span>
+<span class="c1">#     print(x.shape)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.armeye</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

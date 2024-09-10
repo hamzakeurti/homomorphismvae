@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.data.obj3d.generate_dataset_mju &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css" />
+    
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d.generate_dataset_mju</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.data.obj3d.generate_dataset_mju</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">__init__</span>
+
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;Linux&#39;</span><span class="p">:</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MUJOCO_GL&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;egl&#39;</span> 
+<span class="kn">import</span> <span class="nn">mujoco</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;HDF5_USE_FILE_LOCKING&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;FALSE&#39;</span> 
+
+<span class="kn">from</span> <span class="nn">displacementae.data.obj3d.world_model</span> <span class="kn">import</span> <span class="n">WorldModel</span>
+<span class="kn">from</span> <span class="nn">displacementae.utils</span> <span class="kn">import</span> <span class="n">misc</span>
+
+<div class="viewcode-block" id="parse_args"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.generate_dataset_mju.parse_args">[docs]</a><span class="k">def</span> <span class="nf">parse_args</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse command line arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Generate a dataset of object transitions.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--object_dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory containing .obj files.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--object_name&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of the object to be rendered. Needs to &quot;</span> <span class="o">+</span> 
+                             <span class="s2">&quot; be the same as .obj file&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--output_path&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to save the dataset.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_samples&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of samples to generate.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of action steps per sample.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rotation_range&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;0,</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Range of rotations in radians.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rotation_format&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;quat&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;quat&#39;</span><span class="p">,</span> <span class="s1">&#39;mat&#39;</span><span class="p">,</span> <span class="s1">&#39;euler&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Format of the rotations.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--color&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to act on color or not.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--continuous_color&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether hues are continuously sampled.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--color_range&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Range of color displacements. &#39;</span> <span class="o">+</span> 
+                        <span class="s1">&#39;If --continuous_color, this is a float between &#39;</span> <span class="o">+</span> 
+                        <span class="s1">&#39;0 and 1. With 1 corresponding to the whole &#39;</span> <span class="o">+</span> 
+                        <span class="s1">&#39;color wheel.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_colors&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of equally spaced colors on the hue &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;wheel.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--figsize&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;72,72&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Size of the rendered image.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Random seed.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to print progress.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--write_batch_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Size of the batches of samples written at the &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;same time on the hdf5 file.&#39;</span><span class="p">)</span>
+    
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span></div>
+
+
+<div class="viewcode-block" id="generate_transitions"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.generate_dataset_mju.generate_transitions">[docs]</a><span class="k">def</span> <span class="nf">generate_transitions</span><span class="p">(</span><span class="n">world_model</span><span class="p">:</span><span class="n">WorldModel</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> 
+                         <span class="n">rot_range</span><span class="p">:</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> 
+                         <span class="n">rotation_format</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;quat&#39;</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">continuous_color</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                         <span class="n">n_colors</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                         <span class="n">color_range</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span><span class="nb">float</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span>
+                         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> 
+                                    <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> 
+                                    <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a dataset of transitions (image, action, image,...) .</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n_color_params</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">color</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># Initialize arrays</span>
+    <span class="n">n_rotation_params</span> <span class="o">=</span> <span class="n">get_n_rotation_params</span><span class="p">(</span><span class="n">rotation_format</span><span class="p">)</span> 
+    <span class="n">n_actions</span> <span class="o">=</span> <span class="n">n_rotation_params</span> <span class="o">+</span> <span class="n">n_color_params</span>
+    <span class="n">n_poses</span> <span class="o">=</span> <span class="n">n_actions</span>
+    <span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">*</span><span class="n">world_model</span><span class="o">.</span><span class="n">figsize</span><span class="p">),</span> 
+                      <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_poses</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Sample initial orientations (euler angles).</span>
+    <span class="n">euler</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">quat</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">euler_to_quat</span><span class="p">(</span><span class="n">euler</span><span class="p">)</span>
+
+    <span class="c1"># sample rotations</span>
+    <span class="n">deuler</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">rot_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rot_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> 
+                               <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">dquat</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">euler_to_quat</span><span class="p">(</span><span class="n">deuler</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;euler&#39;</span><span class="p">:</span>
+        <span class="n">poses</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="n">n_rotation_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">euler</span>
+        <span class="n">actions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">n_rotation_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">deuler</span>
+    <span class="k">elif</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;quat&#39;</span><span class="p">:</span>
+        <span class="n">poses</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="n">n_rotation_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">quat</span>
+        <span class="n">actions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">n_rotation_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">dquat</span>
+    <span class="k">elif</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;mat&#39;</span><span class="p">:</span>
+        <span class="n">poses</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:</span><span class="n">n_rotation_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">quat_to_mat</span><span class="p">(</span><span class="n">quat</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">actions</span><span class="p">[:,:,:</span><span class="n">n_rotation_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">quat_to_mat</span><span class="p">(</span><span class="n">dquat</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">continuous_color</span> <span class="ow">and</span> <span class="n">n_colors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">color_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;color_range and at least one of n_colors or &quot;</span> <span class="o">+</span>
+                             <span class="s2">&quot;continuous_colors must be specified when &quot;</span> <span class="o">+</span> 
+                             <span class="s2">&quot;color is True.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">continuous_color</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">n_colors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_range</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">hues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_colors</span><span class="p">)</span><span class="o">/</span><span class="n">n_colors</span> <span class="c1"># hue colors from 0 to 1</span>
+            <span class="n">colors_rgb</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">hue_to_rgb</span><span class="p">(</span><span class="n">hues</span><span class="p">)</span>
+            <span class="n">colors_rgba</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">colors_rgb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">n_colors</span><span class="p">,</span><span class="mi">1</span><span class="p">])],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># sample initial colors</span>
+            <span class="n">poses</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_colors</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)</span>
+            <span class="c1"># sample color displacements</span>
+            <span class="n">actions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">color_range</span><span class="p">,</span> <span class="n">color_range</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                                                    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">))</span>
+            <span class="n">poses</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">actions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">poses</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">poses</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n_colors</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_range</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+            <span class="c1"># sample initial hues</span>
+            <span class="n">poses</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)</span>
+            <span class="c1"># sample hue displacements</span>
+            <span class="n">actions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">))</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="o">*</span> <span class="n">color_range</span>
+            <span class="c1"># compute hues for next steps</span>
+            <span class="n">poses</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">actions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">poses</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">poses</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span>
+            <span class="c1"># convert hues to rgba</span>
+            <span class="n">colors_rgba</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">n_samples</span><span class="p">,</span><span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+            <span class="n">colors_rgba</span><span class="p">[</span><span class="o">...</span><span class="p">,:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">hue_to_rgb</span><span class="p">(</span><span class="n">poses</span><span class="p">[:,:,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)):</span>
+        <span class="c1"># Sample initial color</span>
+        <span class="c1"># if color:</span>
+        <span class="c1">#     color = np.random.randint(0, n_colors)</span>
+        <span class="c1">#     poses[i, 0, 4] = color</span>
+
+        <span class="c1"># Sample initial image</span>
+        <span class="n">world_model</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">quat</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">continuous_color</span><span class="p">:</span>
+                <span class="n">world_model</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors_rgba</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">poses</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">world_model</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors_rgba</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">world_model</span><span class="o">.</span><span class="n">render</span><span class="p">(),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Sample subsequent images</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+            <span class="c1"># Update pose</span>
+            <span class="n">world_model</span><span class="o">.</span><span class="n">rotate_by</span><span class="p">(</span><span class="n">dquat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+            <span class="n">quat_pose</span> <span class="o">=</span> <span class="n">world_model</span><span class="o">.</span><span class="n">orientation</span>
+            <span class="k">if</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;euler&#39;</span><span class="p">:</span>
+                <span class="n">poses</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">quat_to_euler</span><span class="p">(</span><span class="n">quat_pose</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;quat&#39;</span><span class="p">:</span>
+                <span class="n">poses</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">quat_pose</span>
+            <span class="k">elif</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;mat&#39;</span><span class="p">:</span>
+                <span class="n">poses</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">quat_to_mat</span><span class="p">(</span><span class="n">quat_pose</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">continuous_color</span><span class="p">:</span>
+                    <span class="n">world_model</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors_rgba</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">poses</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">world_model</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors_rgba</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># Update image</span>
+            <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">world_model</span><span class="o">.</span><span class="n">render</span><span class="p">(),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">/</span><span class="mf">255.0</span>
+    <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="n">actions</span><span class="p">,</span> <span class="n">poses</span></div>
+
+
+<div class="viewcode-block" id="get_n_rotation_params"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.generate_dataset_mju.get_n_rotation_params">[docs]</a><span class="k">def</span> <span class="nf">get_n_rotation_params</span><span class="p">(</span><span class="n">rotation_format</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;quat&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">4</span> 
+    <span class="k">elif</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;euler&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">3</span>
+    <span class="k">elif</span> <span class="n">rotation_format</span> <span class="o">==</span> <span class="s1">&#39;mat&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">9</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown rotation format: </span><span class="si">{</span><span class="n">rotation_format</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.generate_dataset_mju.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Generating dataset...&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Parsing arguments...&#39;</span><span class="p">)</span>
+    <span class="n">figsize</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">figsize</span><span class="p">))</span>
+    <span class="n">rots_range</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">misc</span><span class="o">.</span><span class="n">str_to_floats</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">rotation_range</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Creating world model...&#39;</span><span class="p">)</span>
+    <span class="n">world_model</span> <span class="o">=</span> <span class="n">WorldModel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">object_dir</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">object_name</span><span class="p">,</span> 
+                             <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Generating transitions...&#39;</span><span class="p">)</span>
+    
+    <span class="n">color_rng</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+        <span class="n">color_rng</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">color_range</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">continuous_color</span> \
+                 <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">color_range</span><span class="p">)</span>
+
+    <span class="n">imgs</span><span class="p">,</span> <span class="n">acts</span><span class="p">,</span> <span class="n">poses</span> <span class="o">=</span> <span class="n">generate_transitions</span><span class="p">(</span>
+                <span class="n">world_model</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span>
+                <span class="n">rot_range</span><span class="o">=</span><span class="n">rots_range</span><span class="p">,</span> <span class="n">rotation_format</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">rotation_format</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">continuous_color</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">continuous_color</span><span class="p">,</span> 
+                <span class="n">n_colors</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">n_colors</span><span class="p">,</span> <span class="n">color_range</span><span class="o">=</span><span class="n">color_rng</span><span class="p">)</span>
+    
+    <span class="n">n_color_params</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">color</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># Initialize arrays</span>
+    <span class="n">n_rotation_params</span> <span class="o">=</span> <span class="n">get_n_rotation_params</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">rotation_format</span><span class="p">)</span> 
+    <span class="n">n_actions</span> <span class="o">=</span> <span class="n">n_rotation_params</span> <span class="o">+</span> <span class="n">n_color_params</span>
+
+
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_path</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Saving in HDF5...&#39;</span><span class="p">)</span>
+        <span class="n">kwargs_images</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;dtype&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+            <span class="s1">&#39;shape&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                                                <span class="n">figsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> 
+            <span class="s1">&#39;maxshape&#39;</span><span class="p">:(</span><span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                                                <span class="n">figsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">}</span>
+        <span class="n">kwargs_actions</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;dtype&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+            <span class="s1">&#39;shape&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">),</span> 
+            <span class="s1">&#39;maxshape&#39;</span><span class="p">:(</span><span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">kwargs_pos</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;dtype&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+            <span class="s1">&#39;shape&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">),</span> 
+            <span class="s1">&#39;maxshape&#39;</span><span class="p">:(</span><span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;n_samples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">n_samples</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;n_steps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">n_steps</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rotation_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">rotation_range</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">color</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;color_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">color_rng</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;continuous_color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">continuous_color</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;n_colors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">continuous_color</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">n_colors</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">figsize</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">seed</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rotation_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">rotation_format</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;continuous&#39;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;translate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">dset_imgs</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_images</span><span class="p">)</span>
+        <span class="n">dset_act</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;actions&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_actions</span><span class="p">)</span>
+        <span class="n">dset_pos</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;positions&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_pos</span><span class="p">)</span>
+
+        <span class="n">bsize</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">write_batch_size</span>
+        <span class="n">n_batches</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">n_samples</span> <span class="o">//</span> <span class="n">bsize</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_batches</span><span class="p">)):</span>
+            <span class="n">dset_imgs</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">bsize</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">bsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">imgs</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">bsize</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">bsize</span><span class="p">]</span>
+            <span class="n">dset_act</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">bsize</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">bsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">acts</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">bsize</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">bsize</span><span class="p">]</span>
+            <span class="n">dset_pos</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">bsize</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">bsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">poses</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">bsize</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">bsize</span><span class="p">]</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d.generate_dataset_mju</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

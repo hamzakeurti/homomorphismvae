@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.networks.cnn &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks.cnn</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.networks.cnn</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/networks/cnn.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :17/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="CNN"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.cnn.CNN">[docs]</a><span class="k">class</span> <span class="nc">CNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape_in</span><span class="p">,</span> <span class="n">kernel_sizes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+                <span class="n">conv_channels</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span> <span class="n">linear_channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                <span class="n">use_bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">activation_fn</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A convolutional neural network with convolutional layers </span>
+<span class="sd">        followed by a linear readout.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            shape_in (tuple, optional): tuple of height, width of the input, </span>
+<span class="sd">                channels should be specified in conv_channels argument.</span>
+<span class="sd">            kernel_sizes (int, optional): [description]. Defaults to 5.</span>
+<span class="sd">            conv_channels (list, optional): [description].</span>
+<span class="sd">            linear_channels (list, optional): [description]. Defaults to [20].</span>
+<span class="sd">            use_bias (bool, optional): [description]. Defaults to True.</span>
+<span class="sd">            use_bn (bool, optional): [description]. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="o">=</span> <span class="n">activation_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_bias</span> <span class="o">=</span> <span class="n">use_bias</span>
+ 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shape_in</span> <span class="o">=</span> <span class="n">shape_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conv_channels</span> <span class="o">=</span> <span class="n">conv_channels</span>
+        <span class="n">n_conv</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_channels</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kernel_sizes</span> <span class="o">=</span> <span class="n">kernel_sizes</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kernel_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">kernel_sizes</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_conv</span><span class="p">)]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span> <span class="o">=</span> <span class="n">strides</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strides</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span> <span class="o">=</span> <span class="p">[</span><span class="n">strides</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_conv</span><span class="p">)]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conv_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_conv</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
+                <span class="n">in_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_channels</span><span class="p">[</span><span class="n">l</span><span class="p">],</span>
+                <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_channels</span><span class="p">[</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_kernel_sizes</span><span class="p">[</span><span class="n">l</span><span class="p">],</span>
+                <span class="n">stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="n">l</span><span class="p">],</span>
+                <span class="n">bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_use_bias</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fm_shapes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">shape_in</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_conv</span><span class="p">):</span>
+            <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fm_shapes</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+            <span class="n">new_h</span> <span class="o">=</span> <span class="p">(</span><span class="n">h</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kernel_sizes</span><span class="p">[</span><span class="n">l</span><span class="p">])</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">new_w</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kernel_sizes</span><span class="p">[</span><span class="n">l</span><span class="p">])</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fm_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">new_h</span><span class="p">,</span> <span class="n">new_w</span><span class="p">])</span>
+
+        <span class="n">n_lin</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">linear_channels</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">linear_channels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_conv_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fm_shapes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_channels</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">linear_channels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lin_channels</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_conv_out</span><span class="p">]</span> <span class="o">+</span> <span class="n">linear_channels</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_lin</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_lin_channels</span><span class="p">[</span><span class="n">l</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_lin_channels</span><span class="p">[</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_use_bias</span><span class="p">))</span>
+
+<div class="viewcode-block" id="CNN.forward"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.cnn.CNN.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="c1"># Convolutions</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_layers</span><span class="p">)):</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conv_layers</span><span class="p">[</span><span class="n">l</span><span class="p">](</span><span class="n">out</span><span class="p">)</span>
+            <span class="n">is_last_layer</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_layers</span><span class="p">)</span> <span class="o">-</span>
+                             <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_last_layer</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="c1"># Linear layers</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lin_channels</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span><span class="p">)):</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span><span class="p">[</span><span class="n">l</span><span class="p">](</span><span class="n">out</span><span class="p">)</span>
+            <span class="n">is_last_layer</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lin_layers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_last_layer</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">out</span></div></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks.cnn</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

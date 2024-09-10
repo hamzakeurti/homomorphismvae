@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.grouprepr.prodrepr.action_lookup &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css" />
+    
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.grouprepr.prodrepr.action_lookup</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.grouprepr.prodrepr.action_lookup</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :networks/geometric/prodrepr/product_represenation.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :04/02/2022</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Group representation of actions into a product of rotation matrices</span>
+<span class="sd">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+
+<span class="sd">Adapted from </span>
+<span class="sd">`Quessard et al. 2020 &lt;https://github.com/IndustAI/learning-group-structure&gt;`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.prodrepr.product_representation</span> <span class="kn">import</span> <span class="n">ProductRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.group_representation</span> <span class="kn">import</span> <span class="n">GroupRepresentation</span>
+
+
+<div class="viewcode-block" id="ActionLookup"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup">[docs]</a><span class="k">class</span> <span class="nc">ActionLookup</span><span class="p">(</span><span class="n">GroupRepresentation</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_action_units</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dim_representation</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">repr_loss_on</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">repr_loss_weight</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n_action_units</span><span class="p">,</span> <span class="n">dim_representation</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                         <span class="n">repr_loss_on</span><span class="o">=</span><span class="n">repr_loss_on</span><span class="p">,</span>
+                         <span class="n">repr_loss_weight</span><span class="o">=</span><span class="n">repr_loss_weight</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">ProductRepresentation</span><span class="p">(</span><span class="n">dim_representation</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_action_units</span><span class="p">)])</span>
+
+<div class="viewcode-block" id="ActionLookup.forward"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">get_matrix</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">R</span></div>
+
+<div class="viewcode-block" id="ActionLookup.act"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.act">[docs]</a>    <span class="k">def</span> <span class="nf">act</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActionLookup.get_representation_params"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.get_representation_params">[docs]</a>    <span class="k">def</span> <span class="nf">get_representation_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rep</span><span class="o">.</span><span class="n">thetas</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span></div>
+
+<div class="viewcode-block" id="ActionLookup.end_iteration"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.end_iteration">[docs]</a>    <span class="k">def</span> <span class="nf">end_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_representations</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ActionLookup.representation_loss"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.representation_loss">[docs]</a>    <span class="k">def</span> <span class="nf">representation_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entanglement_loss</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ActionLookup.clear_representations"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.clear_representations">[docs]</a>    <span class="k">def</span> <span class="nf">clear_representations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">:</span>
+            <span class="n">rep</span><span class="o">.</span><span class="n">clear_matrix</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ActionLookup.save_representations"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.save_representations">[docs]</a>    <span class="k">def</span> <span class="nf">save_representations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;.pth&#39;</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="s1">&#39;.pth&#39;</span>
+        <span class="n">rep_thetas</span> <span class="o">=</span> <span class="p">[</span><span class="n">rep</span><span class="o">.</span><span class="n">thetas</span> <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">rep_thetas</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActionLookup.load_reprentations"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.load_reprentations">[docs]</a>    <span class="k">def</span> <span class="nf">load_reprentations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">rep_thetas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">:</span>
+            <span class="n">rep</span><span class="o">.</span><span class="n">set_thetas</span><span class="p">(</span><span class="n">rep_thetas</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ActionLookup.entanglement_loss"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.entanglement_loss">[docs]</a>    <span class="k">def</span> <span class="nf">entanglement_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">+=</span> <span class="n">rep</span><span class="o">.</span><span class="n">entanglement_loss</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">loss</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_reps</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActionLookup.get_example_repr"><a class="viewcode-back" href="../../../../displacementae.grouprepr.prodrepr.html#displacementae.grouprepr.prodrepr.action_lookup.ActionLookup.get_example_repr">[docs]</a>    <span class="k">def</span> <span class="nf">get_example_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">IntTensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_example_repr</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.grouprepr.prodrepr.action_lookup</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

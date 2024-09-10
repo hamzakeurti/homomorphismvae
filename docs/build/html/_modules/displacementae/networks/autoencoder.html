@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.networks.autoencoder &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks.autoencoder</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.networks.autoencoder</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/networks/autoencoder.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :17/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.group_representation</span> <span class="kn">import</span> <span class="n">GroupRepresentation</span>
+
+<span class="kn">import</span> <span class="nn">displacementae.networks.variational_utils</span> <span class="k">as</span> <span class="nn">var_utils</span>
+
+<div class="viewcode-block" id="AutoEncoder"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.autoencoder.AutoEncoder">[docs]</a><span class="k">class</span> <span class="nc">AutoEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An autoencoder neural network with group transformation applied to </span>
+<span class="sd">    the latent space.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        encoder, nn.Module: Encoder Network. Maps inputs to a representation </span>
+<span class="sd">                        vector or to parameters of a posterior distribution </span>
+<span class="sd">                        in the variational case. </span>
+<span class="sd">        decoder, nn.Module: Decoder Network. Maps a representation </span>
+<span class="sd">                        vector back in the input space. </span>
+<span class="sd">        grp_transformation, nn.Module: Maps an action to a transformation of</span>
+<span class="sd">                        the representation space.</span>
+<span class="sd">        n_repr_units, int: Dimensionality of the representation space.</span>
+<span class="sd">                        :note: In the variational case, this does not </span>
+<span class="sd">                        correspond to the dimensionality of the </span>
+<span class="sd">                        encoder&#39;s output space.</span>
+<span class="sd">        specified_step, array: If parameters of the grp_transformation are </span>
+<span class="sd">                        not learned, they can be provided through this </span>
+<span class="sd">                        argument. defaults to 0</span>
+<span class="sd">        variational, bool: If True, the encoder describes a distribution instead </span>
+<span class="sd">                        of being deterministic, defaults to True.</span>
+<span class="sd">        intervene, bool: If true actions are provided and are used to transform </span>
+<span class="sd">                        the encoded representations, defaults to True.</span>
+<span class="sd">        spherical, bool: If True, the encoder&#39;s outputs (the location part </span>
+<span class="sd">                        in the variational case) is normalized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">grp_morphism</span><span class="p">,</span> <span class="n">n_repr_units</span><span class="p">,</span> 
+                 <span class="n">variational</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">intervene</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">spherical</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grp_morphism</span><span class="p">:</span><span class="n">GroupRepresentation</span> <span class="o">=</span> <span class="n">grp_morphism</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variational</span> <span class="o">=</span> <span class="n">variational</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intervene</span> <span class="o">=</span> <span class="n">intervene</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spherical</span> <span class="o">=</span> <span class="n">spherical</span>
+        <span class="k">if</span> <span class="n">grp_morphism</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_transform_units</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grp_morphism</span><span class="o">.</span><span class="n">dim_representation</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_transform_units</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_repr_units</span> <span class="o">=</span> <span class="n">n_repr_units</span>
+
+<div class="viewcode-block" id="AutoEncoder.encode"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.autoencoder.AutoEncoder.encode">[docs]</a>    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variational</span><span class="p">:</span>
+            <span class="n">half</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+            <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span> <span class="o">=</span> <span class="n">h</span><span class="p">[:,</span> <span class="p">:</span> <span class="n">half</span><span class="p">],</span> <span class="n">h</span><span class="p">[:,</span> <span class="n">half</span><span class="p">:]</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">var_utils</span><span class="o">.</span><span class="n">reparametrize</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spherical</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">[</span><span class="o">...</span><span class="p">,:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_transform_units</span><span class="p">]</span> <span class="o">=</span>\
+                 <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="o">...</span><span class="p">,:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_transform_units</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variational</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="AutoEncoder.forward"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.autoencoder.AutoEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dz</span><span class="p">):</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="c1"># Through encoder</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervene</span><span class="p">:</span>
+            <span class="c1"># Through geom</span>
+            <span class="n">transformed_h</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">grp_morphism</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">dz</span><span class="p">,</span><span class="n">h</span><span class="p">[:,:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_transform_units</span><span class="p">])</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">transformed_h</span><span class="p">,</span><span class="n">h</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">n_transform_units</span><span class="p">:]])</span>
+        <span class="c1"># Through decoder</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variational</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks.autoencoder</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

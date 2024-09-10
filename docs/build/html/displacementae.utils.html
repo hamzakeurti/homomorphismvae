@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>displacementae.utils package &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="displacementae.trajectory package" href="displacementae.trajectory.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="displacementae.trajectory.html" title="displacementae.trajectory package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >displacementae</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="displacementae.html" accesskey="U">displacementae package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="displacementae-utils-package">
+<h1>displacementae.utils package<a class="headerlink" href="#displacementae-utils-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-displacementae.utils.args">
+<span id="displacementae-utils-args-module"></span><h2>displacementae.utils.args module<a class="headerlink" href="#module-displacementae.utils.args" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.data_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">data_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'autoencoder'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#data_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.data_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.data_gen_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">data_gen_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#data_gen_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.data_gen_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.train_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">train_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#train_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.train_args" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Arguments specified in this function:</dt><dd><ul class="simple">
+<li><p><cite>batch_size</cite></p></li>
+<li><p><cite>n_iter</cite></p></li>
+<li><p><cite>epochs</cite></p></li>
+<li><p><cite>lr</cite></p></li>
+<li><p><cite>momentum</cite></p></li>
+<li><p><cite>weight_decay</cite></p></li>
+<li><p><cite>use_adam</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.net_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">net_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#net_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.net_args" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Arguments specified in this function:</dt><dd><ul class="simple">
+<li><p><cite>net_act</cite></p></li>
+<li><p><cite>conv_channels</cite></p></li>
+<li><p><cite>lin_channels</cite></p></li>
+<li><p><cite>kernel_sizes</cite></p></li>
+<li><p><cite>strides</cite></p></li>
+<li><p><cite>learn_geometry</cite></p></li>
+<li><p><cite>specified_grp_step</cite></p></li>
+<li><p><cite>variational</cite></p></li>
+<li><p><cite>beta</cite></p></li>
+<li><p><cite>n_free_latents</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.misc_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">misc_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dout_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#misc_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.misc_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.group_repr_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">group_repr_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#group_repr_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.group_repr_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.args.supervised_args">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.args.</span></span><span class="sig-name descname"><span class="pre">supervised_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/args.html#supervised_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.args.supervised_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.utils.checkpoint">
+<span id="displacementae-utils-checkpoint-module"></span><h2>displacementae.utils.checkpoint module<a class="headerlink" href="#module-displacementae.utils.checkpoint" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.checkpoint.save_checkpoint">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.checkpoint.</span></span><span class="sig-name descname"><span class="pre">save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">losses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/checkpoint.html#save_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.checkpoint.save_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.checkpoint.load_checkpoint">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.checkpoint.</span></span><span class="sig-name descname"><span class="pre">load_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/checkpoint.html#load_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.checkpoint.load_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.utils.data_utils">
+<span id="displacementae-utils-data-utils-module"></span><h2>displacementae.utils.data_utils module<a class="headerlink" href="#module-displacementae.utils.data_utils" title="Permalink to this heading">¶</a></h2>
+<section id="miscellaneous-data-utilities">
+<h3>Miscellaneous data utilities<a class="headerlink" href="#miscellaneous-data-utilities" title="Permalink to this heading">¶</a></h3>
+<p>Collection of methods used to adjust data to different approaches.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.data_utils.action_to_id">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.data_utils.</span></span><span class="sig-name descname"><span class="pre">action_to_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/data_utils.html#action_to_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.data_utils.action_to_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts an action vector in the form of a displacement to an action id.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>a (ndarray): a 2D array of actions with type <cite>int</cite> in the form of a </dt><dd><p>batch of displacement of properties 
+(generating factors).
+Expects values to be in <span class="math notranslate nohighlight">\(-1,0,1\)</span> with only one 
+active.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>ndarray: a 1D array of type <cite>int</cite>.</p>
+</dd>
+<dt>TODO:</dt><dd><p>implement in more general cases where action is not necessarily sparse.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="module-displacementae.utils.logger_config">
+<span id="displacementae-utils-logger-config-module"></span><h2>displacementae.utils.logger_config module<a class="headerlink" href="#module-displacementae.utils.logger_config" title="Permalink to this heading">¶</a></h2>
+<section id="console-file-logging">
+<h3>Console/file logging<a class="headerlink" href="#console-file-logging" title="Permalink to this heading">¶</a></h3>
+<p>Collection of methods used to setup and maintain the logger used by this
+framework.</p>
+<p>Adapted from 
+<a class="reference external" href="https://git.ee.ethz.ch/henningc/hypnettorch/-/blob/master/hypnettorch/utils/logger_config.py">https://git.ee.ethz.ch/henningc/hypnettorch/-/blob/master/hypnettorch/utils/logger_config.py</a></p>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.logger_config.config_logger">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.logger_config.</span></span><span class="sig-name descname"><span class="pre">config_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">console_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/logger_config.html#config_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.logger_config.config_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure the logger that should be used by all modules in this
+package.
+This method sets up a logger, such that all messages are written to console
+and to an extra logging file. Both outputs will be the same, except that
+a message logged to file contains the module name, where the message comes
+from.</p>
+<p>The implementation is based on an earlier implementation of a function I
+used in another project:</p>
+<blockquote>
+<div><p><a class="reference external" href="https://git.io/fNDZJ">https://git.io/fNDZJ</a></p>
+</div></blockquote>
+<dl>
+<dt>Args:</dt><dd><p>name: The name of the created logger.
+log_file: Path of the log file. If None, no logfile will be generated.</p>
+<blockquote>
+<div><p>If the logfile already exists, it will be overwritten.</p>
+</div></blockquote>
+<p>file_level: Log level for logging to log file.
+console_level: Log level for logging to console.</p>
+</dd>
+<dt>Returns:</dt><dd><p>The configured logger.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="module-displacementae.utils.misc">
+<span id="displacementae-utils-misc-module"></span><h2>displacementae.utils.misc module<a class="headerlink" href="#module-displacementae.utils.misc" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.str_to_ints">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">str_to_ints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str_arg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#str_to_ints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.str_to_ints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a string argument into a list of ints.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.ints_to_str">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">ints_to_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#ints_to_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.ints_to_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.str_to_floats">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">str_to_floats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str_arg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#str_to_floats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.str_to_floats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a string argument into a list of ints.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.rotation_matrix">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">rotation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yaw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pitch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roll</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/misc.html#rotation_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.euler_to_mat">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">euler_to_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">euler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#euler_to_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.euler_to_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert euler angles ZYX (roll, pitch, yaw) to rotation matrix.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>euler (npt.NDArray[np.float64]): euler angles ZYX (…, 3)</p>
+</dd>
+<dt>Returns:</dt><dd><p>npt.NDArray[np.float64]: rotation matrix (…, 9)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.euler_to_quat">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">euler_to_quat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">euler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#euler_to_quat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.euler_to_quat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.quat_to_euler">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">quat_to_euler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#quat_to_euler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.quat_to_euler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert quaternion to euler angles (roll, pitch, yaw)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>quat (npt.NDArray[np.float64]): quaternion array shape (…, 4)</p>
+</dd>
+<dt>Returns:</dt><dd><p>npt.NDArray[np.float64]: euler angles roll, pitch, yaw (…, 3)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.quat_to_mat">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">quat_to_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#quat_to_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.quat_to_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert quaternion to rotation matrix using mujoco</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>quat (npt.NDArray[np.float64]): quaternion array shape (…, 4)</p>
+</dd>
+<dt>Returns:</dt><dd><p>npt.NDArray[np.float64]: rotation matrix (…, 9)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.misc.hue_to_rgb">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.misc.</span></span><span class="sig-name descname"><span class="pre">hue_to_rgb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/displacementae/utils/misc.html#hue_to_rgb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.misc.hue_to_rgb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert hue to rgb</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>hue (npt.NDArray[np.float64]): hue array shape (…, 1)</p>
+</dd>
+<dt>Returns:</dt><dd><p>npt.NDArray[np.float64]: rgb array shape (…, 3)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-displacementae.utils.plotting_utils">
+<span id="displacementae-utils-plotting-utils-module"></span><h2>displacementae.utils.plotting_utils module<a class="headerlink" href="#module-displacementae.utils.plotting_utils" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_reconstruction">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_reconstruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_reconstruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_reconstruction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_n_step_reconstruction">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_n_step_reconstruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_n_step_reconstruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_n_step_reconstruction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_supervised_reconstruction">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_supervised_reconstruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_supervised_reconstruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_supervised_reconstruction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_rollout_reconstructions">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_rollout_reconstructions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_rollout_reconstructions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_rollout_reconstructions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_manifold">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_manifold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vary_latents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_latent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_manifold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_manifold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produces colored scatter plot of the latent representation of 
+the different positions in the joint space.</p>
+<p>A 1D or 2D grid of joint positions are generated, 
+corresponding images are forwarded through the encoder.
+Resulting latent units are</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_manifold_pca">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_manifold_pca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vary_latents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_manifold_pca"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_manifold_pca" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produces colored scatter plot of the latent representation of 
+the different positions in the joint space.</p>
+<p>A 1D or 2D grid of joint positions are generated, 
+corresponding images are forwarded through the encoder.
+Resulting latent units are</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_curves">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_curves" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_matrix">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example_R</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_matrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_step_recon_loss">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_step_recon_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_losses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_step_recon_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_step_recon_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.plotting_utils.plot_thetas">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.plotting_utils.</span></span><span class="sig-name descname"><span class="pre">plot_thetas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="displacementae.networks.html#displacementae.networks.autoencoder_prodrep.AutoencoderProdrep" title="displacementae.networks.autoencoder_prodrep.AutoencoderProdrep"><span class="pre">AutoencoderProdrep</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/plotting_utils.html#plot_thetas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.plotting_utils.plot_thetas" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.utils.scheduler">
+<span id="displacementae-utils-scheduler-module"></span><h2>displacementae.utils.scheduler module<a class="headerlink" href="#module-displacementae.utils.scheduler" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.utils.scheduler.Scheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.utils.scheduler.</span></span><span class="sig-name descname"><span class="pre">Scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grp1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grp2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toggle_every</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[10,</span> <span class="pre">10]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/scheduler.html#Scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.scheduler.Scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.utils.scheduler.Scheduler.toggle_train">
+<span class="sig-name descname"><span class="pre">toggle_train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/scheduler.html#Scheduler.toggle_train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.scheduler.Scheduler.toggle_train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switches requires grad on/off every <cite>toggle_every</cite> epochs.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.scheduler.toggle_grad">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.scheduler.</span></span><span class="sig-name descname"><span class="pre">toggle_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/scheduler.html#toggle_grad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.scheduler.toggle_grad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.scheduler.setup_scheduler">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.scheduler.</span></span><span class="sig-name descname"><span class="pre">setup_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#displacementae.utils.scheduler.Scheduler" title="displacementae.utils.scheduler.Scheduler"><span class="pre">Scheduler</span></a></span></span><a class="reference internal" href="_modules/displacementae/utils/scheduler.html#setup_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.scheduler.setup_scheduler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.utils.sim_utils">
+<span id="displacementae-utils-sim-utils-module"></span><h2>displacementae.utils.sim_utils module<a class="headerlink" href="#module-displacementae.utils.sim_utils" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.sim_utils.setup_environment">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">setup_environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/sim_utils.html#setup_environment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.sim_utils.setup_environment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up output directory and logger.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.sim_utils.setup_summary_dict">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">setup_summary_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/sim_utils.html#setup_summary_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.sim_utils.setup_summary_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the summary dictionary that is written to the performance
+summary file (in the result folder).</p>
+<p>This method adds the keyword “summary” to <cite>shared</cite>.</p>
+<dl>
+<dt>Args:</dt><dd><p>config: Command-line arguments.
+shared: Miscellaneous data shared among training functions (summary dict</p>
+<blockquote>
+<div><p>will be added to this <code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Namespace</span></code>).</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.sim_utils.save_summary_dict">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">save_summary_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/sim_utils.html#save_summary_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.sim_utils.save_summary_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a text file in the result folder that gives a quick
+overview over the results achieved so far.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>(….): See docstring of function <a class="reference internal" href="#displacementae.utils.sim_utils.setup_summary_dict" title="displacementae.utils.sim_utils.setup_summary_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">setup_summary_dict()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.sim_utils.backup_cli_command">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">backup_cli_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/sim_utils.html#backup_cli_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.sim_utils.backup_cli_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the curret CLI call into a script.</p>
+<p>This will make it very easy to reproduce a run, by just copying the call
+from the script in the output folder. However, this call might be ambiguous
+in case default values have changed. In contrast, all default values are
+backed up in the file <code class="docutils literal notranslate"><span class="pre">config.json</span></code>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>(….): See docstring of function <a class="reference internal" href="#displacementae.utils.sim_utils.setup_summary_dict" title="displacementae.utils.sim_utils.setup_summary_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">setup_summary_dict()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.sim_utils.save_dictionary">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">save_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/sim_utils.html#save_dictionary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.sim_utils.save_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.utils.train_utils">
+<span id="displacementae-utils-train-utils-module"></span><h2>displacementae.utils.train_utils module<a class="headerlink" href="#module-displacementae.utils.train_utils" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.utils.train_utils.run">
+<span class="sig-prename descclassname"><span class="pre">displacementae.utils.train_utils.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'autoencoder'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/utils/train_utils.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.utils.train_utils.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Script for setting up and launching the training of the models.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>mode (str): run type, supports ‘autoencoder’, defaults to</dt><dd><p>‘autoencoder’</p>
+</dd>
+<dt>representation (str): group representation, defaults to ‘Representation.BLOCK_ROTS’.</dt><dd><p>‘Representation.BLOCK_ROTS’: actions are represented by block diagonal matrices of
+2D rotation matrices.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-displacementae.utils">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-displacementae.utils" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">displacementae.utils package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.args">displacementae.utils.args module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.checkpoint">displacementae.utils.checkpoint module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.data_utils">displacementae.utils.data_utils module</a><ul>
+<li><a class="reference internal" href="#miscellaneous-data-utilities">Miscellaneous data utilities</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-displacementae.utils.logger_config">displacementae.utils.logger_config module</a><ul>
+<li><a class="reference internal" href="#console-file-logging">Console/file logging</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-displacementae.utils.misc">displacementae.utils.misc module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.plotting_utils">displacementae.utils.plotting_utils module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.scheduler">displacementae.utils.scheduler module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.sim_utils">displacementae.utils.sim_utils module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils.train_utils">displacementae.utils.train_utils module</a></li>
+<li><a class="reference internal" href="#module-displacementae.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="displacementae.trajectory.html"
+                          title="previous chapter">displacementae.trajectory package</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/displacementae.utils.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="displacementae.trajectory.html" title="displacementae.trajectory package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >displacementae</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="displacementae.html" >displacementae package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,467 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>displacementae.networks package &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="displacementae.supervised package" href="displacementae.supervised.html" />
+    <link rel="prev" title="displacementae.homomorphism.hpconfigs package" href="displacementae.homomorphism.hpconfigs.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="displacementae.supervised.html" title="displacementae.supervised package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="displacementae.homomorphism.hpconfigs.html" title="displacementae.homomorphism.hpconfigs package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >displacementae</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="displacementae.html" accesskey="U">displacementae package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="displacementae-networks-package">
+<h1>displacementae.networks package<a class="headerlink" href="#displacementae-networks-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-displacementae.networks.autoencoder">
+<span id="displacementae-networks-autoencoder-module"></span><h2>displacementae.networks.autoencoder module<a class="headerlink" href="#module-displacementae.networks.autoencoder" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.autoencoder.AutoEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.autoencoder.</span></span><span class="sig-name descname"><span class="pre">AutoEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/autoencoder.html#AutoEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.autoencoder.AutoEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>An autoencoder neural network with group transformation applied to 
+the latent space.</p>
+<dl>
+<dt>Args:</dt><dd><dl>
+<dt>encoder, nn.Module: Encoder Network. Maps inputs to a representation </dt><dd><p>vector or to parameters of a posterior distribution 
+in the variational case.</p>
+</dd>
+<dt>decoder, nn.Module: Decoder Network. Maps a representation </dt><dd><p>vector back in the input space.</p>
+</dd>
+<dt>grp_transformation, nn.Module: Maps an action to a transformation of</dt><dd><p>the representation space.</p>
+</dd>
+<dt>n_repr_units, int: Dimensionality of the representation space.</dt><dd><dl class="field-list simple">
+<dt class="field-odd">note<span class="colon">:</span></dt>
+<dd class="field-odd"><p>In the variational case, this does not</p>
+</dd>
+</dl>
+<p>correspond to the dimensionality of the 
+encoder’s output space.</p>
+</dd>
+<dt>specified_step, array: If parameters of the grp_transformation are </dt><dd><p>not learned, they can be provided through this 
+argument. defaults to 0</p>
+</dd>
+<dt>variational, bool: If True, the encoder describes a distribution instead </dt><dd><p>of being deterministic, defaults to True.</p>
+</dd>
+<dt>intervene, bool: If true actions are provided and are used to transform </dt><dd><p>the encoded representations, defaults to True.</p>
+</dd>
+<dt>spherical, bool: If True, the encoder’s outputs (the location part </dt><dd><p>in the variational case) is normalized.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.autoencoder.AutoEncoder.encode">
+<span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/autoencoder.html#AutoEncoder.encode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.autoencoder.AutoEncoder.encode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.autoencoder.AutoEncoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/autoencoder.html#AutoEncoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.autoencoder.AutoEncoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.autoencoder_prodrep">
+<span id="displacementae-networks-autoencoder-prodrep-module"></span><h2>displacementae.networks.autoencoder_prodrep module<a class="headerlink" href="#module-displacementae.networks.autoencoder_prodrep" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.autoencoder_prodrep.AutoencoderProdrep">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.autoencoder_prodrep.</span></span><span class="sig-name descname"><span class="pre">AutoencoderProdrep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/autoencoder_prodrep.html#AutoencoderProdrep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.autoencoder_prodrep.AutoencoderProdrep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.networks.autoencoder.AutoEncoder" title="displacementae.networks.autoencoder.AutoEncoder"><code class="xref py py-class docutils literal notranslate"><span class="pre">AutoEncoder</span></code></a></p>
+<p>An autoencoder with a transformation of the latent from a known action.
+The transformation is a matrix multiplication with an SO(n) matrix
+represented by a product of matrices of 2D rotations.</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>encoder (<cite>torch.nn.Module</cite>): Maps the input to a latent representation,</dt><dd><p>or, if :param:variational is <cite>True</cite> to a posterior distribution.</p>
+</dd>
+<dt>decoder (<cite>torch.nn.Module</cite>): Maps from the latent space back to the</dt><dd><p>input space.</p>
+</dd>
+</dl>
+<p>n_actions (int): Number of possible actions.
+n_repr_units (int): Total number of representation units.
+n_transform_units (int): Number of representation units acted on by the</p>
+<blockquote>
+<div><p>action representation.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>variational (bool): Whether this is a variational autoencoder. </dt><dd><p>If <cite>True</cite>, the <a href="#id1"><span class="problematic" id="id2">:method:`forward`</span></a> outputs the reconstruction, 
+the mean and logvar.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.autoencoder_prodrep.AutoencoderProdrep.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/autoencoder_prodrep.html#AutoencoderProdrep.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.autoencoder_prodrep.AutoencoderProdrep.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>encodes input signals, transforms with input actions then decodes.</p>
+<dl>
+<dt>Args:</dt><dd><p>x (ndarray): input signal.
+a (ndarray): input actions. Each action is an int in the range</p>
+<blockquote>
+<div><p>(0,n_actions). TODO input is a normal acion converted within function call?</p>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt><dd><dl>
+<dt>(ndarray): If <a href="#id3"><span class="problematic" id="id4">:param:`variational`</span></a> is <cite>False</cite>: </dt><dd><blockquote>
+<div><p>output of the decoder.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>If <a href="#id5"><span class="problematic" id="id6">:param:`variational`</span></a> is <cite>True</cite>:</dt><dd><p>output of decoder, mu, logvar.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.autoencoder_prodrep.AutoencoderProdrep.entanglement_loss">
+<span class="sig-name descname"><span class="pre">entanglement_loss</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/autoencoder_prodrep.html#AutoencoderProdrep.entanglement_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.autoencoder_prodrep.AutoencoderProdrep.entanglement_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.cnn">
+<span id="displacementae-networks-cnn-module"></span><h2>displacementae.networks.cnn module<a class="headerlink" href="#module-displacementae.networks.cnn" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.cnn.CNN">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.cnn.</span></span><span class="sig-name descname"><span class="pre">CNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/cnn.html#CNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.cnn.CNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.cnn.CNN.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/cnn.html#CNN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.cnn.CNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.cond_cnn">
+<span id="displacementae-networks-cond-cnn-module"></span><h2>displacementae.networks.cond_cnn module<a class="headerlink" href="#module-displacementae.networks.cond_cnn" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.cond_cnn.ConditionalEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.cond_cnn.</span></span><span class="sig-name descname"><span class="pre">ConditionalEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/cond_cnn.html#ConditionalEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.cond_cnn.ConditionalEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Convolutional network that encodes an image conditionally to an embedding vector.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.cond_cnn.ConditionalEncoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/cond_cnn.html#ConditionalEncoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.cond_cnn.ConditionalEncoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.cond_transposedcnn">
+<span id="displacementae-networks-cond-transposedcnn-module"></span><h2>displacementae.networks.cond_transposedcnn module<a class="headerlink" href="#module-displacementae.networks.cond_transposedcnn" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.cond_transposedcnn.ConditionalDecoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.cond_transposedcnn.</span></span><span class="sig-name descname"><span class="pre">ConditionalDecoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/cond_transposedcnn.html#ConditionalDecoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.cond_transposedcnn.ConditionalDecoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Transposed Convolutional network that decodes conditionally to an embedding vector.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.cond_transposedcnn.ConditionalDecoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/cond_transposedcnn.html#ConditionalDecoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.cond_transposedcnn.ConditionalDecoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.mlp">
+<span id="displacementae-networks-mlp-module"></span><h2>displacementae.networks.mlp module<a class="headerlink" href="#module-displacementae.networks.mlp" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.mlp.MLP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.mlp.</span></span><span class="sig-name descname"><span class="pre">MLP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/mlp.html#MLP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.mlp.MLP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Simple MLP network</p>
+<p>Network made of stacked linear layers, optionally activated.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.mlp.MLP.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/mlp.html#MLP.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.mlp.MLP.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the output of this network.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>x (tensor):</p>
+</dd>
+<dt>Returns:</dt><dd><p>tensor: output tensor, not activated.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.multistep_autoencoder">
+<span id="displacementae-networks-multistep-autoencoder-module"></span><h2>displacementae.networks.multistep_autoencoder module<a class="headerlink" href="#module-displacementae.networks.multistep_autoencoder" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.multistep_autoencoder.MultistepAutoencoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.multistep_autoencoder.</span></span><span class="sig-name descname"><span class="pre">MultistepAutoencoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/multistep_autoencoder.html#MultistepAutoencoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.multistep_autoencoder.MultistepAutoencoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.networks.autoencoder.AutoEncoder" title="displacementae.networks.autoencoder.AutoEncoder"><code class="xref py py-class docutils literal notranslate"><span class="pre">AutoEncoder</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.multistep_autoencoder.MultistepAutoencoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/multistep_autoencoder.html#MultistepAutoencoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.multistep_autoencoder.MultistepAutoencoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encodes the input image and predicts the <cite>n_steps</cite> following images.</p>
+<p>Encodes the input image <cite>x</cite>. Decodes each image after the ith observed
+transition. Transitions <cite>dz</cite> are mapped to matrices through the
+<cite>grp_morphism</cite>, matrices are applied to the obtained representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.multistep_autoencoder.MultistepAutoencoder.forward2">
+<span class="sig-name descname"><span class="pre">forward2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/multistep_autoencoder.html#MultistepAutoencoder.forward2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.multistep_autoencoder.MultistepAutoencoder.forward2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encodes the input image and predicts the <cite>n_steps</cite> following images.</p>
+<p>Encodes the input image <cite>x</cite>. Decodes each image after the ith observed
+transition. Transitions <cite>dz</cite> are mapped to matrices through the
+<cite>grp_morphism</cite>, matrices are applied to the obtained representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.multistep_autoencoder.MultistepAutoencoder.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/multistep_autoencoder.html#MultistepAutoencoder.act"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.multistep_autoencoder.MultistepAutoencoder.act" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forwards latent vectors through the group representation of input
+transitions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.multistep_autoencoder.MultistepAutoencoder.decode">
+<span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/multistep_autoencoder.html#MultistepAutoencoder.decode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.multistep_autoencoder.MultistepAutoencoder.decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forwards a sequence of latent vectors through the decoder.
+Outputs images</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.multistep_autoencoder.MultistepAutoencoder.normalize_representation">
+<span class="sig-name descname"><span class="pre">normalize_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/networks/multistep_autoencoder.html#MultistepAutoencoder.normalize_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.multistep_autoencoder.MultistepAutoencoder.normalize_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize subrepresentation spaces according to the group action.</p>
+<p>If the group representation is a direct sum of subrepresentations,
+then each subrepresentation is normalized individually.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.network_utils">
+<span id="displacementae-networks-network-utils-module"></span><h2>displacementae.networks.network_utils module<a class="headerlink" href="#module-displacementae.networks.network_utils" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_network">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'autoencoder'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_network"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_network" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_encoder">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repr_units</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_encoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_encoder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_decoder">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repr_units</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_decoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_decoder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_encoder_decoder">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_encoder_decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repr_units</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_encoder_decoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_encoder_decoder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_grp_morphism">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_grp_morphism</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="displacementae.data.html#displacementae.data.transition_dataset.TransitionDataset" title="displacementae.data.transition_dataset.TransitionDataset"><span class="pre">TransitionDataset</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="displacementae.grouprepr.html#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><span class="pre">GroupRepresentation</span></a></span></span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_grp_morphism"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_grp_morphism" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up the group morphism module which converts input actions to</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_autoencoder_network">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_autoencoder_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_autoencoder_network"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_autoencoder_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up an autoencoder with a geometric transformation of the latent
+units.</p>
+<p>The autoencoder consists of a contracting path,
+a geometric transformation of the latent space and
+an expanding path back into the input space.</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config (Namespace): configuration of the experiment, obtained</dt><dd><p>from cli.</p>
+</dd>
+</dl>
+<p>dhandler (dataset): Handler for dataset.
+device (str): indicates device where parameters are stored.
+representation (str): Indicates which group representation to use for the</p>
+<blockquote>
+<div><p>observed actions.
+if ‘block_repr’: group representation is block
+diagonal 2D rotation matrices.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.network_utils.setup_multistep_autoencoder">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.network_utils.</span></span><span class="sig-name descname"><span class="pre">setup_multistep_autoencoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhandler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/network_utils.html#setup_multistep_autoencoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.network_utils.setup_multistep_autoencoder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.networks.transposedcnn">
+<span id="displacementae-networks-transposedcnn-module"></span><h2>displacementae.networks.transposedcnn module<a class="headerlink" href="#module-displacementae.networks.transposedcnn" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.networks.transposedcnn.TransposedCNN">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.networks.transposedcnn.</span></span><span class="sig-name descname"><span class="pre">TransposedCNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/transposedcnn.html#TransposedCNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.transposedcnn.TransposedCNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.networks.transposedcnn.TransposedCNN.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/transposedcnn.html#TransposedCNN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.transposedcnn.TransposedCNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.networks.variational_utils">
+<span id="displacementae-networks-variational-utils-module"></span><h2>displacementae.networks.variational_utils module<a class="headerlink" href="#module-displacementae.networks.variational_utils" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.variational_utils.reparametrize">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.variational_utils.</span></span><span class="sig-name descname"><span class="pre">reparametrize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logvar</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/variational_utils.html#reparametrize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.variational_utils.reparametrize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reparametrization trick for sampling from a gaussian of
+which parameters are outputted by a model.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.variational_utils.kl_loss">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.variational_utils.</span></span><span class="sig-name descname"><span class="pre">kl_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logvar</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/variational_utils.html#kl_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.variational_utils.kl_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.networks.variational_utils.bce_loss">
+<span class="sig-prename descclassname"><span class="pre">displacementae.networks.variational_utils.</span></span><span class="sig-name descname"><span class="pre">bce_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sum'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/networks/variational_utils.html#bce_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.networks.variational_utils.bce_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.networks">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-displacementae.networks" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">displacementae.networks package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.autoencoder">displacementae.networks.autoencoder module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.autoencoder_prodrep">displacementae.networks.autoencoder_prodrep module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.cnn">displacementae.networks.cnn module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.cond_cnn">displacementae.networks.cond_cnn module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.cond_transposedcnn">displacementae.networks.cond_transposedcnn module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.mlp">displacementae.networks.mlp module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.multistep_autoencoder">displacementae.networks.multistep_autoencoder module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.network_utils">displacementae.networks.network_utils module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.transposedcnn">displacementae.networks.transposedcnn module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks.variational_utils">displacementae.networks.variational_utils module</a></li>
+<li><a class="reference internal" href="#module-displacementae.networks">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="displacementae.homomorphism.hpconfigs.html"
+                          title="previous chapter">displacementae.homomorphism.hpconfigs package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="displacementae.supervised.html"
+                          title="next chapter">displacementae.supervised package</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/displacementae.networks.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="displacementae.supervised.html" title="displacementae.supervised package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="displacementae.homomorphism.hpconfigs.html" title="displacementae.homomorphism.hpconfigs package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >displacementae</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="displacementae.html" >displacementae package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>
