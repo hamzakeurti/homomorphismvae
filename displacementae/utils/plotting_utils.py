@@ -20,6 +20,7 @@
 # @version        :1.0
 # @python_version :3.7.4
 
+from typing import List, Optional
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
@@ -29,11 +30,9 @@ import wandb
 import os
 
 
-from displacementae.data.dsprites import DspritesDataset
 import displacementae.networks.autoencoder_prodrep as aeprod
 import displacementae.utils.misc as misc
 import displacementae.utils.data_utils as udutils
-from sklearn.random_projection import GaussianRandomProjection
 from scipy.stats import sem
 
 _DEFAULT_PLOT_CONFIG = [12, 5, 8] # fontsize, linewidth, markersize
@@ -94,31 +93,25 @@ def plot_reconstruction(dhandler, nets, config, device, logger, epoch,
     plt.close(fig)
 
 
-def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
+def plot_n_step_reconstruction(imgs, actions, nets, device, logger, 
+                               plot_on_black:bool=False, n_steps:int=1, 
+                               n_examples:int=7, savefig:bool=False, 
+                               savedir:str='', log_wandb:bool=False, 
+                               figname:str="reconstructions", 
+                               epoch:Optional[int]=None):
     # always reonstruct first, even when not considered in loss
-    reconstruct_first = 1
-    if config.plot_on_black:
+    if plot_on_black:
         plt.style.use('dark_background')
 
-    n_steps = config.n_steps
-
-    imgs, latents, dj = dhandler.get_val_batch()
     X1 = torch.FloatTensor(imgs[:,0]).to(device)
-    if reconstruct_first:
-        Xi = torch.FloatTensor(imgs).to(device)
-    else:
-        Xi = torch.FloatTensor(imgs[:,1:]).to(device)
 
-    dj = torch.FloatTensor(dj).to(device)
+    dj = torch.FloatTensor(actions).to(device)
 
     h, _, _, mu, logvar = nets(X1, dj)
     Xi_hat = torch.sigmoid(h)
 
-    nrows = 7
-    if reconstruct_first :
-        ncols = 2 + 2*n_steps
-    else:
-        ncols = 1 + 2*n_steps
+    nrows = n_examples
+    ncols = 2 + 2*n_steps
 
     unit_length = 1.5
 
@@ -126,27 +119,23 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
                              figsize=(ncols * unit_length,
                                       nrows * unit_length))
     kwargs = {'vmin': 0, 'vmax': 1}
+    
+    Xi = imgs
     if imgs.shape[2] == 1:
         kwargs['cmap'] = 'gray'
-        Xi = Xi[:,:,0].cpu().numpy()
+        Xi = Xi[:,:,0]
         Xi_hat = Xi_hat[:,:,0].cpu().numpy()
         X1 = X1[:,0].cpu().numpy()
     else:
-        Xi = np.moveaxis(Xi.cpu().numpy(),-3,-1)
+        Xi = np.moveaxis(Xi,-3,-1)
         Xi_hat = np.moveaxis(Xi_hat.cpu().numpy(),-3,-1)
         X1 = np.moveaxis(X1.cpu().numpy(),-3,-1)
 
     for row in range(nrows):
-        if not reconstruct_first:
-            axes[row,0].imshow(X1,**kwargs)
-            s = 1
-        else:
-            s = 0
-        
         for i in range(Xi_hat.shape[1]):
-            axes[row,2*i+s].imshow(Xi[row,i],**kwargs)#should be i+1
-            axes[row,2*i+s+1].imshow(Xi_hat[row,i],**kwargs)
-        if config.plot_on_black:
+            axes[row,2*i].imshow(Xi[row,i],**kwargs)#should be i+1
+            axes[row,2*i+1].imshow(Xi_hat[row,i],**kwargs)
+        if plot_on_black:
             for j in range(ncols):
                 axes[row, j].axes.xaxis.set_visible(False)
                 axes[row, j].axes.yaxis.set_visible(False)
@@ -155,13 +144,18 @@ def plot_n_step_reconstruction(dhandler, nets, config, device, logger, figname):
                 axes[row, j].axis('off')
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
-    if figname is not None:
-        figname += 'reconstructions.pdf'
-        plt.savefig(figname, bbox_inches='tight')
-        logger.info(f'Figure saved {figname}')
-    if config.log_wandb:
-        wandb.log({'plot/reconstructions':wandb.Image(plt)})
+    title = figname.split('.')[0]
+    if savefig:
+        if epoch is not None:
+            figname = f'{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
+    if log_wandb:
+        wandb.log({f'plot/reconstructions/{title}':wandb.Image(plt)})
     plt.close(fig)
+
+
 
 def plot_supervised_reconstruction(dhandler, nets, config, device, logger, figname):
 
@@ -216,13 +210,31 @@ def plot_supervised_reconstruction(dhandler, nets, config, device, logger, figna
     plt.close(fig)
 
 
-def plot_rollout_reconstructions(dhandler, nets, config, device, logger):
-    n_rollouts = config.plot_n_rollouts
-    X, a = dhandler.get_n_rollouts(n_rollouts)
-    X = torch.FloatTensor(X).to(device)
-    a = torch.FloatTensor(a).to(device)
-    i_pow2 = np.power(2, np.arange(2,np.log2(a.shape[1]),1)).astype(int)
-    n_steps = len(i_pow2)
+def plot_rollout_reconstructions(imgs, actions, nets, device, logger, 
+                                 n_rollouts:int=7, powers:bool=False, 
+                                 n_images:Optional[int]=None, 
+                                 savefig:bool=False, savedir:str='', 
+                                 log_wandb:bool=False, 
+                                 figname:str="rollouts_reconstructions",
+                                 epoch:Optional[int]=None):
+    """
+    Plots the reconstructions of the first `n_{rollouts}` rollouts.
+
+    """
+
+    X = torch.FloatTensor(imgs).to(device)
+    a = torch.FloatTensor(actions).to(device)
+
+    if powers:
+        indices = np.power(2, np.arange(2,np.log2(a.shape[1]),1)).astype(int)
+    else:
+        indices = np.arange(0,a.shape[1],1).astype(int)
+    
+    if n_images is not None:
+        indices = indices[:n_images]
+    
+    n_steps = len(indices)
+
     n_rows = X.shape[0]*2
     n_cols = n_steps
 
@@ -245,199 +257,128 @@ def plot_rollout_reconstructions(dhandler, nets, config, device, logger):
     
     for row in range(n_rollouts):
         for col in range(n_cols):
-            axs[row*2,col].imshow(X[row,i_pow2[col]], **kwargs)
+            axs[row*2,col].imshow(X[row,indices[col]], **kwargs)
             axs[row*2,col].axis('off')
-            axs[row*2+1,col].imshow(X_hat[row,i_pow2[col]], **kwargs)
+            axs[row*2+1,col].imshow(X_hat[row,indices[col]], **kwargs)
             axs[row*2+1,col].axis('off')
     
-    figname = f'rollout_reconstructions'
     plt.subplots_adjust(wspace=0, hspace=0.1)
-    if config.save_figures:
-        fig_dir = os.path.join(config.out_dir, 'figures')
-        fig_path = os.path.join(fig_dir,figname)
-        plt.savefig(f'{fig_path}.pdf', bbox_inches='tight')
-        logger.info(f'Figure saved {fig_path}')
 
-    if config.log_wandb:
-        wandb.log({f'plot/{figname}':wandb.Image(plt)})
+    title = figname.split('.')[0]
+    if savefig:
+        if epoch is not None:
+            figname = f'{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
+    if log_wandb:
+        wandb.log({f'plot/rollouts/{title}':wandb.Image(plt)})
     plt.close(fig)
 
 
-
-
-
-def plot_manifold(dhandler, nets, shared, config, device, logger, mode,
-                  epoch, vary_latents=[3], plot_latent=[0,1], figname=None):
-    """
-    Produces colored scatter plot of the latent representation of 
-    the different positions in the joint space.
-
-    A 1D or 2D grid of joint positions are generated, 
-    corresponding images are forwarded through the encoder.
-    Resulting latent units are 
-    """
-    n_repr_units = nets.n_repr_units
-    if max(plot_latent) >= n_repr_units:
-        raise ValueError(
-            "Requested plotting a representational unit which index: "+
-            f"{max(plot_latent)} is too large for the "+
-            f"number of representational units: {n_repr_units}")
+def plot_manifold(representations, true_latents, logger, plot_on_black:bool=False, 
+                  log_wandb:bool=False, label:str='', savedir:str='', 
+                  savefig:bool=False, figname:str="manifold", 
+                  epoch:Optional[int]=None):
+    kwargs={}
     ts, lw, ms = _DEFAULT_PLOT_CONFIG
-    if config.plot_on_black:
+    if plot_on_black:
         plt.style.use('dark_background')
-
-    indices = dhandler.get_indices_vary_latents(vary_latents)
-    latents = dhandler.latents[indices][:,vary_latents]
-    batch_size = config.batch_size
-    n_batches = len(indices) // batch_size + 1
-    
-    results = []
-
-    for i in range(n_batches):
-        batch_indices = indices[ i * batch_size : (i+1) * batch_size]
-        images = dhandler.images[batch_indices]
-        X = torch.FloatTensor(images).to(device)
-        with torch.no_grad():
-            h, mu, logvar = nets.encode(X)
-            h = nets.normalize_representation(h)
-            results.append(h[:,plot_latent].cpu().numpy())
-    results = np.vstack(results).squeeze()
-    
-    if config.plot_on_black:
+    if plot_on_black:
         kwargs={'cmap':'summer'}
-    else:
-        kwargs={}
 
-    kwargs['alpha']=0.8
+    kwargs['alpha']=0.8 # type: ignore
     kwargs['edgecolors']='none'
 
-    for i in range(len(vary_latents)):
-        latent = vary_latents[i]
-        latent_name = dhandler.get_latent_name(latent)
-        fig, ax = plt.subplots(figsize=(8,7))
-        if len(plot_latent) == 1:
-            f = ax.scatter(x=latents[:,i], y=results)
-            ax.set_xlabel(f'true label {latent}', fontsize=ts)
-            ax.set_ylabel(f'latent {plot_latent[0]}', fontsize=ts)
-        if len(plot_latent) == 2:
-            f = ax.scatter(x=results[:,0], y=results[:,1], c=latents[:,i],
-                            **kwargs)
-            ax.set_xlabel(f'latent {plot_latent[0]}', fontsize=ts)
-            ax.set_ylabel(f'latent {plot_latent[1]}', fontsize=ts)
-            dx = np.abs(results).max()
-            #if config.spherical:
-            #    ax.set_xlim(_TWO_D_MISC.x_range_medium)
-            #    ax.set_ylim(_TWO_D_MISC.y_range_medium)
-            #elif dx <= 0.3:
-            #    ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-            #    ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-            #else:
-            #    ax.set_xlim(_TWO_D_MISC.x_range)
-            #    ax.set_ylim(_TWO_D_MISC.y_range)
-            plt.colorbar(f)
-        ax.set_title('Manifold latent for latent: ' + latent_name)
-        if figname is not None:
-            figname1 = figname + 'repr_units=' + misc.ints_to_str(plot_latent) 
-            figname1 += '_varied='+ misc.ints_to_str(vary_latents)
-            figname1 += '_clr='+ misc.ints_to_str(latent) + '.pdf'
-            plt.savefig(figname1)
-            logger.info(f'Figure saved {figname1}')
-        if config.log_wandb:
-            wandb.log({f'plot/manifold_repr{misc.ints_to_str(plot_latent)}'+
-                       f'_varied{misc.ints_to_str(vary_latents)}_col{i}':\
-                                                        wandb.Image(plt)})
-        plt.close(fig)
 
-def plot_manifold_pca(dhandler, nets, shared, config, device, logger, mode,
-                epoch, vary_latents=[3], figname=None):
-    """
-    Produces colored scatter plot of the latent representation of 
-    the different positions in the joint space.
-
-    A 1D or 2D grid of joint positions are generated, 
-    corresponding images are forwarded through the encoder.
-    Resulting latent units are 
-    """
-    n_repr_units = nets.n_repr_units
-    ts, lw, ms = _DEFAULT_PLOT_CONFIG
-    if config.plot_on_black:
-        plt.style.use('dark_background')
-
-    indices = dhandler.get_indices_vary_latents(vary_latents)
-    latents = dhandler.latents[indices][:,vary_latents]
-    batch_size = config.batch_size
-    n_batches = len(indices) // batch_size + 1
+    fig, ax = plt.subplots(figsize=(8,7))
+    # check if true_latents is squeezable to 1D array
+    representations = np.squeeze(representations)
     
-    results = []
+    if len(representations.shape) == 1:
+        f = ax.scatter(x=true_latents, y=representations)
+        ax.set_xlabel(f'{label}', fontsize=ts)
+        ax.set_ylabel(f'repr unit', fontsize=ts)
+    elif representations.shape[1] == 2:
+        f = ax.scatter(x=representations[:,0], y=representations[:,1], 
+                       c=true_latents, **kwargs)
+        ax.set_xlabel(f'repr unit 0', fontsize=ts)
+        ax.set_ylabel(f'repr unit 1', fontsize=ts)
+        plt.colorbar(f)
 
-    for i in range(n_batches):
-        batch_indices = indices[ i * batch_size : (i+1) * batch_size]
-        images = dhandler.images[batch_indices]
-        X = torch.FloatTensor(images).to(device)
-        with torch.no_grad():
-            h, mu, logvar = nets.encode(X)
-            h = nets.normalize_representation(h)
-            results.append(h[:,:].cpu().numpy())
-    results = np.vstack(results).squeeze()
+    title = figname.split('.')[0]
+    ax.set_title(title)
+    if savefig:
+        if epoch is not None:
+            figname = f'{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
+    if log_wandb:
+        wandb.log({f'plot/manifold/{title}':wandb.Image(plt)})
+    plt.close(fig)
 
-    # PCA Projection
-    pca = GaussianRandomProjection(n_components=2)
-    latent2d = pca.fit_transform(results)
 
-    # latent2d/= np.linalg.norm(latent2d,)
+def plot_manifold_markers(latents_clr, latents_mrk, representations, logger,
+                          plot_on_black:bool=False, log_wandb:bool=False, 
+                          savedir:str=None, savefig:bool=False, 
+                          figname:str="manifold",
+                          epoch:Optional[int]=None):
+    """
+    Plots a scatter plot of the representation manifold with 
+    colors and markers corresponding to the true latents.
 
-    if config.plot_on_black:
+    Args:
+        latents_clr (np.ndarray): array of true latents to be used as colors.
+        latents_mrk (np.ndarray): array of true latents to be used as markers.
+        representations (np.ndarray): array of representations to be plotted.
+        logger (logging.Logger): logger object.
+        plot_on_black (bool, optional): whether to plot on black background.
+            Defaults to False.
+        log_wandb (bool, optional): whether to log to wandb. Defaults to False.
+        figname (str, optional): figure name. Defaults to None.
+        savefig (bool, optional): whether to save figure. Defaults to False.
+    """
+    
+    ts, lw, ms = _DEFAULT_PLOT_CONFIG
+    if plot_on_black:
+        plt.style.use('dark_background')
         kwargs={'cmap':'summer'}
     else:
         kwargs={}
 
     kwargs['alpha'] = 0.5
     kwargs['edgecolors']='none'
-
-
-    for i in range(len(vary_latents)):
-        if len(vary_latents) > 1:
-            kwargs['vmin'] = min(latents[:,i])
-            kwargs['vmax'] = max(latents[:,i])
-            
-        latent = vary_latents[i]
-        latent_name = dhandler.get_latent_name(latent)
-        fig, ax = plt.subplots(figsize=(8,7))
-
-        # f = ax.scatter(x=latent2d[:,0], y=latent2d[:,1], c=latents[:,i],
-                        # **kwargs)
-        for x,y,c,m in zip(
-                latent2d[:,0],latent2d[:,1],latents[:,i],latents[:,(i+1)%2]):
-            f = ax.scatter(x=x, y=y, c=c,marker=MARKERS[m%len(MARKERS)],
-                        **kwargs)
-
-        ax.set_xlabel(f'latent component 0', fontsize=ts)
-        ax.set_ylabel(f'latent component 1', fontsize=ts)
-        dx = np.abs(latent2d).max()
-        #if config.spherical:
-        #    ax.set_xlim(_TWO_D_MISC.x_range_medium)
-        #    ax.set_ylim(_TWO_D_MISC.y_range_medium)
-        #elif dx <= 0.3:
-        #    ax.set_xlim(_TWO_D_MISC.x_range_narrow)
-        #    ax.set_ylim(_TWO_D_MISC.y_range_narrow)
-        #else:
-        #    ax.set_xlim(_TWO_D_MISC.x_range)
-        #    ax.set_ylim(_TWO_D_MISC.y_range)
+    
+    kwargs['vmin'] = min(latents_clr)
+    kwargs['vmax'] = max(latents_clr)
         
-        plt.colorbar(f)
-        
-        ax.set_title('Manifold latent for latent: ' + latent_name)
-        if figname is not None:
-            figname1 = figname + 'repr_manifold_pca' 
-            figname1 += '_varied='+ misc.ints_to_str(vary_latents)
-            figname1 += '_true='+ misc.ints_to_str(latent) + '.pdf'
-            plt.savefig(figname1)
-            logger.info(f'Figure saved {figname1}')
-        if config.log_wandb:
-            wandb.log({f'plot/manifold_repr'+
-                       f'_varied{misc.ints_to_str(vary_latents)}_col{i}':\
-                                                        wandb.Image(plt)})
-        plt.close(fig)
+    fig, ax = plt.subplots(figsize=(8,7))
+
+    # f = ax.scatter(x=latent2d[:,0], y=latent2d[:,1], c=latents[:,i],
+                    # **kwargs)
+    for x,y,c,m in zip(
+            representations[:,0],representations[:,1],latents_clr,latents_mrk):
+        f = ax.scatter(x=x, y=y, c=c,marker=MARKERS[m%len(MARKERS)],
+                    **kwargs)
+
+    ax.set_xlabel(f'latent component 0', fontsize=ts)
+    ax.set_ylabel(f'latent component 1', fontsize=ts)
+    
+    plt.colorbar(f)
+    
+    title = figname.split('.')[0]
+    ax.set_title(title)
+    if savefig:
+        if epoch is not None:
+            figname = f'{epoch} - {figname}'
+        savepath = os.path.join(savedir,figname)
+        plt.savefig(savepath)
+        logger.info(f'Figure saved {savepath}')
+    if log_wandb:
+        wandb.log({f'plot/manifold/{title}':wandb.Image(plt)})
+    plt.close(fig)
+
 
 
 T_SERIES = ["bce_loss", "kl_loss", "learned_alpha"]
@@ -571,17 +512,3 @@ def plot_thetas(dhandler, nets: aeprod.AutoencoderProdrep, config, logger,
     if config.log_wandb:
         wandb.log({'plot/grp_repr':wandb.Image(plt)})
     plt.close(fig)
-
-    # TODO
-    pass
-    # for rep in nets.grp_morphism.actions_reps:
-
-    #     fig, ax = plt.subplots(figsize=(8,7))
-
-    #         ax.plot(epochs,vars(shared)[key])
-    #         ax.set_xlabel('epochs')
-    #         ax.set_ylabel(key)
-    #         if figname is not None:
-    #             figname1 = figname + 'curve_' + key + '.pdf'
-    #             plt.savefig(figname1)
-    #         plt.close()

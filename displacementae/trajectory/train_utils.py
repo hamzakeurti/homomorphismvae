@@ -138,17 +138,6 @@ def evaluate(dhandler: TrajectoryDataset,
     shared.bce_loss.append(step_loss.mean(dim=0).tolist())
     if nets.variational:
         shared.kl_loss.append(kl_loss.item())
-    a_in, a = dhandler.get_example_actions()
-    #example_R = nets.grp_morphism.get_example_repr(
-    #                torch.as_tensor([a_in], dtype=torch.float64, device=device))
-    #shared.learned_repr = example_R.tolist()
-    if (isinstance(nets.grp_morphism, BlockLookupRepresentation) or
-            isinstance(nets.grp_morphism, ActionLookup)):
-        reprs = nets.grp_morphism(torch.arange(dhandler.n_actions, device=device))
-        np.save(os.path.join(config.out_dir, f'repr_{epoch}'),
-                reprs.cpu().numpy())
-
-    shared.actions = [a]
 
     shared.summary[LOSS_FINAL] = total_loss.item()
     if shared.summary[LOSS_LOWEST] == -1 or\
@@ -179,24 +168,6 @@ def evaluate(dhandler: TrajectoryDataset,
             figname = os.path.join(fig_dir, f'{epoch}_')
             shared.figname = figname
         plt_utils.plot_step_recon_loss(step_loss.cpu().numpy(), config, figname)
-    #    vary_latents = misc.str_to_ints(config.plot_vary_latents)
-    #    plot_latent = misc.str_to_ints(config.plot_manifold_latent)
-    #    if len(plot_latent) > 0:
-    #        if not isinstance(plot_latent[0], list):
-    #            plot_latent = [plot_latent]
-    #            vary_latents = [vary_latents]
-    #        for i in range(len(vary_latents)):
-    #            if config.plot_pca:
-    #                plt_utils.plot_manifold_pca(dhandler[1], nets, shared, config,
-    #                                            device, logger, mode, epoch,
-    #                                            vary_latents=vary_latents[i],
-    #                                            figname=figname)
-    #            else:
-    #                plt_utils.plot_manifold(dhandler[1], nets, shared, config,
-    #                                        device, logger, mode, epoch,
-    #                                        vary_latents=vary_latents[i],
-    #                                        plot_latent=plot_latent[i],
-    #                                        figname=figname)
     nets.train()
 
 

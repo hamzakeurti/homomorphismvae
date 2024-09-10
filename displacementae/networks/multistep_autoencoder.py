@@ -83,9 +83,9 @@ class MultistepAutoencoder(AutoEncoder):
 
         # Through decoder
         latent_hat = h_out
-        h_out = h_out.view(-1, self.n_repr_units)
+        h_out = h_out.reshape(-1, self.n_repr_units)
         h_out = self.decoder(h_out)
-        h_out = h_out.view(x.shape[0],n_images,*x.shape[1:])
+        h_out = h_out.reshape(x.shape[0],n_images,*x.shape[1:])
         if self.variational:
             return h_out, latent, latent_hat, mu, logvar
         else:

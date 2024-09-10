@@ -24,11 +24,13 @@ Abstract Dataset class for transitions tuple :math:`(o_1,g_1,...,g_{n-1},o_n)`.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 """
 
-from typing import Tuple, List, Generator
+from typing import Tuple, List, Generator, Optional
 
 import numpy as np
 import numpy.typing as npt
 from torch.utils.data import Dataset
+
+from displacementae.utils import plotting_utils as plt_utils
 
 
 class TransitionDataset(Dataset):
@@ -47,7 +49,7 @@ class TransitionDataset(Dataset):
     """
 
 
-    def __init__(self, rseed:int=None, n_transitions:int=1):
+    def __init__(self, rseed:Optional[int]=None, n_transitions:int=1):
         
         # Random generator
         if rseed is not None:
@@ -58,7 +60,7 @@ class TransitionDataset(Dataset):
         self._rseed = rseed
 
         # Number of transitions
-        self.n_transitions = n_transitions
+        self._n_transitions = n_transitions
     
 
     def __getitem__(self, idx:int) -> Tuple[np.ndarray, np.ndarray]:
@@ -76,7 +78,8 @@ class TransitionDataset(Dataset):
         pass
 
     def resample_data(self) -> None:
-        """resamples the training dataset. (Does nothing for some datasets).
+        """
+        resamples the training dataset. (Does nothing for some datasets).
         """
         pass
 
@@ -100,16 +103,16 @@ class TransitionDataset(Dataset):
         .. todo::
         maybe get rid of the labels.
         """
-        pass
+        raise NotImplementedError
     
 
     def get_rollouts(self) -> Generator[
             Tuple[npt.NDArray, npt.NDArray], None, None]:
-        pass
+        raise NotImplementedError
 
 
     def get_n_rollouts(self, n:int) -> Tuple[npt.NDArray, npt.NDArray]:
-        pass
+        raise NotImplementedError
 
 
     @property
@@ -119,7 +122,7 @@ class TransitionDataset(Dataset):
         :return: Dimension of the action vector.
         :rtype: int
         """
-        pass
+        raise NotImplementedError
 
     @property
     def in_shape(self) -> List[int]:
@@ -131,7 +134,7 @@ class TransitionDataset(Dataset):
                  this returns `[1, height, width]`. 
         :rtype: List[int]
         """
-        pass
+        raise NotImplementedError
 
 
     @property
@@ -141,7 +144,8 @@ class TransitionDataset(Dataset):
         :return: `int` indicating total number fo training samples.
         :rtype: int
         """
-        pass
+        raise NotImplementedError
+
 
     @property
     def num_val(self) -> int:
@@ -150,94 +154,58 @@ class TransitionDataset(Dataset):
         :return: an integer indicating the number of evaluation samples.
         :rtype: int
         """
-        pass
+        raise NotImplementedError
 
-# class TransitionDataset(Dataset):
-#     def __init__(self, rseed=None, transitions_on=True, n_transitions=None):
+    # ----------------------
+    # Plotting methods
+    # ----------------------
+
+    def plot_n_step_reconstruction(self, nets, config, 
+                                   device, logger, epoch, figdir) -> None:
+        """
+        Plots the first few transitions in the evaluation batch.
+
+        This method saves the figure in the `figname` path,
+        and logs it to WandB as well.
+        """
+        raise NotImplementedError
+
+
+    def plot_manifold(
+                    self,nets,shared, config,
+                    device, logger, mode, epoch, figdir) -> None:
+        """
+        Plots the learned representation manifold of the dataset.
+
+        Plots the learned representation manifold 
+        (or its projection along specified representation units) 
+        of the dataset (or a subset of it).
         
-#         # Random generator
-#         if rseed is not None:
-#             rand = np.random.RandomState(rseed)
-#         else:
-#             rand = np.random
-#         self._rand = rand
-#         self._rseed = rseed
+        To be implemented by inheriting class.
+        """
+        raise NotImplementedError
 
-#         # Number of samples
-#         self.num_train = 0
-#         self.num_val = 0
 
-#         # Latents Config
-#         self.transitions_on = transitions_on
-#         self.n_latents = 0
-#         self.latents = np.array([])
+    def plot_manifold_pca(self, nets, shared, config,
+                          device, logger, mode, epoch, figdir) -> None:
+        """
+        Plots the PCA projection of the learned representation manifold.
 
-#         self.fixed_in_sampling = []
-#         self.fixed_values = []
-#         self.varied_in_sampling = []
-
-#         self.fixed_in_action = []
-#         self.varied_in_action = []
-#         self.transition_range = []
-
-#         # Number of transitions
-#         if not transitions_on:
-#             self.n_transitions = 0
-#         elif n_transitions is None:
-#             self.n_transitions = 1
-#         else:
-#             self.n_transitions = n_transitions
+        Plots the PCA projection of the learned representation manifold 
+        of the dataset or a subset of it.
         
-
-#     def __getitem__(self,idx):
-#         pass
-
-#     def __len__(self):
-#         pass
-
-#     def latents_2_index(self,latents):
-#         """
-#         Converts a vector of latents values to its index in the subdataset.
-#         """
-#         return np.dot(
-#             latents[...,self.varied_in_sampling],self.latent_bases_varied)
-
-#     def setup_latents_bases(self):
-#         """
-#         Computes the latents bases vector for converting latents vectors to indices.
-#         """
-#         self.num_latents_varied = self.num_latents[self.varied_in_sampling]
-#         self.latent_bases = np.concatenate([
-#             np.cumprod(self.num_latents[::-1])[::-1][1:],[1]])
-#         self.latent_bases_varied = np.concatenate([
-#             np.cumprod(self.num_latents_varied[::-1])[::-1][1:],[1]])    
-#         self.dataset_size = np.prod(self.num_latents_varied)
-
-#     def transition(self, idx):
-#         pass
-
-#     def observe_n_transitions(self, idx):
-#         indices = np.empty(shape=(idx.shape[-1], self.n_transitions+1), dtype=int)
-#         transitions = []
-#         indices[:, 0] = idx
-#         for i in range(self.n_transitions):
-#             idx2, dj = self.transition(indices[:,i])
-#             indices[:,i+1]= idx2
-#             transitions.append(dj)
-#         transitions = np.stack(transitions,axis=1)
-#         return indices,transitions
-    
-#     def get_val_batch(self):
-#         pass
+        To be implemented by inheriting class.
+        """
+        raise NotImplementedError
     
 
-#     def resample_data(self):
-#         pass
-    
-#     @property
-#     def action_shape(self) -> list:
-#         pass
+    def plot_rollout_reconstruction(self, nets, config, device, logger, epoch, figdir) -> None:
+        """
+        Plots the reconstructions of the first few rollouts.
+        """
+        raise NotImplementedError
 
-#     @property
-#     def in_shape(self) -> list:
-#         pass
+
+
+if __name__ == "__main__":
+    pass
