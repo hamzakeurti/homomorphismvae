@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.supervised.train_args &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.supervised.train_args</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.supervised.train_args</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2022 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/supervised/train_args.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :12/02/2023</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="nn">displacementae.utils.args</span> <span class="k">as</span> <span class="nn">args</span>
+
+
+
+<div class="viewcode-block" id="parse_cmd_arguments"><a class="viewcode-back" href="../../../displacementae.supervised.html#displacementae.supervised.train_args.parse_cmd_arguments">[docs]</a><span class="k">def</span> <span class="nf">parse_cmd_arguments</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;homomorphism&#39;</span>
+    <span class="n">curr_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">_%H-%M-%S&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">description</span><span class="p">:</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;N Steps Autoencoder&#39;</span>
+    <span class="n">dout_dir</span> <span class="o">=</span> <span class="s1">&#39;./out/run_&#39;</span><span class="o">+</span><span class="n">curr_date</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">data_args</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span><span class="n">mode</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">train_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">net_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">misc_args</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span><span class="n">dout_dir</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">supervised_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">group_repr_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+    <span class="n">config</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">argv</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">intervene</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="process_config"><a class="viewcode-back" href="../../../displacementae.supervised.html#displacementae.supervised.train_args.process_config">[docs]</a><span class="k">def</span> <span class="nf">process_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+
+    <span class="c1"># Process plotting options</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">no_plots</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">plot_reconstruction</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">plot_manifold</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">plot_matrices</span> <span class="o">=</span> <span class="kc">False</span>
+        
+    <span class="k">return</span> <span class="n">config</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.supervised.train_args</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

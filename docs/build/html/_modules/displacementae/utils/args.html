@@ -1,0 +1,555 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.utils.args &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.args</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.utils.args</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/utils/args.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :10/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.representation_utils</span> <span class="kn">import</span> <span class="n">Representation</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+
+
+<div class="viewcode-block" id="data_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.data_args">[docs]</a><span class="k">def</span> <span class="nf">data_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;autoencoder&#39;</span><span class="p">):</span>
+    <span class="n">dgroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Data options&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dataset&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;armeye&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of dataset&#39;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;armeye&#39;</span><span class="p">,</span> <span class="s1">&#39;dsprites&#39;</span><span class="p">,</span> <span class="s1">&#39;obj3d&#39;</span><span class="p">])</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_joints&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of joints in the robot&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--fixed_in_sampling&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;indices of fixed joints in sampling&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--fixed_values&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Values of fixed joints&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--fixed_in_intervention&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Indices of fixed joints in intervention&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--shuffle&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Shuffle the dataset.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--displacement_range&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;-3,3&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Range of uniform distribution &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;from which to sample future joint position&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--data_root&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Root directory of the dataset directory.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--data_random_seed&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Specify data random seed for reproducibility.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num_train&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of training samples&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num_val&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of evaluation samples&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cyclic_trans&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;considers position as a cyclic latent.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--distrib&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="s1">&#39;disentangled&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Selects distribution from which to &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;sample transitions&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--integer_actions&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Indexes the action vector, &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;losing structure in the input actions.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rotate_actions&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Rotation angle of the first two components &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;of action vectors&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--train_trajs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Training trajectories&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--valid_trajs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Validation trajectories&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--resample&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to partially load a different &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;fraction of the dataset every few epochs&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--resample_every&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of epochs to load a new fraction &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;of the data.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num_samples&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of samples to load in memory every resampling.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize_actions&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Divide the input transition signals by their &#39;</span> <span class="o">+</span>
+                              <span class="s1">&#39;max values.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;autoencoder&#39;</span><span class="p">:</span>
+        <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--intervene&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to vary joint positions.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;homomorphism&#39;</span><span class="p">:</span>
+        <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of observed transitions per example.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rollouts&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to use rollouts.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rollouts_path&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path to the rollouts.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rollouts_batch_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of rollouts per batch.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_rollouts&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to plot rollouts.&#39;</span><span class="p">)</span>
+    <span class="n">dgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_n_rollouts&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of rollouts to plot.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="data_gen_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.data_gen_args">[docs]</a><span class="k">def</span> <span class="nf">data_gen_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">):</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Data Generation Options&quot;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--out_path&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Root directory for saving the generated &#39;</span><span class="o">+</span>
+                        <span class="s1">&#39;dataset.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--obj_filename&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;obj file path storing the 3D object.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--center&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Center the 3D object by substracting &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;mean vertex.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--chunk_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;number of samples per chunk, if 0 no chunking&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--gen_random_seed&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Specify data gen random seed for &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;reproducibility.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--batch_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of samples generated every loop.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--figsize&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;3,3&quot;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Figure size in inches. Use jointly with --dpi&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dpi&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dots per inch.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Axis limit.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--mode&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;continuous&quot;</span><span class="p">,</span><span class="s2">&quot;discrete&quot;</span><span class="p">],</span> 
+                        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;continuous&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dots per inch.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rots_range&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;-0.8,0.8&quot;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;range of small rotations&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rots_range_canonical&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;-3.14,3.14&quot;</span><span class="p">,</span> 
+                       <span class="n">help</span><span class="o">=</span><span class="s1">&#39;range of rotations for the initial observation &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;from the canonical view.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_values&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of values in the angle range for the &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;discrete sampling.&#39;</span><span class="p">)</span>                              
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of rotation steps from the initial &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;orientation.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_samples&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of generated  &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;discrete sampling.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--translate&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to also act with translations.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rotate&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to act with rotations.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rotation_matrix_action&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to use rotation matrices &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;as action signals.&#39;</span><span class="p">)</span>     
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--translation_grid&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Half the number of positions for each axis.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--translation_stepsize&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Elementary translation for each direction.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--translation_range&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Half the range of the small displacements.&#39;</span><span class="p">)</span>    
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--crop&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Crop the image by `crop` pixels from each side.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--color&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to also act with color shifts.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_colors&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of colors equally spaced on the hue wheel.&#39;</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--max_color_shift&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Range of the random displacement of the color.&#39;</span><span class="p">)</span> </div>
+    
+
+
+<div class="viewcode-block" id="train_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.train_args">[docs]</a><span class="k">def</span> <span class="nf">train_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Arguments specified in this function:</span>
+<span class="sd">            - `batch_size`</span>
+<span class="sd">            - `n_iter`</span>
+<span class="sd">            - `epochs`</span>
+<span class="sd">            - `lr`</span>
+<span class="sd">            - `momentum`</span>
+<span class="sd">            - `weight_decay`</span>
+<span class="sd">            - `use_adam`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tgroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Train options&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--batch_size&#39;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span><span class="n">default</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Training batch size&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_iter&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of training iterations per task. &#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--epochs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of epochs.&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--val_epoch&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of epochs between evaluations.&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_epoch&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of epochs between evaluations.&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lr&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Learning rate of optimizer(s).&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--momentum&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Momentum of optimizer(s) (Only used for SGD).&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--weight_decay&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Weight decay of optimizer(s).&#39;</span><span class="p">)</span>
+    <span class="n">tgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--use_adam&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use Adam optimizer instead of SGD.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="net_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.net_args">[docs]</a><span class="k">def</span> <span class="nf">net_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Arguments specified in this function:</span>
+<span class="sd">            - `net_act`</span>
+<span class="sd">            - `conv_channels`</span>
+<span class="sd">            - `lin_channels`</span>
+<span class="sd">            - `kernel_sizes`</span>
+<span class="sd">            - `strides`</span>
+<span class="sd">            - `learn_geometry`</span>
+<span class="sd">            - `specified_grp_step`</span>
+<span class="sd">            - `variational`</span>
+<span class="sd">            - `beta`</span>
+<span class="sd">            - `n_free_latents`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ngroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;network options&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--net_act&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">,</span> <span class="s1">&#39;relu&#39;</span><span class="p">,</span> <span class="s1">&#39;tanh&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Training batch size&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--conv_channels&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Channels per layer. &#39;</span><span class="o">+</span>
+                        <span class="s1">&#39;Input channels must not be included&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lin_channels&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;linear channels.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--kernel_sizes&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;5&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;kernel sizes of convolution layers.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--strides&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;strides of convlution layers.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--decoder_conv_channels&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;-1&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Channels per layer. &#39;</span><span class="o">+</span>
+                        <span class="s1">&#39;Input channels must be included&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--decoder_lin_channels&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;-1&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;linear channels.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--decoder_kernel_sizes&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;-1&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;kernel sizes of convolution layers.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--decoder_strides&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;-1&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;strides of transposed convolution layers.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--variational&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the network outputs &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;should be considered as mean and var of a gaussian.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--beta&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Beta factor of the beta-VAE &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;balances contribution of prior matching loss. &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;Defaults to 1.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--gamma&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Gamma factor for latent consistency loss&#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;Defaults to 0.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n_free_units&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;number of representation units &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;not transformed by the action representations.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--spherical&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;If True, the representation vector is &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;normalized prior to being forwarded to &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;group action or decoder&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--spherical_post_action&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;If True, the representation vector is &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;normalized after each group action&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--reconstruct_first&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Reconstructs the input prior to any action, &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;this pathway is equivalent to a classic &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;AutoEncoder.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--reconstruct_first_only&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Reconstructs the input prior to any action, &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;and not the following steps.&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--latent_loss&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to enforce equivariance &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;at the latents level&#39;</span><span class="p">)</span>
+    <span class="n">ngroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--latent_loss_weight&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Weight of the latent equivariance loss.&#39;</span><span class="p">)</span>    </div>
+
+
+<div class="viewcode-block" id="misc_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.misc_args">[docs]</a><span class="k">def</span> <span class="nf">misc_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">dout_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">dout_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dout_dir</span> <span class="o">=</span> <span class="s1">&#39;./out/run_&#39;</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">_%H-%M-%S&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Miscellaneous options&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--out_dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">dout_dir</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Where to store the outputs of this simulation.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--use_cuda&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to use GPU.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cuda_number&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;if use_cuda, GPU device number.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--random_seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Specify random seed for reproducibility&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_on_black&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to plot using dark background style&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--no_plots&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to plot figures&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_reconstruction&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to plot reconstrucion figures&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_manifold&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to plot representation manifold figures&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_matrices&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to plot group representation figures&#39;</span><span class="p">)</span>                        
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_manifold_latent&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Which latent units to visualize the manifold of.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_vary_latents&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Which joints to move&#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;to produce a manifold of latents.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--checkpoint&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Saves a checkpoint of the model and optimizer &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;at the end of training&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--checkpoint_every&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Period of making checkpoints.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_pca&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Plots scatter of representations projected &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;along 2 main pca components&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--toggle_training_every&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;2&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;2values e1, e2. &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;Train parameters group 1 for e1 epochs, &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;Train parameters group 1 for e2 epochs. &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;If only one value is provided, then e1=e2.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log_wandb&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to log this run on WandB&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--wandb_project_name&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> 
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;homomorphism-autoencoder&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of the WandB project to log this run.&#39;</span><span class="p">)</span>
+    <span class="n">mgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--save_figures&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to save figures&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="group_repr_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.group_repr_args">[docs]</a><span class="k">def</span> <span class="nf">group_repr_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">):</span>
+    <span class="n">ggroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Group Representation options&#39;</span><span class="p">)</span>
+    <span class="n">ggroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--varphi_units&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;List of layer units in the for the varphi &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;network. This is a fixed random mlp &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;network transforming action vectors. &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;Defaults to [] which corresponds to &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;varphi=identity mapping&#39;</span><span class="p">)</span>
+    <span class="n">ggroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--varphi_random_seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;random seed for generating the varphi network.&#39;</span><span class="p">)</span>
+    <span class="n">ggroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--varphi_act&#39;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span><span class="s1">&#39;softplus&#39;</span><span class="p">,</span><span class="s1">&#39;leakyrelu&#39;</span><span class="p">,</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;activation function for each layer of varphi, &#39;</span><span class="o">+</span>
+                             <span class="s1">&#39;if any.&#39;</span><span class="p">)</span>
+    <span class="n">ggroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize_post_action&#39;</span><span class="p">,</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> 
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;If True, the representation vector is &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;normalized after each group action&#39;</span><span class="p">)</span>
+
+
+    <span class="n">grprepr_subparsers</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subparsers</span><span class="p">(</span>
+                        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">title</span><span class="o">=</span><span class="s1">&#39;group_representation_subparsers&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;grouprepr&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Multiple group representations are available &#39;</span> <span class="o">+</span> 
+                             <span class="s1">&#39;with different arguments.&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># BLOCK_MLP</span>
+    <span class="n">block_mlp_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;block_mlp&#39;</span><span class="p">)</span>
+    <span class="n">block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dims&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;List of dimensions of the subreps. &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;The resulting representation is of dim &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;the sum of provided dims and it maps to &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;block diagonal matrices.&#39;</span><span class="p">)</span>
+    <span class="n">block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--group_hidden_units&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hidden units list for all subreps</span><span class="se">\&#39;</span><span class="s1"> MLP&#39;</span><span class="p">)</span>
+    <span class="n">block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize_subrepresentations&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the group action on each &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;subrepresentation normalizes the &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;representation post action&#39;</span><span class="p">)</span>
+    <span class="n">block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--exponential_map&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the matrix exponential is applied &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;to the parametrized matrix.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># MLP</span>
+    <span class="n">mlp_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;mlp&#39;</span><span class="p">)</span>
+    <span class="n">mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dimension of the representation space &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;acted on.&#39;</span><span class="p">)</span>
+    <span class="n">mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--group_hidden_units&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hidden units list of the rep</span><span class="se">\&#39;</span><span class="s1">s MLP&#39;</span><span class="p">)</span>
+    <span class="n">mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the group action normalizes the &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;representation post action&#39;</span><span class="p">)</span>
+    <span class="n">mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--exponential_map&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the matrix exponential is applied &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;to the parametrized matrix.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># BLOCK ROTS</span>
+    <span class="n">block_rots_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;block_rots&#39;</span><span class="p">)</span>
+    <span class="n">block_rots_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--learn_geometry&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to learn the grp action parameters. &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;If not, these should be provided in arg &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;--specified_grp_step&#39;</span><span class="p">)</span>
+    <span class="n">block_rots_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--specified_grp_step&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;specified grp action parameters&#39;</span><span class="p">)</span>
+    
+    
+    <span class="c1"># PROD ROTS LOOKUP (Quessard et al. 2020)</span>
+    <span class="n">prod_rots_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;prod_rots&#39;</span><span class="p">)</span>
+    <span class="n">prod_rots_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dimension of the representation space &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;acted on.&#39;</span><span class="p">)</span>
+    <span class="n">prod_rots_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--grp_loss_on&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;whether to add group representation loss.&#39;</span><span class="p">)</span>
+    <span class="n">prod_rots_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--grp_loss_weight&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Factor of the grp loss in the total loss.&#39;</span><span class="p">)</span>
+    <span class="n">prod_rots_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot_thetas&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Plots learned thetas&#39;</span><span class="p">)</span>
+
+    <span class="c1"># BLOCK MLP LOOKUP</span>
+    <span class="n">block_lookup_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;block_lookup&#39;</span><span class="p">)</span> <span class="c1"># FIX</span>
+    <span class="n">block_lookup_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dims&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;List of dimensions of the subreps. &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;The resulting representation is of dim &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;the sum of provided dims and it maps to &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;block diagonal matrices.&#39;</span><span class="p">)</span>
+    <span class="n">block_lookup_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize_subrepresentations&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the group action on each &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;subrepresentation normalizes the &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;representation post action&#39;</span><span class="p">)</span>
+    <span class="n">block_lookup_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--exponential_map&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the matrix exponential is applied &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;to the parametrized matrix.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># MLP LOOKUP</span>
+    <span class="n">lookup_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;lookup&#39;</span><span class="p">)</span>
+    <span class="n">lookup_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dimension of the representation space &#39;</span><span class="o">+</span>
+                                <span class="s1">&#39;acted on.&#39;</span><span class="p">)</span>
+    <span class="n">lookup_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the group action normalizes the &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;representation post action&#39;</span><span class="p">)</span>
+    <span class="n">lookup_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--exponential_map&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the matrix exponential is applied &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;to the parametrized matrix.&#39;</span><span class="p">)</span>
+    
+
+    <span class="c1"># TRIVIAL</span>
+    <span class="n">trivial_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;trivial&#39;</span><span class="p">)</span>
+    <span class="n">trivial_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dimension of the representation space &#39;</span><span class="o">+</span>
+                                <span class="s1">&#39;acted on.&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># UNSTRUCTURED</span>
+    <span class="n">unstructured_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;unstructured&#39;</span><span class="p">)</span>
+    <span class="n">unstructured_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dimension of the representation space &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;acted on.&#39;</span><span class="p">)</span>
+    <span class="n">unstructured_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--group_hidden_units&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hidden units list for all subreps</span><span class="se">\&#39;</span><span class="s1"> MLP&#39;</span><span class="p">)</span>
+
+    <span class="c1"># SOFT BLOCK MLP</span>
+    <span class="n">soft_block_mlp_parser</span> <span class="o">=</span> <span class="n">grprepr_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;soft_block_mlp&#39;</span><span class="p">)</span>
+
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Dimension of the representation space &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;acted on.&#39;</span><span class="p">)</span>
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--group_hidden_units&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hidden units list of the rep</span><span class="se">\&#39;</span><span class="s1">s MLP&#39;</span><span class="p">)</span>
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--normalize&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the group action normalizes the &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;representation post action&#39;</span><span class="p">)</span>
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--exponential_map&#39;</span><span class="p">,</span> 
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether the matrix exponential is applied &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;to the parametrized matrix.&#39;</span><span class="p">)</span>
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--grp_loss_on&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;whether to add group representation loss.&#39;</span><span class="p">)</span>
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--grp_loss_weight&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Factor of the grp loss in the total loss.&#39;</span><span class="p">)</span>
+    <span class="n">soft_block_mlp_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--regularize_algebra&#39;</span><span class="p">,</span> 
+                         <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to regularize the group &#39;</span> <span class="o">+</span>
+                         <span class="s1">&#39;representation before applying the matrix &#39;</span> <span class="o">+</span>
+                         <span class="s1">&#39;exponential. This corresponds to regularizing the &#39;</span> <span class="o">+</span>
+                         <span class="s1">&#39;algebra representation.&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="supervised_args"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.args.supervised_args">[docs]</a><span class="k">def</span> <span class="nf">supervised_args</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span><span class="n">ArgumentParser</span><span class="p">):</span>
+    <span class="n">sgroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Supervised options&#39;</span><span class="p">)</span>
+    <span class="n">sgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--net_mode&#39;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;encoder&#39;</span><span class="p">,</span><span class="s1">&#39;decoder&#39;</span><span class="p">,</span><span class="s1">&#39;grouprepr&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether we train a supervised encoder &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;or decoder or grouprepr&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.args</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

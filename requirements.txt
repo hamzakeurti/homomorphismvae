@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+torch
+h5py
+pillow
+scikit-learn
+wheel

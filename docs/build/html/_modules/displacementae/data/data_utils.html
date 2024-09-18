@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.data.data_utils &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.data_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.data.data_utils</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/data/data_utils.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :12/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.data.dsprites</span> <span class="kn">import</span> <span class="n">DspritesDataset</span>
+<span class="kn">from</span> <span class="nn">displacementae.data.obj3d_dataset</span> <span class="kn">import</span> <span class="n">Obj3dDataset</span>
+<span class="kn">from</span> <span class="nn">displacementae.data.obj3d_supervised_dset</span> <span class="kn">import</span> <span class="n">Obj3dSupervisedDataset</span> 
+<span class="kn">from</span> <span class="nn">displacementae.data.trajs</span> <span class="kn">import</span> <span class="n">TrajectoryDataset</span>
+
+<span class="kn">import</span> <span class="nn">displacementae.utils.misc</span> <span class="k">as</span> <span class="nn">misc</span>
+
+
+<div class="viewcode-block" id="setup_data"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.data_utils.setup_data">[docs]</a><span class="k">def</span> <span class="nf">setup_data</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;autoencoder&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">train_trajs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">setup_trajectory_dataset</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s1">&#39;dsprites&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">setup_dsprites_dataset</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s1">&#39;obj3d&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">setup_obj3d_dataset</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="setup_dsprites_dataset"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.data_utils.setup_dsprites_dataset">[docs]</a><span class="k">def</span> <span class="nf">setup_dsprites_dataset</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;autoencoder&#39;</span><span class="p">):</span>
+    <span class="n">fixed_in_sampling</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">fixed_in_sampling</span><span class="p">)</span>
+    <span class="n">fixed_values</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">fixed_values</span><span class="p">)</span>
+    <span class="n">fixed_in_action</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">fixed_in_intervention</span><span class="p">)</span>
+    <span class="n">action_range</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">displacement_range</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;homomorphism&#39;</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">intervene</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;autoencoder&#39;</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">n_steps</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;supervised&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="n">dhandler</span> <span class="o">=</span> <span class="n">DspritesDataset</span><span class="p">(</span>
+        <span class="n">root</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">data_root</span><span class="p">,</span>
+        <span class="n">num_train</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_train</span><span class="p">,</span>
+        <span class="n">num_val</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_val</span><span class="p">,</span>
+        <span class="n">rseed</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">data_random_seed</span><span class="p">,</span>
+        <span class="n">fixed_in_sampling</span><span class="o">=</span><span class="n">fixed_in_sampling</span><span class="p">,</span>
+        <span class="n">fixed_values</span><span class="o">=</span><span class="n">fixed_values</span><span class="p">,</span>
+        <span class="n">fixed_in_action</span><span class="o">=</span><span class="n">fixed_in_action</span><span class="p">,</span>
+        <span class="n">n_transitions</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span>
+        <span class="n">action_range</span><span class="o">=</span><span class="n">action_range</span><span class="p">,</span>
+        <span class="n">cyclic_trans</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cyclic_trans</span><span class="p">,</span>
+        <span class="n">dist</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">distrib</span><span class="p">,</span>
+        <span class="n">return_integer_actions</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">integer_actions</span><span class="p">,</span>
+        <span class="n">rotate_actions</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">rotate_actions</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">dloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="o">=</span><span class="n">dhandler</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">shuffle</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">dloader</span></div>
+
+
+<div class="viewcode-block" id="setup_obj3d_dataset"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.data_utils.setup_obj3d_dataset">[docs]</a><span class="k">def</span> <span class="nf">setup_obj3d_dataset</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;autoencoder&#39;</span><span class="p">):</span>    
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;supervised&#39;</span><span class="p">:</span>
+        <span class="n">dhandler</span> <span class="o">=</span> <span class="n">Obj3dSupervisedDataset</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">data_root</span><span class="p">,</span> 
+                             <span class="n">num_train</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_train</span><span class="p">,</span> 
+                             <span class="n">num_val</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_val</span><span class="p">)</span>
+        <span class="n">dloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+                            <span class="n">dataset</span><span class="o">=</span><span class="n">dhandler</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                            <span class="n">shuffle</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">shuffle</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dhandler</span> <span class="o">=</span> <span class="n">Obj3dDataset</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">data_root</span><span class="p">,</span> 
+                             <span class="n">num_train</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_train</span><span class="p">,</span> 
+                             <span class="n">num_val</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_val</span><span class="p">,</span>
+                             <span class="n">resample</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">resample</span><span class="p">,</span>
+                             <span class="n">num_samples</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                             <span class="n">normalize_actions</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_actions</span><span class="p">,</span>
+                             <span class="n">rollouts</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">rollouts</span><span class="p">,</span>
+                             <span class="n">rollouts_path</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">rollouts_path</span><span class="p">,</span>
+                             <span class="n">rollouts_batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">rollouts_batch_size</span><span class="p">,)</span>
+        <span class="n">dloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+                            <span class="n">dataset</span><span class="o">=</span><span class="n">dhandler</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                            <span class="n">shuffle</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">shuffle</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">dloader</span></div>
+
+
+<div class="viewcode-block" id="setup_trajectory_dataset"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.data_utils.setup_trajectory_dataset">[docs]</a><span class="k">def</span> <span class="nf">setup_trajectory_dataset</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+
+    <span class="n">dhandlers</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">TrajectoryDataset</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">train_trajs</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">data_random_seed</span><span class="p">),</span>
+        <span class="n">TrajectoryDataset</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">valid_trajs</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">data_random_seed</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">dloaders</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dhandlers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">shuffle</span><span class="p">),</span>
+        <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dhandlers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">dhandlers</span><span class="p">,</span> <span class="n">dloaders</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.data_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

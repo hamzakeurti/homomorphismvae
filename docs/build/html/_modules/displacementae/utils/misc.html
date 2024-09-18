@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.utils.misc &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.misc</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.utils.misc</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/utils/misc.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :18/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">import</span> <span class="nn">mujoco</span>
+
+
+<div class="viewcode-block" id="str_to_ints"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.str_to_ints">[docs]</a><span class="k">def</span> <span class="nf">str_to_ints</span><span class="p">(</span><span class="n">str_arg</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a string argument into a list of ints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">str_arg</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">str_arg</span> <span class="o">=</span> <span class="n">str_arg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">str_arg</span> <span class="o">=</span> <span class="n">str_arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">str_arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39;[]&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="c1"># Nested list if &#39;]&#39; not in last position.</span>
+    <span class="n">args_list</span> <span class="o">=</span> <span class="n">str_arg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;],[&quot;</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">args_list</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="ints_to_str"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.ints_to_str">[docs]</a><span class="k">def</span> <span class="nf">ints_to_str</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">str_ret</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">str_ret</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">str_ret</span></div>
+
+<div class="viewcode-block" id="str_to_floats"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.str_to_floats">[docs]</a><span class="k">def</span> <span class="nf">str_to_floats</span><span class="p">(</span><span class="n">str_arg</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a string argument into a list of ints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">str_arg</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">str_arg</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">str_arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">args</span></div>
+
+<div class="viewcode-block" id="rotation_matrix"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.rotation_matrix">[docs]</a><span class="k">def</span> <span class="nf">rotation_matrix</span><span class="p">(</span><span class="n">yaw</span><span class="p">,</span><span class="n">pitch</span><span class="p">,</span><span class="n">roll</span><span class="p">):</span>
+    <span class="n">cy</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">yaw</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">yaw</span><span class="p">)</span>
+    <span class="n">cp</span><span class="p">,</span> <span class="n">sp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">pitch</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pitch</span><span class="p">)</span>
+    <span class="n">cr</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">roll</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">roll</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">cy</span><span class="o">*</span><span class="n">cp</span>  <span class="p">,</span> <span class="n">cy</span><span class="o">*</span><span class="n">sp</span><span class="o">*</span><span class="n">sr</span> <span class="o">-</span> <span class="n">sy</span><span class="o">*</span><span class="n">cr</span>  <span class="p">,</span> <span class="n">cy</span><span class="o">*</span><span class="n">sp</span><span class="o">*</span><span class="n">cr</span> <span class="o">+</span> <span class="n">sy</span><span class="o">*</span><span class="n">sr</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">sy</span><span class="o">*</span><span class="n">cp</span>  <span class="p">,</span> <span class="n">sy</span><span class="o">*</span><span class="n">sp</span><span class="o">*</span><span class="n">sr</span> <span class="o">+</span> <span class="n">cy</span><span class="o">*</span><span class="n">cr</span>  <span class="p">,</span> <span class="n">sy</span><span class="o">*</span><span class="n">sp</span><span class="o">*</span><span class="n">cr</span> <span class="o">-</span> <span class="n">cy</span><span class="o">*</span><span class="n">sr</span><span class="p">],</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">sp</span>    <span class="p">,</span> <span class="n">cp</span><span class="o">*</span><span class="n">sr</span>             <span class="p">,</span> <span class="n">cp</span><span class="o">*</span><span class="n">cr</span>           <span class="p">],</span>
+    <span class="p">])</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">R</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">R</span></div>
+
+
+<div class="viewcode-block" id="euler_to_mat"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.euler_to_mat">[docs]</a><span class="k">def</span> <span class="nf">euler_to_mat</span><span class="p">(</span><span class="n">euler</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert euler angles ZYX (roll, pitch, yaw) to rotation matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        euler (npt.NDArray[np.float64]): euler angles ZYX (..., 3)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        npt.NDArray[np.float64]: rotation matrix (..., 9)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">sr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">sp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">sy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">cy</span> <span class="o">*</span> <span class="n">cp</span><span class="p">,</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">sp</span> <span class="o">*</span> <span class="n">sr</span> <span class="o">-</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">cr</span><span class="p">,</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">sp</span> <span class="o">*</span> <span class="n">cr</span> <span class="o">+</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">sr</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">sy</span> <span class="o">*</span> <span class="n">cp</span><span class="p">,</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">sp</span> <span class="o">*</span> <span class="n">sr</span> <span class="o">+</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">cr</span><span class="p">,</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">sp</span> <span class="o">*</span> <span class="n">cr</span> <span class="o">-</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">sr</span><span class="p">],</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">sp</span><span class="p">,</span> <span class="n">cp</span> <span class="o">*</span> <span class="n">sr</span><span class="p">,</span> <span class="n">cp</span> <span class="o">*</span> <span class="n">cr</span><span class="p">],</span>
+    <span class="p">])</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">R</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">euler</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">9</span><span class="p">,))</span></div>
+
+
+<span class="c1"># convert euler angles ZYX numpy array (possibly a batch) to quaternions</span>
+<span class="c1"># zyx euler angles are yaw, pitch, roll</span>
+<div class="viewcode-block" id="euler_to_quat"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.euler_to_quat">[docs]</a><span class="k">def</span> <span class="nf">euler_to_quat</span><span class="p">(</span><span class="n">euler</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="n">cr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">sr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">sp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">sy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">euler</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="n">qw</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">cr</span> <span class="o">*</span> <span class="n">cp</span> <span class="o">+</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">sp</span>
+    <span class="n">qx</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">cp</span> <span class="o">-</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">cr</span> <span class="o">*</span> <span class="n">sp</span>
+    <span class="n">qy</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">cr</span> <span class="o">*</span> <span class="n">sp</span> <span class="o">+</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">cp</span>
+    <span class="n">qz</span> <span class="o">=</span> <span class="n">sy</span> <span class="o">*</span> <span class="n">cr</span> <span class="o">*</span> <span class="n">cp</span> <span class="o">-</span> <span class="n">cy</span> <span class="o">*</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">sp</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">qw</span><span class="p">,</span> <span class="n">qx</span><span class="p">,</span> <span class="n">qy</span><span class="p">,</span> <span class="n">qz</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+<span class="c1"># convert quaternions numpy array (possibly a batch) to euler angles ZYX</span>
+<div class="viewcode-block" id="quat_to_euler"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.quat_to_euler">[docs]</a><span class="k">def</span> <span class="nf">quat_to_euler</span><span class="p">(</span><span class="n">quat</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert quaternion to euler angles (roll, pitch, yaw)</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        quat (npt.NDArray[np.float64]): quaternion array shape (..., 4)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        npt.NDArray[np.float64]: euler angles roll, pitch, yaw (..., 3)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">qw</span><span class="p">,</span> <span class="n">qx</span><span class="p">,</span> <span class="n">qy</span><span class="p">,</span> <span class="n">qz</span> <span class="o">=</span> <span class="n">quat</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">quat</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">quat</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">quat</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+    <span class="c1"># roll (x-axis rotation)</span>
+    <span class="n">sinr_cosp</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qw</span> <span class="o">*</span> <span class="n">qx</span> <span class="o">+</span> <span class="n">qy</span> <span class="o">*</span> <span class="n">qz</span><span class="p">)</span>
+    <span class="n">cosr_cosp</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qx</span> <span class="o">*</span> <span class="n">qx</span> <span class="o">+</span> <span class="n">qy</span> <span class="o">*</span> <span class="n">qy</span><span class="p">)</span>
+    <span class="n">roll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">sinr_cosp</span><span class="p">,</span> <span class="n">cosr_cosp</span><span class="p">)</span>
+
+    <span class="c1"># pitch (y-axis rotation)</span>
+    <span class="n">sinp</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qw</span> <span class="o">*</span> <span class="n">qy</span> <span class="o">-</span> <span class="n">qz</span> <span class="o">*</span> <span class="n">qx</span><span class="p">)</span>
+    <span class="n">pitch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sinp</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">sinp</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">sinp</span><span class="p">))</span>
+
+    <span class="c1"># yaw (z-axis rotation)</span>
+    <span class="n">siny_cosp</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qw</span> <span class="o">*</span> <span class="n">qz</span> <span class="o">+</span> <span class="n">qx</span> <span class="o">*</span> <span class="n">qy</span><span class="p">)</span>
+    <span class="n">cosy_cosp</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">qy</span> <span class="o">*</span> <span class="n">qy</span> <span class="o">+</span> <span class="n">qz</span> <span class="o">*</span> <span class="n">qz</span><span class="p">)</span>
+    <span class="n">yaw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">siny_cosp</span><span class="p">,</span> <span class="n">cosy_cosp</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">roll</span><span class="p">,</span> <span class="n">pitch</span><span class="p">,</span> <span class="n">yaw</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="quat_to_mat"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.quat_to_mat">[docs]</a><span class="k">def</span> <span class="nf">quat_to_mat</span><span class="p">(</span><span class="n">quat</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert quaternion to rotation matrix using mujoco</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        quat (npt.NDArray[np.float64]): quaternion array shape (..., 4)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        npt.NDArray[np.float64]: rotation matrix (..., 9)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">quat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">9</span><span class="p">,))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">mujoco</span><span class="o">.</span><span class="n">mju_quat2Mat</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">q</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">quat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">9</span><span class="p">,))</span></div>
+
+
+<div class="viewcode-block" id="hue_to_rgb"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.misc.hue_to_rgb">[docs]</a><span class="k">def</span> <span class="nf">hue_to_rgb</span><span class="p">(</span><span class="n">hue</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert hue to rgb</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hue (npt.NDArray[np.float64]): hue array shape (..., 1)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        npt.NDArray[np.float64]: rgb array shape (..., 3)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ph</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hue</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hue</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hue</span><span class="o">+</span><span class="n">ph</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hue</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">ph</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hue</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hue</span><span class="o">+</span><span class="n">ph</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">hue</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">ph</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rgb</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.misc</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

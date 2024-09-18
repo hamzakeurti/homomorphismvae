@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.grouprepr.mlp_representation &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.grouprepr.mlp_representation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.grouprepr.mlp_representation</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2022 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/grouprepr/mlp_representation.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :24/03/2022</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.varphi</span> <span class="kn">import</span> <span class="n">VarPhi</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.group_representation</span> <span class="kn">import</span> <span class="n">GroupRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.networks.mlp</span> <span class="kn">import</span> <span class="n">MLP</span>
+
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> 
+                        <span class="n">message</span><span class="o">=</span><span class="s1">&#39;UserWarning: An output with one or more &#39;</span> <span class="o">+</span> 
+                                <span class="s1">&#39;elements or more elements was resized &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;since it had shape &#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MLPRepresentation"><a class="viewcode-back" href="../../../displacementae.grouprepr.html#displacementae.grouprepr.mlp_representation.MLPRepresentation">[docs]</a><span class="k">class</span> <span class="nc">MLPRepresentation</span><span class="p">(</span><span class="n">GroupRepresentation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An MLP mapping from transitions to invertible matrices.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_action_units</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dim_representation</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
+                 <span class="n">hidden_units</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="p">[],</span> 
+                 <span class="n">activation</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+                 <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                 <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+                 <span class="n">layer_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                 <span class="n">normalize_post_action</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">exponential_map</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">varphi</span><span class="p">:</span><span class="n">VarPhi</span><span class="o">=</span> <span class="kc">None</span>
+                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n_action_units</span><span class="p">,</span> <span class="n">dim_representation</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> 
+                         <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span> 
+                         <span class="n">normalize_post_action</span><span class="o">=</span><span class="n">normalize_post_action</span><span class="p">,</span>
+                         <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="n">in_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">varphi_out</span><span class="p">,</span>
+                       <span class="n">out_features</span><span class="o">=</span><span class="n">dim_representation</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                       <span class="n">hidden_units</span><span class="o">=</span><span class="n">hidden_units</span><span class="p">,</span>
+                       <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span>
+                       <span class="n">dropout_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">layer_norm</span><span class="o">=</span><span class="n">layer_norm</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exponential_map</span> <span class="o">=</span> <span class="n">exponential_map</span>
+    
+<div class="viewcode-block" id="MLPRepresentation.forward"><a class="viewcode-back" href="../../../displacementae.grouprepr.html#displacementae.grouprepr.mlp_representation.MLPRepresentation.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">use_exponential</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forwards input transitions through an MLP network and reshapes</span>
+<span class="sd">        the outputs to form matrices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">use_exponential</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">use_exponential</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponential_map</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varphi</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_representation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_exponential</span><span class="p">:</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matrix_exp</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> 
+        <span class="k">return</span> <span class="n">R</span></div>
+    
+<div class="viewcode-block" id="MLPRepresentation.forward_algebra"><a class="viewcode-back" href="../../../displacementae.grouprepr.html#displacementae.grouprepr.mlp_representation.MLPRepresentation.forward_algebra">[docs]</a>    <span class="k">def</span> <span class="nf">forward_algebra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forwards input transitions through an MLP network and reshapes</span>
+<span class="sd">        the outputs to form matrices. No exponential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varphi</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_representation</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">R</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.grouprepr.mlp_representation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,560 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>displacementae.grouprepr package &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="displacementae.grouprepr.blockrots package" href="displacementae.grouprepr.blockrots.html" />
+    <link rel="prev" title="displacementae.data.obj3d package" href="displacementae.data.obj3d.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="displacementae.grouprepr.blockrots.html" title="displacementae.grouprepr.blockrots package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="displacementae.data.obj3d.html" title="displacementae.data.obj3d package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >displacementae</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="displacementae.html" accesskey="U">displacementae package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.grouprepr package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="displacementae-grouprepr-package">
+<h1>displacementae.grouprepr package<a class="headerlink" href="#displacementae-grouprepr-package" title="Permalink to this heading">¶</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="displacementae.grouprepr.blockrots.html">displacementae.grouprepr.blockrots package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.blockrots.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.blockrots.html#module-displacementae.grouprepr.blockrots.orthogonal">displacementae.grouprepr.blockrots.orthogonal module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.blockrots.html#module-displacementae.grouprepr.blockrots">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html">displacementae.grouprepr.prodrepr package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html#module-displacementae.grouprepr.prodrepr.action_lookup">displacementae.grouprepr.prodrepr.action_lookup module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html#group-representation-of-actions-into-a-product-of-rotation-matrices">Group representation of actions into a product of rotation matrices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html#module-displacementae.grouprepr.prodrepr.product_representation">displacementae.grouprepr.prodrepr.product_representation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html#product-of-rotation-matrices-from-stored-angles">Product of rotation matrices from stored angles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="displacementae.grouprepr.prodrepr.html#module-displacementae.grouprepr.prodrepr">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-displacementae.grouprepr.block_lookup_representation">
+<span id="displacementae-grouprepr-block-lookup-representation-module"></span><h2>displacementae.grouprepr.block_lookup_representation module<a class="headerlink" href="#module-displacementae.grouprepr.block_lookup_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.block_lookup_representation.</span></span><span class="sig-name descname"><span class="pre">BlockLookupRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/block_lookup_representation.html#BlockLookupRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupRepresentation</span></code></a></p>
+<p>This subclass of group representations is a direct product of
+subrepresentations, as such it maps transitions to block diagonal
+matrices.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/block_lookup_representation.html#BlockLookupRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the representation matrix of input transition <a href="#id1"><span class="problematic" id="id2">:arg:`a`</span></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/block_lookup_representation.html#BlockLookupRepresentation.act"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation.act" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acts on an input representation vector <a href="#id3"><span class="problematic" id="id4">:arg:`z`</span></a> through matrix
+product with the representation matrix of input transition
+<a href="#id5"><span class="problematic" id="id6">:arg:`a`</span></a>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>a, torch.Tensor: Batch of transitions.</dt><dd><p>shape: <cite>[batch_size,n_action]</cite></p>
+</dd>
+<dt>z, torch.Tensor: Batch of representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr]</cite></p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.Tensor: Transformed representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr_units]</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation.normalize_vector">
+<span class="sig-name descname"><span class="pre">normalize_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/block_lookup_representation.html#BlockLookupRepresentation.normalize_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_lookup_representation.BlockLookupRepresentation.normalize_vector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.block_mlp_representation">
+<span id="displacementae-grouprepr-block-mlp-representation-module"></span><h2>displacementae.grouprepr.block_mlp_representation module<a class="headerlink" href="#module-displacementae.grouprepr.block_mlp_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.block_mlp_representation.</span></span><span class="sig-name descname"><span class="pre">BlockMLPRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/block_mlp_representation.html#BlockMLPRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupRepresentation</span></code></a></p>
+<p>This subclass of group representations is a direct product of
+subrepresentations, as such it maps transitions to block diagonal
+matrices.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_exponential</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/block_mlp_representation.html#BlockMLPRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the representation matrix of input transition <a href="#id7"><span class="problematic" id="id8">:arg:`a`</span></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.forward_algebra">
+<span class="sig-name descname"><span class="pre">forward_algebra</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/block_mlp_representation.html#BlockMLPRepresentation.forward_algebra"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.forward_algebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forwards input transitions through an MLP network and reshapes
+the outputs to form matrices. No exponential.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/block_mlp_representation.html#BlockMLPRepresentation.act"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.act" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acts on an input representation vector <a href="#id9"><span class="problematic" id="id10">:arg:`z`</span></a> through matrix
+product with the representation matrix of input transition
+<a href="#id11"><span class="problematic" id="id12">:arg:`a`</span></a>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>a, torch.Tensor: Batch of transitions.</dt><dd><p>shape: <cite>[batch_size,n_action]</cite></p>
+</dd>
+<dt>z, torch.Tensor: Batch of representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr]</cite></p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.Tensor: Transformed representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr_units]</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.normalize_vector">
+<span class="sig-name descname"><span class="pre">normalize_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/block_mlp_representation.html#BlockMLPRepresentation.normalize_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.block_mlp_representation.BlockMLPRepresentation.normalize_vector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.group_representation">
+<span id="displacementae-grouprepr-group-representation-module"></span><h2>displacementae.grouprepr.group_representation module<a class="headerlink" href="#module-displacementae.grouprepr.group_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.group_representation.</span></span><span class="sig-name descname"><span class="pre">GroupRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>An interface for group representation classes.</p>
+<p>Group representations are maps from the abstract action group to
+invertible matrices through the <a href="#id13"><span class="problematic" id="id14">:method:`forward`</span></a> method.
+Group representations also define a linear
+action of the abstract group on the representation space of
+observations, as such the group representation transforms input
+representation vectors through the matrix product with the
+representation of a given action, through the <a href="#id15"><span class="problematic" id="id16">:method:`act`</span></a> method.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the representation matrix of input transition <a href="#id17"><span class="problematic" id="id18">:arg:`a`</span></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation.act"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.act" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acts on an input representation vector <a href="#id19"><span class="problematic" id="id20">:arg:`z`</span></a> through matrix
+product with the representation matrix of input transition
+<a href="#id21"><span class="problematic" id="id22">:arg:`a`</span></a>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>a, torch.Tensor: Batch of transitions.</dt><dd><p>shape: <cite>[batch_size,n_action]</cite></p>
+</dd>
+<dt>z, torch.Tensor: Batch of representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr]</cite></p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.Tensor: Transformed representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr_units]</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.get_example_repr">
+<span class="sig-name descname"><span class="pre">get_example_repr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation.get_example_repr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.get_example_repr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.representation_loss">
+<span class="sig-name descname"><span class="pre">representation_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation.representation_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.representation_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.end_iteration">
+<span class="sig-name descname"><span class="pre">end_iteration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation.end_iteration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.end_iteration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.normalize_vector">
+<span class="sig-name descname"><span class="pre">normalize_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/group_representation.html#GroupRepresentation.normalize_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.normalize_vector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="displacementae.grouprepr.group_representation.GroupRepresentation.varphi_out">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">varphi_out</span></span><a class="headerlink" href="#displacementae.grouprepr.group_representation.GroupRepresentation.varphi_out" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.lookup_representation">
+<span id="displacementae-grouprepr-lookup-representation-module"></span><h2>displacementae.grouprepr.lookup_representation module<a class="headerlink" href="#module-displacementae.grouprepr.lookup_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.lookup_representation.LookupRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.lookup_representation.</span></span><span class="sig-name descname"><span class="pre">LookupRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/lookup_representation.html#LookupRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.lookup_representation.LookupRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupRepresentation</span></code></a></p>
+<p>A Lookup table of learned matrices.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.lookup_representation.LookupRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/lookup_representation.html#LookupRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.lookup_representation.LookupRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Looks up representation matrices for each input action.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.mlp_representation">
+<span id="displacementae-grouprepr-mlp-representation-module"></span><h2>displacementae.grouprepr.mlp_representation module<a class="headerlink" href="#module-displacementae.grouprepr.mlp_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.mlp_representation.MLPRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.mlp_representation.</span></span><span class="sig-name descname"><span class="pre">MLPRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/mlp_representation.html#MLPRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.mlp_representation.MLPRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupRepresentation</span></code></a></p>
+<p>An MLP mapping from transitions to invertible matrices.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.mlp_representation.MLPRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_exponential</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/mlp_representation.html#MLPRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.mlp_representation.MLPRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forwards input transitions through an MLP network and reshapes
+the outputs to form matrices.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.mlp_representation.MLPRepresentation.forward_algebra">
+<span class="sig-name descname"><span class="pre">forward_algebra</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/mlp_representation.html#MLPRepresentation.forward_algebra"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.mlp_representation.MLPRepresentation.forward_algebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forwards input transitions through an MLP network and reshapes
+the outputs to form matrices. No exponential.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.representation_utils">
+<span id="displacementae-grouprepr-representation-utils-module"></span><h2>displacementae.grouprepr.representation_utils module<a class="headerlink" href="#module-displacementae.grouprepr.representation_utils" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.representation_utils.</span></span><span class="sig-name descname"><span class="pre">Representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/representation_utils.html#Representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.TRIVIAL">
+<span class="sig-name descname"><span class="pre">TRIVIAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.TRIVIAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.BLOCK_ROTS">
+<span class="sig-name descname"><span class="pre">BLOCK_ROTS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.BLOCK_ROTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.MLP">
+<span class="sig-name descname"><span class="pre">MLP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.MLP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.BLOCK_MLP">
+<span class="sig-name descname"><span class="pre">BLOCK_MLP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.BLOCK_MLP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.PROD_ROTS_LOOKUP">
+<span class="sig-name descname"><span class="pre">PROD_ROTS_LOOKUP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.PROD_ROTS_LOOKUP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.LOOKUP">
+<span class="sig-name descname"><span class="pre">LOOKUP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.LOOKUP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.BLOCK_LOOKUP">
+<span class="sig-name descname"><span class="pre">BLOCK_LOOKUP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.BLOCK_LOOKUP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.UNSTRUCTURED">
+<span class="sig-name descname"><span class="pre">UNSTRUCTURED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.UNSTRUCTURED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.Representation.SOFT_BLOCK_MLP">
+<span class="sig-name descname"><span class="pre">SOFT_BLOCK_MLP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#displacementae.grouprepr.representation_utils.Representation.SOFT_BLOCK_MLP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="displacementae.grouprepr.representation_utils.str_to_enum">
+<span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.representation_utils.</span></span><span class="sig-name descname"><span class="pre">str_to_enum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str_repr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#displacementae.grouprepr.representation_utils.Representation" title="displacementae.grouprepr.representation_utils.Representation"><span class="pre">Representation</span></a></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/representation_utils.html#str_to_enum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.representation_utils.str_to_enum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.soft_block_mlp_representation">
+<span id="displacementae-grouprepr-soft-block-mlp-representation-module"></span><h2>displacementae.grouprepr.soft_block_mlp_representation module<a class="headerlink" href="#module-displacementae.grouprepr.soft_block_mlp_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.soft_block_mlp_representation.SoftBlockMLPRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.soft_block_mlp_representation.</span></span><span class="sig-name descname"><span class="pre">SoftBlockMLPRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/soft_block_mlp_representation.html#SoftBlockMLPRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.soft_block_mlp_representation.SoftBlockMLPRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.mlp_representation.MLPRepresentation" title="displacementae.grouprepr.mlp_representation.MLPRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MLPRepresentation</span></code></a></p>
+<p>An MLP mapping from transitions to invertible matrices.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.soft_block_mlp_representation.SoftBlockMLPRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_exponential</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/soft_block_mlp_representation.html#SoftBlockMLPRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.soft_block_mlp_representation.SoftBlockMLPRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forwards input transitions through an MLP network and reshapes
+the outputs to form matrices.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.soft_block_mlp_representation.SoftBlockMLPRepresentation.representation_loss">
+<span class="sig-name descname"><span class="pre">representation_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/soft_block_mlp_representation.html#SoftBlockMLPRepresentation.representation_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.soft_block_mlp_representation.SoftBlockMLPRepresentation.representation_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.trivial_representation">
+<span id="displacementae-grouprepr-trivial-representation-module"></span><h2>displacementae.grouprepr.trivial_representation module<a class="headerlink" href="#module-displacementae.grouprepr.trivial_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.trivial_representation.TrivialRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.trivial_representation.</span></span><span class="sig-name descname"><span class="pre">TrivialRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/trivial_representation.html#TrivialRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.trivial_representation.TrivialRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupRepresentation</span></code></a></p>
+<p>A Trivial Representation.</p>
+<p>Maps all group elements to identity transformation.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.trivial_representation.TrivialRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/trivial_representation.html#TrivialRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.trivial_representation.TrivialRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns identity representation for any action.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.trivial_representation.TrivialRepresentation.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/trivial_representation.html#TrivialRepresentation.act"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.trivial_representation.TrivialRepresentation.act" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acts trivially on input z.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.unstructured_representation">
+<span id="displacementae-grouprepr-unstructured-representation-module"></span><h2>displacementae.grouprepr.unstructured_representation module<a class="headerlink" href="#module-displacementae.grouprepr.unstructured_representation" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.unstructured_representation.</span></span><span class="sig-name descname"><span class="pre">UnstructuredRepresentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/unstructured_representation.html#UnstructuredRepresentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#displacementae.grouprepr.group_representation.GroupRepresentation" title="displacementae.grouprepr.group_representation.GroupRepresentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupRepresentation</span></code></a></p>
+<p>Class for unstructured latent transformation.</p>
+<p>Instead of transforming latent by group actions, this representation
+simply map [latent, action] to the next latent through an MLP</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/unstructured_representation.html#UnstructuredRepresentation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the representation matrix of input transition <a href="#id23"><span class="problematic" id="id24">:arg:`a`</span></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/unstructured_representation.html#UnstructuredRepresentation.act"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.act" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acts on an input representation vector <a href="#id25"><span class="problematic" id="id26">:arg:`z`</span></a> through matrix
+product with the representation matrix of input transition
+<a href="#id27"><span class="problematic" id="id28">:arg:`a`</span></a>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>a, torch.Tensor: Batch of transitions.</dt><dd><p>shape: <cite>[batch_size,n_action]</cite></p>
+</dd>
+<dt>z, torch.Tensor: Batch of representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr]</cite></p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.Tensor: Transformed representation vectors.</dt><dd><p>shape: <cite>[batch_size,n_repr_units]</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.get_example_repr">
+<span class="sig-name descname"><span class="pre">get_example_repr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/unstructured_representation.html#UnstructuredRepresentation.get_example_repr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.get_example_repr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.representation_loss">
+<span class="sig-name descname"><span class="pre">representation_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/unstructured_representation.html#UnstructuredRepresentation.representation_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.representation_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.end_iteration">
+<span class="sig-name descname"><span class="pre">end_iteration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/unstructured_representation.html#UnstructuredRepresentation.end_iteration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.unstructured_representation.UnstructuredRepresentation.end_iteration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr.varphi">
+<span id="displacementae-grouprepr-varphi-module"></span><h2>displacementae.grouprepr.varphi module<a class="headerlink" href="#module-displacementae.grouprepr.varphi" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="displacementae.grouprepr.varphi.VarPhi">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">displacementae.grouprepr.varphi.</span></span><span class="sig-name descname"><span class="pre">VarPhi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/displacementae/grouprepr/varphi.html#VarPhi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.varphi.VarPhi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>A mixing function of the action units.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="displacementae.grouprepr.varphi.VarPhi.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/displacementae/grouprepr/varphi.html#VarPhi.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#displacementae.grouprepr.varphi.VarPhi.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="displacementae.grouprepr.varphi.VarPhi.out_units">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_units</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#displacementae.grouprepr.varphi.VarPhi.out_units" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-displacementae.grouprepr">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-displacementae.grouprepr" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">displacementae.grouprepr package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.block_lookup_representation">displacementae.grouprepr.block_lookup_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.block_mlp_representation">displacementae.grouprepr.block_mlp_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.group_representation">displacementae.grouprepr.group_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.lookup_representation">displacementae.grouprepr.lookup_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.mlp_representation">displacementae.grouprepr.mlp_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.representation_utils">displacementae.grouprepr.representation_utils module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.soft_block_mlp_representation">displacementae.grouprepr.soft_block_mlp_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.trivial_representation">displacementae.grouprepr.trivial_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.unstructured_representation">displacementae.grouprepr.unstructured_representation module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr.varphi">displacementae.grouprepr.varphi module</a></li>
+<li><a class="reference internal" href="#module-displacementae.grouprepr">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="displacementae.data.obj3d.html"
+                          title="previous chapter">displacementae.data.obj3d package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="displacementae.grouprepr.blockrots.html"
+                          title="next chapter">displacementae.grouprepr.blockrots package</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/displacementae.grouprepr.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="displacementae.grouprepr.blockrots.html" title="displacementae.grouprepr.blockrots package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="displacementae.data.obj3d.html" title="displacementae.data.obj3d package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >displacementae</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="displacementae.html" >displacementae package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.grouprepr package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

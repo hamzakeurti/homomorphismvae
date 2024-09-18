@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.data.obj3d.world_model &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css" />
+    
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d.world_model</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.data.obj3d.world_model</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;Linux&#39;</span><span class="p">:</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MUJOCO_GL&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;egl&#39;</span> 
+<span class="c1"># os.environ[&quot;MUJOCO_EGL_DEVICE_ID&quot;] = &quot;0&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">mujoco</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+
+<div class="viewcode-block" id="WorldModel"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.world_model.WorldModel">[docs]</a><span class="k">class</span> <span class="nc">WorldModel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class maintains a world model of a colored object as it changes orientation and color.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">object_name</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">figsize</span><span class="p">:</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="mi">72</span><span class="p">,</span><span class="mi">72</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the mujoco simulation and renderer.</span>
+
+<span class="sd">        Todo: add color option, 1D rotation option.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">object_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">object_dir</span><span class="p">)</span>
+        <span class="n">xml</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_xml</span><span class="p">(</span><span class="n">object_dir</span><span class="p">,</span> <span class="n">object_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">mujoco</span><span class="o">.</span><span class="n">MjModel</span><span class="o">.</span><span class="n">from_xml_string</span><span class="p">(</span><span class="n">xml</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">mujoco</span><span class="o">.</span><span class="n">MjData</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="s1">&#39;camera&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="n">object_name</span><span class="p">)</span>
+        <span class="c1"># Center the object at the origin.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_object</span><span class="o">.</span><span class="n">ipos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figsize</span> <span class="o">=</span> <span class="n">figsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span> <span class="o">=</span> <span class="n">mujoco</span><span class="o">.</span><span class="n">Renderer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> 
+                                        <span class="n">height</span><span class="o">=</span><span class="n">figsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                                        <span class="n">width</span><span class="o">=</span><span class="n">figsize</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">figsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_figsize</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">orientation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="c1"># normalize the quaterniopn prior to returning it.</span>
+        <span class="n">quat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_object</span><span class="o">.</span><span class="n">quat</span>
+        <span class="k">return</span> <span class="n">quat</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">quat</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="WorldModel.render"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.world_model.WorldModel.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render the scene at the current position and orientation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            the rendered image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mujoco</span><span class="o">.</span><span class="n">mj_forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">update_scene</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;camera&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_renderer</span><span class="o">.</span><span class="n">render</span><span class="p">()</span> </div>
+
+
+<div class="viewcode-block" id="WorldModel.set_orientation"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.world_model.WorldModel.set_orientation">[docs]</a>    <span class="k">def</span> <span class="nf">set_orientation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quat</span><span class="p">:</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_object</span><span class="o">.</span><span class="n">quat</span> <span class="o">=</span> <span class="n">quat</span></div>
+
+
+<div class="viewcode-block" id="WorldModel.rotate_by"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.world_model.WorldModel.rotate_by">[docs]</a>    <span class="k">def</span> <span class="nf">rotate_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quat</span><span class="p">:</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rotate the object by the given quaternion.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        quat : np.ndarray</span>
+<span class="sd">            the quaternion to rotate by.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mujoco</span><span class="o">.</span><span class="n">mju_mulQuat</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_object</span><span class="o">.</span><span class="n">quat</span><span class="p">,</span> <span class="n">quat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_object</span><span class="o">.</span><span class="n">quat</span><span class="p">)</span></div>
+        
+
+<div class="viewcode-block" id="WorldModel.set_color"><a class="viewcode-back" href="../../../../displacementae.data.obj3d.html#displacementae.data.obj3d.world_model.WorldModel.set_color">[docs]</a>    <span class="k">def</span> <span class="nf">set_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the color of the object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        color : np.ndarray</span>
+<span class="sd">            the rgba color to set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">geom</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_object</span><span class="o">.</span><span class="n">geomadr</span><span class="p">)</span><span class="o">.</span><span class="n">rgba</span> <span class="o">=</span> <span class="n">color</span>    </div>
+
+
+    <span class="k">def</span> <span class="nf">_create_xml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">objects_dir</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">object_name</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the xml file for the mujoco simulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xml</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;mujoco&gt;</span>
+<span class="s2">            &lt;visual&gt;</span>
+<span class="s2">                &lt;quality numslices=&quot;1000&quot; offsamples=&quot;1000&quot;/&gt;</span>
+<span class="s2">            &lt;/visual&gt;</span>
+<span class="s2">            &lt;asset&gt;</span>
+<span class="s2">                &lt;texture type=&quot;skybox&quot; builtin=&quot;flat&quot; rgb1=&quot;1 1 1&quot; width=&quot;32&quot; height=&quot;512&quot;/&gt;</span>
+<span class="s2">                &lt;mesh name=&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_mesh&quot; file=&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">objects_dir</span><span class="p">,</span><span class="n">object_name</span><span class="p">)</span><span class="si">}</span><span class="s2">.obj&quot;/&gt;</span>
+<span class="s2">            &lt;/asset&gt;</span>
+
+<span class="s2">            &lt;worldbody&gt;</span>
+<span class="s2">                &lt;body name=&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">&quot; pos=&quot;0 0 0&quot;&gt;</span>
+<span class="s2">                    &lt;geom name=&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">&quot; type=&quot;mesh&quot; mesh=&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_mesh&quot; size=&quot;.2 .2 .2&quot; rgba=&quot;1 0 0 1&quot; quat=&quot;0.707 0.707 0 0&quot;/&gt;</span>
+<span class="s2">                &lt;/body&gt;</span>
+<span class="s2">                &lt;body name=&quot;camera&quot; pos=&quot;0 0 0&quot; quat=&quot;0 0 0 0&quot;&gt;</span>
+<span class="s2">                    &lt;camera name=&quot;camera&quot; mode=&quot;fixed&quot; pos = &quot;0 -0.32 0.0&quot; quat=&quot;0.7 0.7 0 0&quot;/&gt;</span>
+<span class="s2">                &lt;/body&gt;</span>
+<span class="s2">            &lt;/worldbody&gt;</span>
+<span class="s2">            &lt;option timestep=&quot;0.01&quot; gravity=&quot;0 0 0&quot;/&gt;</span>
+<span class="s2">        &lt;/mujoco&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">xml</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d.world_model</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

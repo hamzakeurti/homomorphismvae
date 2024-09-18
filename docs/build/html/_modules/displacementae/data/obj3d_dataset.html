@@ -1,0 +1,416 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.data.obj3d_dataset &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d_dataset</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.data.obj3d_dataset</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/data/obj3d_dataset.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :10/09/2022</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Dataset of a 3D object in different orientations.</span>
+<span class="sd">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+
+<span class="sd">The module :mod:`data.obj3d` contains a data handler for a hdf5 dataset </span>
+<span class="sd">generated from .obj models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Sampler</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;HDF5_USE_FILE_LOCKING&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;FALSE&#39;</span> 
+
+<span class="kn">from</span> <span class="nn">displacementae.data.transition_dataset</span> <span class="kn">import</span> <span class="n">TransitionDataset</span>
+<span class="kn">from</span> <span class="nn">displacementae.utils</span> <span class="kn">import</span> <span class="n">misc</span>
+
+
+<div class="viewcode-block" id="Obj3dDataset"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_dataset.Obj3dDataset">[docs]</a><span class="k">class</span> <span class="nc">Obj3dDataset</span><span class="p">(</span><span class="n">TransitionDataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">root</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> 
+                 <span class="n">rseed</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">n_transitions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">num_train</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                 <span class="n">num_val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+                 <span class="n">resample</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">num_samples</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                 <span class="n">normalize_actions</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">rollouts</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">rollouts_path</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">rollouts_batch_size</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rseed</span><span class="p">,</span> <span class="n">n_transitions</span><span class="p">)</span>
+
+        <span class="c1"># Read Data from file.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span> <span class="o">=</span> <span class="n">resample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_samples</span> <span class="o">=</span> <span class="n">num_samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_actions</span> <span class="o">=</span> <span class="n">normalize_actions</span>
+
+        <span class="c1"># Number of samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span> <span class="o">=</span> <span class="n">num_train</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_val</span> <span class="o">=</span> <span class="n">num_val</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_attributes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_val_batch</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts</span> <span class="o">=</span> <span class="n">rollouts</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">rollouts_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="n">rollouts_batch_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">rollouts_path</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts_batch_size</span> <span class="o">=</span> <span class="n">rollouts_batch_size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_rollouts</span><span class="p">()</span>
+
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rots_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trans_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_col_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        
+        <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">:</span>
+            <span class="n">n_rots_act</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_rots_act</span><span class="p">)</span>
+            <span class="n">k</span> <span class="o">+=</span> <span class="n">n_rots_act</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">k</span><span class="p">,</span><span class="n">stop</span><span class="o">=</span><span class="n">k</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">k</span><span class="o">+=</span><span class="mi">3</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_col_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>        
+        
+        <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span><span class="o">==</span><span class="s1">&#39;continuous&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_stepsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_stepsize</span><span class="o">=</span><span class="n">rng</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rots_n_values</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;in_shape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="c1"># this is the input size to the group representation</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;action_units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># This is the dimensionality of the action space</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_translate</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_samples</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="p">[],</span> <span class="n">dj</span>
+
+
+<div class="viewcode-block" id="Obj3dDataset.resample_data"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_dataset.Obj3dDataset.resample_data">[docs]</a>    <span class="k">def</span> <span class="nf">resample_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replaces new samples in memory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s2">&quot;__images&quot;</span><span class="p">):</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_rand</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_samples</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">][</span><span class="n">indices</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">][</span><span class="n">indices</span><span class="p">,</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_actions</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span> </div>
+    
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">in_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;in_shape&quot;</span><span class="p">]</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">action_units</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;action_units&quot;</span><span class="p">]</span>
+    
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Number of all possible discrete actions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+
+    <span class="k">def</span> <span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads samples from an hdf5 dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resample_data</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">][:</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">][:</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span><span class="p">]</span> 
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_actions</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_transitions</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M</span>
+            <span class="c1"># images = self._file[&#39;images&#39;]</span>
+            <span class="c1"># transitions = self._file[&#39;rotations&#39;]</span>
+
+    <span class="k">def</span> <span class="nf">_load_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the atributes of the dataset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+        <span class="c1">#         &quot;obj_filename&quot;:obj_filename,  </span>
+        <span class="c1"># &quot;figsize&quot;:figsize,</span>
+        <span class="c1"># &quot;dpi&quot;:dpi, </span>
+        <span class="c1"># &quot;lim&quot;:lim,</span>
+        <span class="c1"># self._translate_only=self._attributes_dict[&quot;translate_only&quot;]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;figsize&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_steps&quot;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_samples&quot;</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;rotate&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="o">=</span><span class="n">misc</span><span class="o">.</span><span class="n">str_to_floats</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;rotation_range&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rotation_format</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;rotation_format&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span><span class="o">==</span><span class="s1">&#39;discrete&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_rots_n_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_values&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_color</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_continuous_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;continuous_color&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_continuous_color</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_n_colors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_colors&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_color_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;color_range&quot;</span><span class="p">]</span>
+
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translate&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_grid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translation_grid&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_stepsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translation_stepsize&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translation_range&quot;</span><span class="p">]</span>
+        
+
+    <span class="k">def</span> <span class="nf">_sample_val_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">)</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span>
+        <span class="n">nv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_val</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span>  <span class="n">n</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">nt</span><span class="o">+</span><span class="n">nv</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not enough samples </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> for chosen &quot;</span> <span class="o">+</span> 
+                    <span class="sa">f</span><span class="s2">&quot;--num_train=</span><span class="si">{</span><span class="n">nt</span><span class="si">}</span><span class="s2"> and --num_val=</span><span class="si">{</span><span class="n">nv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_val_imgs</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">][</span><span class="o">-</span><span class="n">nv</span><span class="p">:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_val_actions</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">][</span><span class="o">-</span><span class="n">nv</span><span class="p">:]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_actions</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_val_actions</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M</span>
+
+
+    <span class="k">def</span> <span class="nf">_load_rollouts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rollouts_path</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;figsize&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_figsize</span>
+            <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
+            <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span>
+            <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;translate&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span>
+            <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">:</span>
+                <span class="n">rng</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_floats</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rotation_range&#39;</span><span class="p">])</span>
+                <span class="k">assert</span> <span class="n">rng</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span>
+                <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rotation_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotation_format</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;continuous_color&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_continuous_color</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_continuous_color</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;n_colors&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_colors</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_roll_imgs</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">][:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_roll_actions</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">][:]</span> 
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_actions</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_roll_actions</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M</span>
+
+<div class="viewcode-block" id="Obj3dDataset.get_example_actions"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_dataset.Obj3dDataset.get_example_actions">[docs]</a>    <span class="k">def</span> <span class="nf">get_example_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;returns a set of example actions (transition signals) with labels. </span>
+
+<span class="sd">        :return: a tuple of a batch of action signals as perceived by the agent </span>
+<span class="sd">                 and associated labels.</span>
+<span class="sd">        :rtype: Tuple[np.ndarray, np.ndarray]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">action_dim</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">action_dim</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_dim</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rots_idx</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">:</span><span class="mi">3</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_rots_stepsize</span><span class="o">*</span><span class="mf">0.8</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trans_idx</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">:</span><span class="mi">3</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_trans_stepsize</span><span class="o">*</span><span class="mf">0.8</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># color</span>
+                <span class="c1"># We take a step big enough that the angle sin is visible.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_continuous_color</span><span class="p">:</span>
+                    <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">:</span><span class="mi">3</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_color_range</span><span class="o">*</span><span class="mf">0.8</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">:</span><span class="mi">3</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="nb">min</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_n_colors</span><span class="o">//</span><span class="mi">10</span><span class="p">,</span> 
+                            <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_color_range</span><span class="o">*</span><span class="mf">0.8</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span> 
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotation_format</span> <span class="o">==</span> <span class="s2">&quot;mat&quot;</span><span class="p">:</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">euler_to_mat</span><span class="p">(</span><span class="n">a</span><span class="p">[:,:</span><span class="mi">3</span><span class="p">])</span> <span class="c1"># R shape: [n,9]</span>
+            <span class="n">a_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">R</span><span class="p">,</span><span class="n">a</span><span class="p">[:,</span><span class="mi">3</span><span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotation_format</span> <span class="o">==</span> <span class="s2">&quot;quat&quot;</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">euler_to_quat</span><span class="p">(</span><span class="n">a</span><span class="p">[:,:</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">a_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">q</span><span class="p">,</span><span class="n">a</span><span class="p">[:,</span><span class="mi">3</span><span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a_in</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_actions</span><span class="p">:</span>
+            <span class="n">a_in</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M</span>
+        <span class="k">return</span> <span class="n">a_in</span><span class="p">,</span> <span class="n">a</span></div>
+
+
+<div class="viewcode-block" id="Obj3dDataset.get_val_batch"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_dataset.Obj3dDataset.get_val_batch">[docs]</a>    <span class="k">def</span> <span class="nf">get_val_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get a batch of evaluation samples.</span>
+
+<span class="sd">        :return: a tuple of a batch of observation evaluation samples and </span>
+<span class="sd">                 transition evaluation samples. </span>
+<span class="sd">        :rtype: Tuple[np.ndarray, np.ndarray]</span>
+<span class="sd">        &quot;&quot;&quot;</span>    <span class="c1">#     imgs = self._images[self.num_train:self.num_train+self.num_val]</span>
+    <span class="c1">#     transitions = self._transitions[self.num_train:self.num_train+self.num_val]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val_imgs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val_actions</span></div>
+
+
+<div class="viewcode-block" id="Obj3dDataset.get_rollouts"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_dataset.Obj3dDataset.get_rollouts">[docs]</a>    <span class="k">def</span> <span class="nf">get_rollouts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span>
+         <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Returns a generator of rollouts.&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rollouts were not loaded.&quot;</span><span class="p">)</span>
+        
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts_batch_size</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roll_imgs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">):</span> 
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roll_imgs</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">b</span><span class="p">],</span>\
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_roll_actions</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">b</span><span class="p">]</span> <span class="c1"># type: ignore</span></div>
+            
+
+<div class="viewcode-block" id="Obj3dDataset.get_n_rollouts"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_dataset.Obj3dDataset.get_n_rollouts">[docs]</a>    <span class="k">def</span> <span class="nf">get_n_rollouts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Returns the first n rollouts.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rollouts</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rollouts were not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roll_imgs</span><span class="p">[:</span><span class="n">n</span><span class="p">],</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">_roll_actions</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span> <span class="c1"># type: ignore</span></div></div>
+    
+            
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d_dataset</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

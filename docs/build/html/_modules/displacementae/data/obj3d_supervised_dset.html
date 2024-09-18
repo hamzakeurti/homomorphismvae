@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.data.obj3d_supervised_dset &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d_supervised_dset</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.data.obj3d_supervised_dset</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2023 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/data/obj3d_supervised_dset.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :20/02/2022</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Dataset of a 3D object in different poses (orientations/positions/colors).</span>
+<span class="sd">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+
+<span class="sd">A data handler for the supervised setting. A similar handler for the transition </span>
+<span class="sd">setting is provided in :mod:`data.obj3d_dataset`.</span>
+<span class="sd">This handler loads an hdf5 dataset of images and labels previously generated </span>
+<span class="sd">using the :mod:`data.obj3d` module. </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Sampler</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
+
+
+
+
+<div class="viewcode-block" id="Obj3dSupervisedDataset"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_supervised_dset.Obj3dSupervisedDataset">[docs]</a><span class="k">class</span> <span class="nc">Obj3dSupervisedDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">root</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> 
+                 <span class="n">rseed</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">num_train</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                 <span class="n">num_val</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># Random generator</span>
+        <span class="k">if</span> <span class="n">rseed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">rseed</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rand</span> <span class="o">=</span> <span class="n">rand</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rseed</span> <span class="o">=</span> <span class="n">rseed</span>
+
+        <span class="c1"># Read Data from file.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root</span> <span class="o">=</span> <span class="n">root</span>
+
+        <span class="c1"># Number of samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span> <span class="o">=</span> <span class="n">num_train</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_val</span> <span class="o">=</span> <span class="n">num_val</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_attributes</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rots_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trans_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_col_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        
+        <span class="n">nrots</span> <span class="o">=</span> <span class="mi">9</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotation_matrix_action</span> <span class="k">else</span> <span class="mi">3</span>
+        <span class="n">ntrans</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nrots</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">+=</span> <span class="n">nrots</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">n</span><span class="p">,</span><span class="n">stop</span><span class="o">=</span><span class="n">n</span><span class="o">+</span><span class="n">ntrans</span><span class="p">)</span>
+            <span class="n">n</span><span class="o">+=</span> <span class="n">ntrans</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_col_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>        
+        
+        <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span><span class="o">==</span><span class="s1">&#39;continuous&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_stepsize</span><span class="o">=</span><span class="n">rng</span><span class="o">/</span><span class="mi">4</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rots_stepsize</span><span class="o">=</span><span class="n">rng</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rots_n_values</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_val_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val_actions</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;in_shape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_imgs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;action_units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_imgs</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span>
+    
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">in_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;in_shape&quot;</span><span class="p">]</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">action_units</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;action_units&quot;</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads samples from an hdf5 dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">)</span>
+
+        <span class="n">nt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_train</span>
+        <span class="n">nv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_val</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_imgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">][:</span><span class="n">nt</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">][:</span><span class="n">nt</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rot_mats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;positions&#39;</span><span class="p">][:</span><span class="n">nt</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            
+            <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span>  <span class="n">n</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">nt</span><span class="o">+</span><span class="n">nv</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not enough samples </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> for chosen &quot;</span> <span class="o">+</span> 
+                    <span class="sa">f</span><span class="s2">&quot;--num_train=</span><span class="si">{</span><span class="n">nt</span><span class="si">}</span><span class="s2"> and --num_val=</span><span class="si">{</span><span class="n">nv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">_val_imgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">][</span><span class="n">nt</span><span class="p">:</span><span class="n">nt</span><span class="o">+</span><span class="n">nv</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_val_actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">][</span><span class="n">nt</span><span class="p">:</span><span class="n">nt</span><span class="o">+</span><span class="n">nv</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_val_rots_mats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;positions&#39;</span><span class="p">][</span><span class="n">nt</span><span class="p">:</span><span class="n">nt</span><span class="o">+</span><span class="n">nv</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_load_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the atributes of the dataset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+        <span class="c1">#         &quot;obj_filename&quot;:obj_filename,  </span>
+        <span class="c1"># &quot;figsize&quot;:figsize,</span>
+        <span class="c1"># &quot;dpi&quot;:dpi, </span>
+        <span class="c1"># &quot;lim&quot;:lim,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translate&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;rotate&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rotation_matrix_action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;rotation_matrix_action&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rots_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;rots_range&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_steps&quot;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_samples&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_color</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rots_n_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;n_values&quot;</span><span class="p">]</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_grid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translation_grid&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_stepsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translation_stepsize&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trans_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_dict</span><span class="p">[</span><span class="s2">&quot;translation_range&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Obj3dSupervisedDataset.get_val_batch"><a class="viewcode-back" href="../../../displacementae.data.html#displacementae.data.obj3d_supervised_dset.Obj3dSupervisedDataset.get_val_batch">[docs]</a>    <span class="k">def</span> <span class="nf">get_val_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get a batch of evaluation samples.</span>
+
+<span class="sd">        :return: a tuple of a batch of observation evaluation samples and </span>
+<span class="sd">                 the batch of their associated labels. </span>
+<span class="sd">        :rtype: Tuple[np.ndarray, np.ndarray]</span>
+<span class="sd">        &quot;&quot;&quot;</span>    <span class="c1">#     imgs = self._imgs[self.num_train:self.num_train+self.num_val]</span>
+    <span class="c1">#     transitions = self._transitions[self.num_train:self.num_train+self.num_val]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val_imgs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val_labels</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># pass</span>
+
+    <span class="kn">from</span> <span class="nn">displacementae.data.obj3d_supervised_dset</span> <span class="kn">import</span> <span class="n">Obj3dSupervisedDataset</span>
+
+    <span class="n">root</span> <span class="o">=</span> <span class="s1">&#39;C:/Users/hamza/datasets/obj3d/collect/bunny1.hdf5&#39;</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">Obj3dSupervisedDataset</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span><span class="n">rseed</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">use_rotation_matrix</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">num_train</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">num_val</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.data.obj3d_supervised_dset</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

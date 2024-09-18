@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.supervised.train_utils &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.supervised.train_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.supervised.train_utils</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2022 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/supervised/train_utils.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :12/02/2023</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">import</span> <span class="nn">wandb</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="kn">from</span> <span class="nn">displacementae.networks.variational_utils</span> <span class="kn">import</span> <span class="n">bce_loss</span>
+<span class="kn">from</span> <span class="nn">displacementae.utils</span> <span class="kn">import</span> <span class="n">checkpoint</span><span class="p">,</span> <span class="n">sim_utils</span>
+<span class="kn">from</span> <span class="nn">displacementae.utils</span> <span class="kn">import</span> <span class="n">plotting_utils</span> <span class="k">as</span> <span class="n">plt_utils</span>
+
+<span class="n">LOSS_LOWEST</span> <span class="o">=</span> <span class="s1">&#39;loss_lowest&#39;</span>
+<span class="n">LOSS_LOWEST_EPOCH</span> <span class="o">=</span> <span class="s1">&#39;loss_lowest_epoch&#39;</span>
+<span class="n">LOSS_FINAL</span> <span class="o">=</span> <span class="s1">&#39;loss_final&#39;</span>
+
+
+
+<div class="viewcode-block" id="setup_optimizer"><a class="viewcode-back" href="../../../displacementae.supervised.html#displacementae.supervised.train_utils.setup_optimizer">[docs]</a><span class="k">def</span> <span class="nf">setup_optimizer</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">lr</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">lr</span>
+    <span class="n">weight_decay</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">weight_decay</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">use_adam</span><span class="p">:</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span> <span class="n">amsgrad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">optimizer</span></div>
+
+
+<div class="viewcode-block" id="train"><a class="viewcode-back" href="../../../displacementae.supervised.html#displacementae.supervised.train_utils.train">[docs]</a><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">dhandler</span><span class="p">:</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dloader</span><span class="p">,</span> <span class="n">nets</span><span class="p">:</span><span class="n">Module</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">,</span> 
+          <span class="n">device</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">nets</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+    <span class="n">optim</span> <span class="o">=</span> <span class="n">setup_optimizer</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">epochs</span>
+    <span class="n">interrupted_training</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">batch_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">evaluate</span><span class="p">(</span><span class="n">dhandler</span><span class="p">,</span> <span class="n">nets</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span>
+                     <span class="n">epoch</span><span class="p">,</span> <span class="n">save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">no_plots</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+  
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dloader</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="n">config</span><span class="o">.</span><span class="n">n_iter</span><span class="p">:</span>
+                <span class="k">break</span>
+  
+            <span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+ 
+            <span class="n">x</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">]</span>
+            <span class="c1"># x is of shape [batch_size, channels, height, width]</span>
+            <span class="c1"># z is of shape [batch_size, n_labels]</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+
+            <span class="c1">### Losses</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span><span class="o">==</span><span class="s1">&#39;encoder&#39;</span><span class="p">:</span>
+                <span class="n">z_hat</span> <span class="o">=</span> <span class="n">nets</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_hat</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span><span class="o">==</span><span class="s1">&#39;decoder&#39;</span><span class="p">:</span>
+                <span class="n">x_hat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">nets</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">bce_loss</span><span class="p">(</span><span class="n">x_hat</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span><span class="o">==</span><span class="s1">&#39;grouprepr&#39;</span><span class="p">:</span>
+                <span class="n">z_hat</span> <span class="o">=</span> <span class="n">nets</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_hat</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            
+            
+            <span class="c1">### Step</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="c1">### Logging</span>
+            <span class="n">log_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] loss</span><span class="se">\t</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_text</span><span class="p">)</span>
+
+            <span class="c1">### WandB Logging</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">log_wandb</span><span class="p">:</span>
+                <span class="n">log_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;train/epoch&#39;</span><span class="p">:</span><span class="n">epoch</span><span class="p">,</span><span class="s1">&#39;train/loss&#39;</span><span class="p">:</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
+                <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">log_dict</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="n">batch_cnt</span><span class="p">,</span><span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">batch_cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint</span><span class="p">:</span>
+        <span class="n">checkpoint_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s2">&quot;checkpoint&quot;</span><span class="p">)</span>
+        <span class="n">losses</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">shared</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="s1">&#39;loss&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">}</span>
+        <span class="n">checkpoint</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">nets</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">losses</span><span class="o">=</span><span class="n">losses</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epochs</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">save_path</span><span class="o">=</span><span class="n">checkpoint_dir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="evaluate"><a class="viewcode-back" href="../../../displacementae.supervised.html#displacementae.supervised.train_utils.evaluate">[docs]</a><span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">dhandler</span><span class="p">:</span><span class="n">Dataset</span><span class="p">,</span>
+             <span class="n">nets</span><span class="p">:</span><span class="n">Module</span><span class="p">,</span>
+             <span class="n">device</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span>
+             <span class="n">save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">nets</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">shared</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">val_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">get_val_batch</span><span class="p">()</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">]</span>
+            <span class="c1"># x is of shape [batch_size, channels, height, width]</span>
+            <span class="c1"># z is of shape [batch_size, n_labels]</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span><span class="o">==</span><span class="s1">&#39;encoder&#39;</span><span class="p">:</span>
+                <span class="n">z_hat</span> <span class="o">=</span> <span class="n">nets</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_hat</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span><span class="o">==</span><span class="s1">&#39;decoder&#39;</span><span class="p">:</span>
+                <span class="n">x_hat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">nets</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">bce_loss</span><span class="p">(</span><span class="n">x_hat</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span><span class="o">==</span><span class="s1">&#39;grouprepr&#39;</span><span class="p">:</span>
+                <span class="n">z_hat</span> <span class="o">=</span> <span class="n">nets</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_hat</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+                
+            <span class="c1">### Logging</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;EVALUATION prior to epoch [</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s1">]...&#39;</span><span class="p">)</span>
+
+            <span class="n">log_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s1">] loss</span><span class="se">\t</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_text</span><span class="p">)</span>
+
+            <span class="c1">### WandB Logging</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">log_wandb</span><span class="p">:</span>
+                <span class="n">log_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;val/epoch&#39;</span><span class="p">:</span><span class="n">epoch</span><span class="p">,</span><span class="s1">&#39;val/loss&#39;</span><span class="p">:</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
+                <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">log_dict</span><span class="p">)</span>
+
+            <span class="c1"># Save Losses</span>
+            <span class="n">shared</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+            <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="p">[</span><span class="n">LOSS_FINAL</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="p">[</span><span class="n">LOSS_LOWEST</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span>\
+                    <span class="n">loss</span> <span class="o">&lt;</span> <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="p">[</span><span class="n">LOSS_LOWEST</span><span class="p">]:</span>
+                <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="p">[</span><span class="n">LOSS_LOWEST</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="p">[</span><span class="n">LOSS_LOWEST_EPOCH</span><span class="p">]</span> <span class="o">=</span> <span class="n">epoch</span>
+
+            <span class="n">sim_utils</span><span class="o">.</span><span class="n">save_summary_dict</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">2</span><span class="o">*</span><span class="n">config</span><span class="o">.</span><span class="n">val_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sim_utils</span><span class="o">.</span><span class="n">save_dictionary</span><span class="p">(</span><span class="n">shared</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="n">plot</span> <span class="ow">and</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">plot_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">fig_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;figures&#39;</span><span class="p">)</span>
+            <span class="n">figname</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">save_fig</span><span class="p">:</span>
+                <span class="n">figname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fig_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s1">_&#39;</span><span class="p">)</span>
+                <span class="n">shared</span><span class="o">.</span><span class="n">figname</span> <span class="o">=</span> <span class="n">figname</span>
+            
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span> <span class="o">==</span> <span class="s1">&#39;decoder&#39;</span><span class="p">:</span>
+                <span class="n">plt_utils</span><span class="o">.</span><span class="n">plot_supervised_reconstruction</span><span class="p">(</span><span class="n">dhandler</span><span class="p">,</span><span class="n">nets</span><span class="p">,</span><span class="n">config</span><span class="p">,</span><span class="n">device</span><span class="p">,</span><span class="n">logger</span><span class="p">,</span><span class="n">figname</span><span class="p">)</span>
+    <span class="n">nets</span><span class="o">.</span><span class="n">train</span><span class="p">()</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.supervised.train_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.utils.train_utils &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.train_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.utils.train_utils</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/utils/train_utils.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :09/02/2022</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">ExitStack</span>
+<span class="kn">import</span> <span class="nn">wandb</span>
+
+<span class="kn">import</span> <span class="nn">displacementae.utils.sim_utils</span> <span class="k">as</span> <span class="nn">sim_utils</span>
+<span class="kn">import</span> <span class="nn">displacementae.data.data_utils</span> <span class="k">as</span> <span class="nn">data_utils</span>
+<span class="kn">import</span> <span class="nn">displacementae.networks.network_utils</span> <span class="k">as</span> <span class="nn">net_utils</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.representation_utils</span> <span class="kn">import</span> <span class="n">Representation</span>
+
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../../displacementae.utils.html#displacementae.utils.train_utils.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;autoencoder&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Script for setting up and launching the training of the models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mode (str): run type, supports &#39;autoencoder&#39;, defaults to</span>
+<span class="sd">            &#39;autoencoder&#39;</span>
+<span class="sd">        representation (str): group representation, defaults to &#39;Representation.BLOCK_ROTS&#39;.</span>
+<span class="sd">            &#39;Representation.BLOCK_ROTS&#39;: actions are represented by block diagonal matrices of</span>
+<span class="sd">            2D rotation matrices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Mode dependent imports</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;autoencoder&#39;</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">displacementae.autoencoder.train_args</span> <span class="k">as</span> <span class="nn">train_args</span>
+        <span class="kn">import</span> <span class="nn">displacementae.autoencoder.train_utils</span> <span class="k">as</span> <span class="nn">tutils</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;homomorphism&#39;</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">displacementae.homomorphism.train_args</span> <span class="k">as</span> <span class="nn">train_args</span>
+        <span class="kn">import</span> <span class="nn">displacementae.homomorphism.train_utils</span> <span class="k">as</span> <span class="nn">tutils</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;trajectory&#39;</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">displacementae.trajectory.train_args</span> <span class="k">as</span> <span class="nn">train_args</span>
+        <span class="kn">import</span> <span class="nn">displacementae.trajectory.train_utils</span> <span class="k">as</span> <span class="nn">tutils</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;supervised&#39;</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">displacementae.supervised.train_args</span> <span class="k">as</span> <span class="nn">train_args</span>
+        <span class="kn">import</span> <span class="nn">displacementae.supervised.train_utils</span> <span class="k">as</span> <span class="nn">tutils</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Mode not supported&#39;</span><span class="p">)</span>
+    
+
+    <span class="c1"># parse commands</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">train_args</span><span class="o">.</span><span class="n">parse_cmd_arguments</span><span class="p">()</span>
+    <span class="c1"># setup environment</span>
+    <span class="n">device</span><span class="p">,</span> <span class="n">logger</span> <span class="o">=</span> <span class="n">sim_utils</span><span class="o">.</span><span class="n">setup_environment</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">sim_utils</span><span class="o">.</span><span class="n">backup_cli_command</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="c1"># setup dataset</span>
+    <span class="n">dhandler</span><span class="p">,</span> <span class="n">dloader</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">setup_data</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="c1"># setup models</span>
+    <span class="n">nets</span> <span class="o">=</span> <span class="n">net_utils</span><span class="o">.</span><span class="n">setup_network</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+    <span class="c1"># setup shared</span>
+    <span class="n">shared</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
+    <span class="n">sim_utils</span><span class="o">.</span><span class="n">setup_summary_dict</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">,</span> <span class="n">nets</span><span class="p">)</span>
+
+    <span class="c1"># The ExitStack is used to make a conditional with statement </span>
+    <span class="c1"># for using WandB</span>
+    <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">stack</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">log_wandb</span><span class="p">:</span>
+            <span class="n">stack</span><span class="o">.</span><span class="n">enter_context</span><span class="p">(</span>
+                  <span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">wandb_project_name</span><span class="p">,</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">))</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">wandb</span><span class="o">.</span><span class="n">config</span>
+            <span class="n">wandb</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">nets</span><span class="p">,</span><span class="n">criterion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">log</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span><span class="n">log_freq</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;### Training ###&#39;</span><span class="p">)</span>
+        <span class="n">finished_training</span> <span class="o">=</span> <span class="n">tutils</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">dhandler</span><span class="p">,</span> <span class="n">dloader</span><span class="p">,</span> <span class="n">nets</span><span class="p">,</span>
+                                <span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">shared</span><span class="o">.</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;finished&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">finished_training</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">sim_utils</span><span class="o">.</span><span class="n">save_summary_dict</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shared</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.utils.train_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,471 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>displacementae.networks.network_utils &#8212; Homomorphism AutoEncoder  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css" />
+    
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks.network_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for displacementae.networks.network_utils</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># Copyright 2021 Hamza Keurti</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># @title          :displacementae/networks/network_utils.py</span>
+<span class="c1"># @author         :Hamza Keurti</span>
+<span class="c1"># @contact        :hkeurti@ethz.ch</span>
+<span class="c1"># @created        :12/11/2021</span>
+<span class="c1"># @version        :1.0</span>
+<span class="c1"># @python_version :3.7.4</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">error</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">displacementae.data.transition_dataset</span> <span class="kn">import</span> <span class="n">TransitionDataset</span>
+
+<span class="kn">from</span> <span class="nn">displacementae.networks.cnn</span> <span class="kn">import</span> <span class="n">CNN</span>
+<span class="kn">from</span> <span class="nn">displacementae.networks.transposedcnn</span> <span class="kn">import</span> <span class="n">TransposedCNN</span> 
+<span class="kn">import</span> <span class="nn">displacementae.grouprepr.blockrots.orthogonal</span> <span class="k">as</span> <span class="nn">orth</span>
+<span class="kn">import</span> <span class="nn">displacementae.utils.misc</span> <span class="k">as</span> <span class="nn">misc</span>
+<span class="kn">from</span> <span class="nn">displacementae.networks.autoencoder</span> <span class="kn">import</span> <span class="n">AutoEncoder</span>
+<span class="kn">from</span> <span class="nn">displacementae.networks.multistep_autoencoder</span> <span class="kn">import</span> <span class="n">MultistepAutoencoder</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.block_mlp_representation</span> <span class="kn">import</span> <span class="n">BlockMLPRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.group_representation</span> <span class="kn">import</span> <span class="n">GroupRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.prodrepr.action_lookup</span> <span class="kn">import</span> <span class="n">ActionLookup</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.representation_utils</span> <span class="kn">import</span> <span class="n">Representation</span><span class="p">,</span> <span class="n">str_to_enum</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.lookup_representation</span> <span class="kn">import</span> <span class="n">LookupRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.block_lookup_representation</span> <span class="kn">import</span> <span class="n">BlockLookupRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.trivial_representation</span> <span class="kn">import</span> <span class="n">TrivialRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.mlp_representation</span> <span class="kn">import</span> <span class="n">MLPRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.unstructured_representation</span> <span class="kn">import</span> <span class="n">UnstructuredRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.soft_block_mlp_representation</span> <span class="kn">import</span> <span class="n">SoftBlockMLPRepresentation</span>
+<span class="kn">from</span> <span class="nn">displacementae.grouprepr.varphi</span> <span class="kn">import</span> <span class="n">VarPhi</span>
+
+<span class="n">AUTOENCODER</span> <span class="o">=</span> <span class="s1">&#39;autoencoder&#39;</span>
+
+
+<div class="viewcode-block" id="setup_network"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_network">[docs]</a><span class="k">def</span> <span class="nf">setup_network</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">AUTOENCODER</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">AUTOENCODER</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">setup_autoencoder_network</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;homomorphism&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">setup_multistep_autoencoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;trajectory&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">setup_multistep_autoencoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;supervised&#39;</span><span class="p">:</span>
+        <span class="n">repr_units</span> <span class="o">=</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span> <span class="o">==</span> <span class="s1">&#39;encoder&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">setup_encoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="n">dhandler</span><span class="p">,</span><span class="n">device</span><span class="p">,</span><span class="n">repr_units</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span> <span class="o">==</span> <span class="s1">&#39;decoder&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">setup_decoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="n">dhandler</span><span class="p">,</span><span class="n">device</span><span class="p">,</span><span class="n">repr_units</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_mode</span> <span class="o">==</span> <span class="s1">&#39;grouprepr&#39;</span><span class="p">:</span>
+            <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">setup_grp_morphism</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">grp_morphism</span><span class="o">.</span><span class="n">dim_representation</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span>
+            <span class="k">if</span> <span class="n">d</span><span class="o">**</span><span class="mi">2</span> <span class="o">!=</span> <span class="n">a</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Group morphism outputs </span><span class="si">{</span><span class="n">d</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s2"> units = &quot;</span> <span class="o">+</span>
+                            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">), expected </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">nets</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">grp_morphism</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">nets</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+
+<div class="viewcode-block" id="setup_encoder"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_encoder">[docs]</a><span class="k">def</span> <span class="nf">setup_encoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="n">dhandler</span><span class="p">,</span><span class="n">device</span><span class="p">,</span><span class="n">repr_units</span><span class="p">):</span>
+    <span class="n">in_channels</span><span class="p">,</span> <span class="n">shape_in</span> <span class="o">=</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">conv_channels</span> <span class="o">=</span> <span class="p">[</span><span class="n">in_channels</span><span class="p">]</span> <span class="o">+</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">conv_channels</span><span class="p">)</span>
+
+    <span class="n">kernel_sizes</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">kernel_sizes</span><span class="p">)</span>
+    <span class="n">strides</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">strides</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">kernel_sizes</span> <span class="o">=</span> <span class="n">kernel_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">strides</span> <span class="o">=</span> <span class="n">strides</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+    <span class="n">lin_channels</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">lin_channels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">net_act</span> <span class="o">==</span> <span class="s1">&#39;relu&#39;</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_act</span> <span class="o">==</span> <span class="s1">&#39;sigmoid&#39;</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_act</span> <span class="o">==</span> <span class="s1">&#39;tanh&#39;</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">variational</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">variational</span>
+    <span class="k">if</span> <span class="n">variational</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">beta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mf">1.</span>
+
+    <span class="c1"># if variational, encoder outputs mean and logvar</span>
+    <span class="n">encoder_outputs</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">variational</span><span class="p">)</span> <span class="o">*</span> <span class="n">repr_units</span>
+    <span class="n">encoder</span> <span class="o">=</span> <span class="n">CNN</span><span class="p">(</span><span class="n">shape_in</span><span class="o">=</span><span class="n">shape_in</span><span class="p">,</span> <span class="n">kernel_sizes</span><span class="o">=</span><span class="n">kernel_sizes</span><span class="p">,</span>
+        <span class="n">strides</span><span class="o">=</span><span class="n">strides</span><span class="p">,</span> <span class="n">conv_channels</span><span class="o">=</span><span class="n">conv_channels</span><span class="p">,</span>
+        <span class="n">linear_channels</span><span class="o">=</span><span class="n">lin_channels</span><span class="o">+</span><span class="p">[</span><span class="n">encoder_outputs</span><span class="p">],</span>
+        <span class="n">use_bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">activation_fn</span><span class="o">=</span><span class="n">act_fn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">encoder</span></div>
+
+<div class="viewcode-block" id="setup_decoder"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_decoder">[docs]</a><span class="k">def</span> <span class="nf">setup_decoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="n">dhandler</span><span class="p">,</span><span class="n">device</span><span class="p">,</span><span class="n">repr_units</span><span class="p">):</span>
+    <span class="n">in_channels</span><span class="p">,</span> <span class="n">shape_in</span> <span class="o">=</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dhandler</span><span class="o">.</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    
+    <span class="n">lin_channels</span> <span class="o">=</span> <span class="p">[</span><span class="n">repr_units</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">decoder_conv_channels</span> <span class="o">==</span> <span class="s2">&quot;-1&quot;</span><span class="p">:</span>
+        <span class="n">conv_channels</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">conv_channels</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">lin_channels</span> <span class="o">+=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">lin_channels</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">kernel_sizes</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">kernel_sizes</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">strides</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">strides</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">conv_channels</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">decoder_conv_channels</span><span class="p">)</span>
+        <span class="n">lin_channels</span> <span class="o">+=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">decoder_lin_channels</span><span class="p">)</span>
+        <span class="n">kernel_sizes</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">decoder_kernel_sizes</span><span class="p">)</span>
+        <span class="n">strides</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">decoder_strides</span><span class="p">)</span>
+    <span class="n">conv_channels</span> <span class="o">+=</span> <span class="p">[</span><span class="n">in_channels</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">kernel_sizes</span> <span class="o">=</span> <span class="n">kernel_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">strides</span> <span class="o">=</span> <span class="n">strides</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">net_act</span> <span class="o">==</span> <span class="s1">&#39;relu&#39;</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_act</span> <span class="o">==</span> <span class="s1">&#39;sigmoid&#39;</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">net_act</span> <span class="o">==</span> <span class="s1">&#39;tanh&#39;</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">act_fn</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">variational</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">variational</span>
+    <span class="k">if</span> <span class="n">variational</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">beta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mf">1.</span>
+    
+    <span class="n">decoder</span> <span class="o">=</span> <span class="n">TransposedCNN</span><span class="p">(</span><span class="n">shape_out</span><span class="o">=</span><span class="n">shape_in</span><span class="p">,</span> <span class="n">kernel_sizes</span><span class="o">=</span><span class="n">kernel_sizes</span><span class="p">,</span>
+                        <span class="n">strides</span><span class="o">=</span><span class="n">strides</span><span class="p">,</span> <span class="n">conv_channels</span><span class="o">=</span><span class="n">conv_channels</span><span class="p">,</span>
+                        <span class="n">linear_channels</span><span class="o">=</span><span class="n">lin_channels</span><span class="p">,</span>
+                        <span class="n">use_bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">activation_fn</span><span class="o">=</span><span class="n">act_fn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">decoder</span></div>
+
+<div class="viewcode-block" id="setup_encoder_decoder"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_encoder_decoder">[docs]</a><span class="k">def</span> <span class="nf">setup_encoder_decoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">repr_units</span><span class="p">):</span>
+    <span class="c1"># in_channels, shape_in = dhandler.in_shape[0], dhandler.in_shape[1:]</span>
+    <span class="c1"># conv_channels = [in_channels] + misc.str_to_ints(config.conv_channels)</span>
+
+    <span class="c1"># kernel_sizes = misc.str_to_ints(config.kernel_sizes)</span>
+    <span class="c1"># strides = misc.str_to_ints(config.strides)</span>
+    <span class="c1"># if len(kernel_sizes) == 1:</span>
+    <span class="c1">#     kernel_sizes = kernel_sizes[0]</span>
+    <span class="c1"># if len(strides) == 1:</span>
+    <span class="c1">#     strides = strides[0]</span>
+
+    <span class="c1"># if isinstance(strides, list):</span>
+    <span class="c1">#     trans_strides = strides[::-1]</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     trans_strides = strides</span>
+
+    <span class="c1"># if isinstance(kernel_sizes, list):</span>
+    <span class="c1">#     trans_kernel = kernel_sizes[::-1]</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     trans_kernel = kernel_sizes</span>
+
+    <span class="c1"># lin_channels = misc.str_to_ints(config.lin_channels)</span>
+    <span class="c1"># if config.net_act == &#39;relu&#39;:</span>
+    <span class="c1">#     act_fn = torch.relu</span>
+    <span class="c1"># elif config.net_act == &#39;sigmoid&#39;:</span>
+    <span class="c1">#     act_fn = torch.sigmoid</span>
+    <span class="c1"># elif config.net_act == &#39;tanh&#39;:</span>
+    <span class="c1">#     act_fn = torch.tanh</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     act_fn = None</span>
+
+    <span class="c1"># variational = config.variational</span>
+    <span class="c1"># if variational and config.beta is None:</span>
+    <span class="c1">#     config.beta = 1.</span>
+
+    <span class="c1"># # if variational, encoder outputs mean and logvar</span>
+    <span class="c1"># encoder_outputs = (1 + variational) * repr_units</span>
+    <span class="c1"># encoder = CNN(shape_in=shape_in, kernel_sizes=kernel_sizes,</span>
+    <span class="c1">#                 strides=strides, conv_channels=conv_channels,</span>
+    <span class="c1">#                 linear_channels=lin_channels+[encoder_outputs],</span>
+    <span class="c1">#                 use_bias=True, activation_fn=act_fn).to(device)</span>
+
+    <span class="c1"># decoder = TransposedCNN(shape_out=shape_in, kernel_sizes=trans_kernel,</span>
+    <span class="c1">#     strides=trans_strides, conv_channels=conv_channels[::-1],</span>
+    <span class="c1">#     linear_channels=[repr_units]+lin_channels[::-1],</span>
+    <span class="c1">#     use_bias=True, activation_fn=act_fn).to(device)</span>
+    <span class="n">encoder</span> <span class="o">=</span> <span class="n">setup_encoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">repr_units</span><span class="p">)</span>
+    <span class="n">decoder</span> <span class="o">=</span> <span class="n">setup_decoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">repr_units</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span></div>
+
+
+<div class="viewcode-block" id="setup_grp_morphism"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_grp_morphism">[docs]</a><span class="k">def</span> <span class="nf">setup_grp_morphism</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Namespace</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">:</span> <span class="n">TransitionDataset</span><span class="p">,</span>
+                       <span class="n">device</span><span class="p">:</span> <span class="nb">str</span>
+                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GroupRepresentation</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets up the group morphism module which converts input actions to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">varphi_units</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">varphi_units</span><span class="p">)</span>
+    <span class="n">varphi</span> <span class="o">=</span> <span class="n">VarPhi</span><span class="p">(</span><span class="n">n_action_units</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span><span class="p">,</span>
+           <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> 
+           <span class="n">linear_units</span><span class="o">=</span><span class="n">varphi_units</span><span class="p">,</span>
+           <span class="n">activation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">varphi_act</span><span class="p">,</span>
+           <span class="n">seed</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">varphi_random_seed</span><span class="p">,</span>
+           <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">representation</span> <span class="o">=</span> <span class="n">str_to_enum</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grouprepr</span><span class="p">)</span>
+
+   
+    <span class="k">if</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">MLP</span><span class="p">:</span>
+        <span class="n">hidden_units</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">group_hidden_units</span><span class="p">)</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">MLPRepresentation</span><span class="p">(</span>
+                <span class="n">n_action_units</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+                <span class="n">hidden_units</span><span class="o">=</span><span class="n">hidden_units</span><span class="p">,</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> 
+                <span class="n">normalize</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize</span><span class="p">,</span>
+                <span class="n">normalize_post_action</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_post_action</span><span class="p">,</span>
+                <span class="n">exponential_map</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">exponential_map</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">BLOCK_MLP</span><span class="p">:</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+        <span class="n">hidden_units</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">group_hidden_units</span><span class="p">)</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">BlockMLPRepresentation</span><span class="p">(</span>
+                <span class="n">n_action_units</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">dims</span><span class="p">),</span>
+                <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
+                <span class="n">hidden_units</span><span class="o">=</span><span class="n">hidden_units</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">normalize_subrepresentations</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_subrepresentations</span><span class="p">,</span>
+                <span class="n">normalize_post_action</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_post_action</span><span class="p">,</span>
+                <span class="n">exponential_map</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">exponential_map</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">SOFT_BLOCK_MLP</span><span class="p">:</span>
+        <span class="n">hidden_units</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">group_hidden_units</span><span class="p">)</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">SoftBlockMLPRepresentation</span><span class="p">(</span>
+                <span class="n">n_action_units</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+                <span class="n">hidden_units</span><span class="o">=</span><span class="n">hidden_units</span><span class="p">,</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> 
+                <span class="n">normalize</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize</span><span class="p">,</span>
+                <span class="n">normalize_post_action</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_post_action</span><span class="p">,</span>
+                <span class="n">exponential_map</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">exponential_map</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">,</span>
+                <span class="n">regularize_algebra</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">regularize_algebra</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">PROD_ROTS_LOOKUP</span><span class="p">:</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">ActionLookup</span><span class="p">(</span>
+                <span class="n">n_action_units</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">n_actions</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+                <span class="n">repr_loss_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">repr_loss_weight</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">grp_loss_weight</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">,</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">BLOCK_ROTS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;specified_grp_step&#39;</span><span class="p">):</span>
+            <span class="n">specified_step</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">specified_step</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_floats</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">specified_grp_step</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">specified_step</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">learn_geometry</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">specified_step</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">specified_step</span> <span class="o">=</span> <span class="n">specified_step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">orth</span><span class="o">.</span><span class="n">OrthogonalMatrix</span><span class="p">(</span>
+            <span class="n">dim_representation</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">action_units</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">learn_params</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">learn_geometry</span><span class="p">,</span>
+            <span class="n">specified_step</span><span class="o">=</span><span class="n">specified_step</span><span class="p">,</span>
+            <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">,)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">LOOKUP</span><span class="p">:</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">LookupRepresentation</span><span class="p">(</span>
+                <span class="n">n_actions</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">n_actions</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">normalize</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize</span><span class="p">,</span>
+                <span class="n">normalize_post_action</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_post_action</span><span class="p">,</span>
+                <span class="n">exponential_map</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">exponential_map</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">,</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">BLOCK_LOOKUP</span><span class="p">:</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">str_to_ints</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">BlockLookupRepresentation</span><span class="p">(</span>
+                <span class="n">n_actions</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">n_actions</span><span class="p">,</span>
+                <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">dims</span><span class="p">),</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">normalize_subrepresentations</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_subrepresentations</span><span class="p">,</span>
+                <span class="n">normalize_post_action</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">normalize_post_action</span><span class="p">,</span>
+                <span class="n">exponential_map</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">exponential_map</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">TRIVIAL</span><span class="p">:</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">TrivialRepresentation</span><span class="p">(</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">representation</span> <span class="o">==</span> <span class="n">Representation</span><span class="o">.</span><span class="n">UNSTRUCTURED</span><span class="p">:</span>
+        <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">UnstructuredRepresentation</span><span class="p">(</span>
+                <span class="n">n_action_units</span><span class="o">=</span><span class="n">dhandler</span><span class="o">.</span><span class="n">n_actions</span><span class="p">,</span>
+                <span class="n">dim_representation</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+                <span class="n">hidden_units</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">group_hidden_units</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">varphi</span><span class="o">=</span><span class="n">varphi</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+            
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Representation </span><span class="si">{</span><span class="n">representation</span><span class="si">}</span><span class="s1"> is not implemented.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grp_morphism</span></div>
+
+
+
+
+<div class="viewcode-block" id="setup_autoencoder_network"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_autoencoder_network">[docs]</a><span class="k">def</span> <span class="nf">setup_autoencoder_network</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets up an autoencoder with a geometric transformation of the latent</span>
+<span class="sd">    units.</span>
+
+<span class="sd">    The autoencoder consists of a contracting path,</span>
+<span class="sd">    a geometric transformation of the latent space and</span>
+<span class="sd">    an expanding path back into the input space.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (Namespace): configuration of the experiment, obtained</span>
+<span class="sd">                            from cli.</span>
+<span class="sd">        dhandler (dataset): Handler for dataset.</span>
+<span class="sd">        device (str): indicates device where parameters are stored.</span>
+<span class="sd">        representation (str): Indicates which group representation to use for the</span>
+<span class="sd">                    observed actions.</span>
+<span class="sd">                    if &#39;block_repr&#39;: group representation is block</span>
+<span class="sd">                    diagonal 2D rotation matrices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">setup_grp_morphism</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dhandler</span><span class="o">=</span><span class="n">dhandler</span><span class="p">)</span>
+
+    <span class="n">dim_representation</span> <span class="o">=</span> <span class="n">grp_morphism</span><span class="o">.</span><span class="n">dim_representation</span>
+    <span class="n">n_free_units</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">n_free_units</span>
+    <span class="n">repr_units</span> <span class="o">=</span> <span class="n">dim_representation</span> <span class="o">+</span> <span class="n">n_free_units</span>
+
+    <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span> <span class="o">=</span> <span class="n">setup_encoder_decoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span>
+                                             <span class="n">repr_units</span><span class="p">)</span>
+
+    <span class="n">autoencoder</span> <span class="o">=</span> <span class="n">AutoEncoder</span><span class="p">(</span>
+        <span class="n">encoder</span><span class="o">=</span><span class="n">encoder</span><span class="p">,</span><span class="n">decoder</span><span class="o">=</span><span class="n">decoder</span><span class="p">,</span> <span class="n">grp_morphism</span><span class="o">=</span><span class="n">grp_morphism</span><span class="p">,</span>
+        <span class="n">variational</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">variational</span><span class="p">,</span> <span class="n">n_repr_units</span><span class="o">=</span><span class="n">repr_units</span><span class="p">,</span> 
+        <span class="n">intervene</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">intervene</span><span class="p">,</span> <span class="n">spherical</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">spherical</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">autoencoder</span></div>
+
+
+<div class="viewcode-block" id="setup_multistep_autoencoder"><a class="viewcode-back" href="../../../displacementae.networks.html#displacementae.networks.network_utils.setup_multistep_autoencoder">[docs]</a><span class="k">def</span> <span class="nf">setup_multistep_autoencoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+    <span class="n">grp_morphism</span> <span class="o">=</span> <span class="n">setup_grp_morphism</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dhandler</span><span class="o">=</span><span class="n">dhandler</span><span class="p">)</span>
+
+    <span class="n">dim_representation</span> <span class="o">=</span> <span class="n">grp_morphism</span><span class="o">.</span><span class="n">dim_representation</span>
+    <span class="n">n_free_units</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">n_free_units</span>
+    <span class="n">repr_units</span> <span class="o">=</span> <span class="n">dim_representation</span> <span class="o">+</span> <span class="n">n_free_units</span>
+
+    <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span> <span class="o">=</span> <span class="n">setup_encoder_decoder</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dhandler</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span>
+                                             <span class="n">repr_units</span><span class="p">)</span>
+
+    <span class="n">autoencoder</span> <span class="o">=</span> <span class="n">MultistepAutoencoder</span><span class="p">(</span>
+                        <span class="n">encoder</span><span class="o">=</span><span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="o">=</span><span class="n">decoder</span><span class="p">,</span>
+                        <span class="n">grp_morphism</span><span class="o">=</span><span class="n">grp_morphism</span><span class="p">,</span>
+                        <span class="n">variational</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">variational</span><span class="p">,</span>
+                        <span class="n">n_repr_units</span><span class="o">=</span><span class="n">repr_units</span><span class="p">,</span>
+                        <span class="n">n_transform_units</span><span class="o">=</span><span class="n">dim_representation</span><span class="p">,</span>
+                        <span class="n">spherical</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">spherical</span><span class="p">,</span>
+                        <span class="n">spherical_post_action</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">spherical_post_action</span><span class="p">,</span>
+                        <span class="n">reconstruct_first</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">reconstruct_first</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">autoencoder</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Homomorphism AutoEncoder  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">displacementae.networks.network_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Hamza Keurti.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>
