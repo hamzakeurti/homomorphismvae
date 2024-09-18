@@ -7,7 +7,7 @@ with open('README.md') as f:
 
 setup(
     name='homomorphism-autoencoder',
-    version='0.1.8',
+    version='0.1.9',
     description='An Autoencoder that learns a group structured representation',
     long_description=long_description,
     # package_dir={'': 'displacementae'},
