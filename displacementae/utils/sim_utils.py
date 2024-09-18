@@ -31,8 +31,10 @@ import numpy as np
 import random
 import pickle
 import json
+from datetime import datetime
 
 from displacementae.utils import logger_config
+import hashlib
 
 
 BCE_LOWEST = 'bce_lowest'
@@ -73,18 +75,18 @@ def setup_environment(config):
     ### Output folder.
     if os.path.exists(config.out_dir):
         # TODO allow continuing from an old checkpoint.
-        print('The output folder %s already exists. ' % (config.out_dir) + \
-              'Do you want us to delete it? [y/n]')
-        inps, _, _ = select.select([sys.stdin], [], [], 30)
-        if len(inps) == 0:
-            warn('Timeout occurred. No user input received!')
-            response = 'n'
-        else:
-            response = sys.stdin.readline().strip()
-        if response != 'y':
-            raise IOError('Could not delete output folder!')
-        shutil.rmtree(config.out_dir)
-
+        # print('The output folder %s already exists. ' % (config.out_dir) + \
+        #       'Do you want us to delete it? [y/n]')
+        # inps, _, _ = select.select([sys.stdin], [], [], 30)
+        # if len(inps) == 0:
+        #     warn('Timeout occurred. No user input received!')
+        #     response = 'n'
+        # else:
+        #     response = sys.stdin.readline().strip()
+        # if response != 'y':
+        #     raise IOError('Could not delete output folder!')
+        # shutil.rmtree(config.out_dir)
+        config.out_dir = os.path.join(config.out_dir, hashlib.sha1(str(random.random()).encode('utf-8')).hexdigest()[:10])
         os.makedirs(config.out_dir)
         print("Created output folder %s." % (config.out_dir))
 
